@@ -21,9 +21,26 @@ using namespace SVFIR::SExprs;
 /// directly due to overloads.
 bool isDigit(const char c) { return std::isdigit(c); }
 
+/// Error parsing expected because we need, and don't have, a list.
+ErrMsg notAList(const std::string &expected) {
+    return ErrMsg("Expected a list when trying to parse " + expected + ".");
+}
+
+/// Error parsing encompassing as the list is too short trying for an expected.
+ErrMsg listCutShort(
+    const std::string &encompassing,
+    const std::string &expected
+) {
+    return ErrMsg(
+        "Expected " + expected + " " +
+        "while parsing " + encompassing + " " +
+        "(list too short)."
+    );
+}
+
 /// <md>
 Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for metadata"); }
+    if (!isList(s)) { return notAList("metadata"); }
     const List list = std::get<List>(s);
 
     if (list.children.size() != 2) {
@@ -140,7 +157,7 @@ Result<VarId, ErrMsg> parseVarId(const SExpr s) {
 }
 
 Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for typed lid"); }
+    if (!isList(s)) { return notAList("typed (local) ID"); }
 
     const List list = std::get<List>(s);
     if (list.children.size() != 2) {
@@ -158,7 +175,7 @@ Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
 
 /// <param>
 Result<Param, ErrMsg> parseParam(const SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for param"); }
+    if (!isList(s)) { return notAList("Param"); }
 
     const List list = std::get<List>(s);
     if (!(list.children.size() == 2 || list.children.size() == 3)) {
@@ -245,7 +262,7 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
 }
 
 Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for typed const"); }
+    if (!isList(s)) { return notAList("typed constant"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2) { return ErrMsg("typed const needs 2 elems"); }
@@ -260,21 +277,21 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
 }
 
 Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for preamble"); }
+    if (!isList(s)) { return notAList("preamble"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     auto it = elems.cbegin();
 
     // Preamble keyword.
-    if (it == elems.cend() || !atomEq(*it, "preamble")) {
+    if (it == elems.cend()) { return listCutShort("preamble", "keyword"); }
+    if (!atomEq(*it, "preamble")) {
         return ErrMsg("expected preamble keyword");
     }
 
     // Version.
     ++it;
-    if (it == elems.cend() || !isList(*it)) {
-        return ErrMsg("expected version");
-    }
+    if (it == elems.cend()) { return listCutShort("preamble", "version"); }
+    if (!isList(*it)) { return notAList("version"); }
     const List versionList = std::get<List>(*it);
     if (
         versionList.children.size() != 2 ||
@@ -307,9 +324,8 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
 
     // Source.
     ++it;
-    if (it == elems.cend() || !isList(*it)) {
-        return ErrMsg("expected source");
-    }
+    if (it == elems.cend()) { return listCutShort("preamble", "source"); }
+    if (!isList(*it)) { return notAList("source"); }
     const List sourceList = std::get<List>(*it);
     if (
         sourceList.children.size() != 2 ||
@@ -389,7 +405,7 @@ Result<IVal, ErrMsg> parseIVal(SExpr s) {
 }
 
 Result<Variable, ErrMsg> parseVariable(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for variable"); }
+    if (!isList(s)) { return notAList("variable"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2 && elems.size() != 3) {
@@ -419,7 +435,7 @@ Result<Variable, ErrMsg> parseVariable(SExpr s) {
 }
 
 Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for variables"); }
+    if (!isList(s)) { return notAList("variables"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     if (
@@ -448,10 +464,10 @@ Result<Statement, ErrMsg> parsePhiStmt(List l) {
     const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
     if (isErr(lid)) { return ErrMsg("expected local id"); }
 
-    if (!isList(elems[2])) { return ErrMsg("expected operand list"); }
+    if (!isList(elems[2])) { return notAList("phi operands"); }
     std::vector<PhiStmt::Operand> operands;
     for (auto s : std::get<List>(elems[2]).children) {
-        if (!isList(s)) { return ErrMsg("expected list as operand"); }
+        if (!isList(s)) { return notAList("phi operand"); }
         const List pair = std::get<List>(s);
         if (pair.children.size() != 2) { return ErrMsg("expected pair"); }
         const Result<Val, ErrMsg> val = parseVal(pair.children[0]);
@@ -488,7 +504,7 @@ Result<Statement, ErrMsg> parseCallStmt(List l) {
     const Result<PVal, ErrMsg> callee = parsePVal(elems[2]);
     if (isErr(callee)) { return getErr(callee); }
 
-    if (!isList(elems[3])) { return ErrMsg("expected args list"); }
+    if (!isList(elems[3])) { return notAList("call arguments"); }
     std::vector<Val> args;
     for (auto s : std::get<List>(elems[3]).children) {
         const Result<Val, ErrMsg> val = parseVal(s);
@@ -967,7 +983,7 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
 }
 
 Result<Statement, ErrMsg> parseStmt(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for stmt"); }
+    if (!isList(s)) { return notAList("statement"); }
     const List l = std::get<List>(s);
 
     if (!isAtom(l.children[0])) { return ErrMsg("expected instr"); }
@@ -1004,7 +1020,7 @@ Result<Statement, ErrMsg> parseStmt(SExpr s) {
 }
 
 Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected basic block list"); }
+    if (!isList(s)) { return ErrMsg("basic block"); }
     const SExprSeq elems = std::get<List>(s).children;
 
     if (elems.size() != 2 && elems.size() != 3) {
@@ -1015,7 +1031,7 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
     if (isErr(bid)) { return getErr(bid); }
 
     std::vector<Statement> stmts;
-    if (!isList(elems[1])) { return ErrMsg("expected stmt list"); }
+    if (!isList(elems[1])) { return ErrMsg("basic block's statements"); }
     for (auto s : std::get<List>(elems[1]).children) {
         const Result<Statement, ErrMsg> stmt = parseStmt(s);
         if (isErr(stmt)) { return getErr(stmt); }
@@ -1033,7 +1049,7 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
 }
 
 Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected basic block list"); }
+    if (!isList(s)) { return notAList("function's basic blocks"); }
     std::vector<BasicBlock> blocks;
     for (auto rawBlock : std::get<List>(s).children) {
         const Result<BasicBlock, ErrMsg> block = parseBasicBlock(rawBlock);
@@ -1046,7 +1062,7 @@ Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
 
 Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
 parseFunctionParams(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected params list"); }
+    if (!isList(s)) { return notAList("function parameter list"); }
     std::vector<Param> params;
     std::optional<LocalId> varargParam = std::nullopt;
     const SExprSeq rawParams = std::get<List>(s).children;
@@ -1079,7 +1095,7 @@ parseFunctionParams(SExpr s) {
 }
 
 Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list (type alias)"); }
+    if (!isList(s)) { return notAList("type alias"); }
 
     SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2 && elems.size() != 3) {
@@ -1108,7 +1124,7 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
 }
 
 Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for function"); }
+    if (!isList(s)) { return notAList("top-level type aliases"); }
 
     SExprSeq elems = std::get<List>(s).children;
     if (elems.empty() || !atomEq(elems[0], "types")) {
@@ -1127,7 +1143,7 @@ Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
 }
 
 Result<Function, ErrMsg> parseFunction(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for function"); }
+    if (!isList(s)) { return notAList("function"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 4 && elems.size() != 5) {
@@ -1168,7 +1184,7 @@ Result<Function, ErrMsg> parseFunction(SExpr s) {
 }
 
 Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
-    if (!isList(s)) { return ErrMsg("expected list for functions"); }
+    if (!isList(s)) { return notAList("top-level functions"); }
 
     const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() < 1 || !atomEq(elems[0], "functions")) {
