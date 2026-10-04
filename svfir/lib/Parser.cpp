@@ -26,6 +26,11 @@ ErrMsg notAList(const std::string &expected) {
     return ErrMsg("Expected a list when trying to parse " + expected + ".");
 }
 
+/// Error parsing expected because we need, and don't have, an atom.
+ErrMsg notAnAtom(const std::string &expected) {
+    return ErrMsg("Expected a atom when trying to parse " + expected + ".");
+}
+
 /// Error parsing encompassing as the list is too short trying for an expected.
 ErrMsg listCutShort(
     const std::string &encompassing,
@@ -55,7 +60,7 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
 
 /// <tid>
 Result<TypeId, ErrMsg> parseTypeId(const SExpr s) {
-    if (!isAtom(s)) { return ErrMsg("expected atom for type id"); }
+    if (!isAtom(s)) { return notAnAtom("type ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
     if (text[0] != '~') { return ErrMsg("type id must start with %"); }
@@ -121,7 +126,7 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
 
 /// <lid>
 Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
-    if (!isAtom(s)) { return ErrMsg("expected atom for local id"); }
+    if (!isAtom(s)) { return notAnAtom("local ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("local id invalid (too short)"); }
     if (text[0] != '%') { return ErrMsg("local id must start with %"); }
@@ -130,7 +135,7 @@ Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
 
 /// <gid>
 Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
-    if (!isAtom(s)) { return ErrMsg("expected atom for global id"); }
+    if (!isAtom(s)) { return notAnAtom("global ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("global id invalid (too short)"); }
     if (text[0] != '@') { return ErrMsg("global id must start with %"); }
@@ -139,7 +144,7 @@ Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
 
 /// <bid>
 Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
-    if (!isAtom(s)) { return ErrMsg("expected atom for block id"); }
+    if (!isAtom(s)) { return notAnAtom("basic block ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("block id invalid (too short)"); }
     if (text[0] != '!') { return ErrMsg("block id must start with %"); }
@@ -148,7 +153,7 @@ Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
 
 Result<VarId, ErrMsg> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
-    if (!isAtom(s)) { return ErrMsg("expected atom for type id"); }
+    if (!isAtom(s)) { return notAnAtom("local or global ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
     if (text[0] == '%') { return getVal(parseLocalId(s)); }
@@ -986,7 +991,7 @@ Result<Statement, ErrMsg> parseStmt(SExpr s) {
     if (!isList(s)) { return notAList("statement"); }
     const List l = std::get<List>(s);
 
-    if (!isAtom(l.children[0])) { return ErrMsg("expected instr"); }
+    if (!isAtom(l.children[0])) { return notAnAtom("statement keyword"); }
     const std::string instr = std::get<Atom>(l.children[0]).val;
 
     if (instr == "phi") { return parsePhiStmt(l); }
