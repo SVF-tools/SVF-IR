@@ -1,5 +1,5 @@
-#ifndef PRETTY_H
-#define PRETTY_H
+#ifndef OPS_H
+#define OPS_H
 
 #include "Ast.h"
 #include "Span.h"
@@ -14,4 +14,4 @@ namespace SVFIR {
 
 }  // namespace SVFIR
 
-#endif  // PRETTY_H
+#endif  // OPS_H
