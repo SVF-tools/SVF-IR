@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "Ast.h"
-#include "Pretty.h"
+#include "Ops.h"
 
 // TODO: there are many instances where you need to "just know" there is/isn't
 // whitespace.

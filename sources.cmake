@@ -1,6 +1,6 @@
 set(SVFIR_HEADERS
   svfir/include/Ast.h svfir/include/InputStream.h svfir/include/Parser.h
-  svfir/include/Pretty.h svfir/include/Result.h svfir/include/SExprs.h
+  svfir/include/Ops.h svfir/include/Result.h svfir/include/SExprs.h
   svfir/include/Span.h  svfir/include/SVFIR.h  svfir/include/Version.h
 )
 
