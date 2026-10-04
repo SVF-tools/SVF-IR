@@ -108,7 +108,11 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
             else if (width == 32) { return Type(IntType(Kind::I32, sp)); }
             else if (width == 64) { return Type(IntType(Kind::I64, sp)); }
             else if (width == 128) { return Type(IntType(Kind::I128, sp)); }
-            else { return ErrMsg("bad width for int"); }
+            else {
+                return ErrMsg(
+                    "Bad width for int type (" + std::to_string(width) + ")."
+                );
+            }
         } else if (!atom.val.empty() && atom.val[0] == 'f') {
             using Kind = FloatType::Kind;
             // + 1 to skip the 'f'.
@@ -117,31 +121,50 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
             else if (width == 32) { return Type(FloatType(Kind::F32, sp)); }
             else if (width == 64) { return Type(FloatType(Kind::F64, sp)); }
             else if (width == 128) { return Type(FloatType(Kind::F128, sp)); }
-            else { return ErrMsg("bad width for float"); }
+            else {
+                return ErrMsg(
+                    "Bad width for float type (" + std::to_string(width) + ")."
+                );
+            }
         } else if (!atom.val.empty() && atom.val[0] == '~') {
             const Result<TypeId, ErrMsg> id = parseTypeId(s);
-            if (isErr(id)) { return getErr(id); }
+            if (isErr(id)) {
+                return ErrMsg(
+                    "Invalid scalar type.\n"
+                    "If you intended a type ID here, note: " +
+                    getErr(id)
+                );
+            }
             return Type(getVal(id));
-        } else { return ErrMsg("invalid type"); }
+        } else { return ErrMsg("Invalid scalar type."); }
     } else {
         assert(isList(s));
         const List list = std::get<List>(s);
-        if (
-            list.children.size() != 2 ||
-            !atomEq(list.children[0], "agg") ||
-            !isAtom(list.children[1])
-        ) { return ErrMsg("expected agg type (list of 2 elements)"); }
-        const std::string slotsStr =
-            std::get<Atom>(list.children[1]).val;
+
+        auto it = list.children.cbegin(), end = list.children.cend();
+        if (it == end) { listCutShort("aggregate type", "'agg'"); }
+        if (!isAtom(*it)) { notAnAtom("'agg'"); }
+        const std::string kw = std::get<Atom>(*it).val;
+        if (kw != "agg") { badKw("aggregate type", "'agg'", kw); }
+
+
+        ++it;
+        if (it == end) { listCutShort("aggregate type", "number of slots"); }
+        if (!isAtom(*it)) { notAnAtom("number of slots"); }
+        const std::string slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
             // TODO: what if it starts with 0
-            return ErrMsg("seq slots not positive number");
+            return ErrMsg(
+                "aggregate type's number of slots is not positive number "
+                "(" + slotsStr + ")."
+            );
         }
         errno = 0;
-        const long long slots =
-            std::strtoull(slotsStr.c_str(), nullptr, 10);
+        const long long slots = std::strtoull(slotsStr.c_str(), nullptr, 10);
         if (errno != 0 || slots > UINT64_MAX) {
-            return ErrMsg("seq type slots too large");
+            return ErrMsg(
+                "Too many slots (" + slotsStr + ") for aggregate type."
+            );
         }
 
         return Type(AggType(slots, sp));
