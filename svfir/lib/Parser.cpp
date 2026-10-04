@@ -193,8 +193,8 @@ Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
 Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("basic block ID"); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return ErrMsg("block id invalid (too short)"); }
-    if (text[0] != '!') { return ErrMsg("block id must start with %"); }
+    if (text.size() < 2) { return shortId("Basic block"); }
+    if (text[0] != '!') { return noSpecialCharId("Basic block", '!'); }
     return BlockId(text, span(s));
 }
 
