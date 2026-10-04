@@ -23,7 +23,6 @@ The syntax of the textual format is defined in `doc/ir.txt`.
 * Tests.
 * Describe build.
 * Error handling in parser.
-* Adding spans to AST nodes.
 * Conversion statements.
 * Explanation of SVF-IR.
 * Validation.

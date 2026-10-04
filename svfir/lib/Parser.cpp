@@ -10,6 +10,7 @@
 #include "Ast.h"
 #include "Parser.h"
 #include "Result.h"
+#include "Span.h"
 
 namespace {
 
@@ -34,7 +35,7 @@ Result<Metadata, ErrMsg> parseMetadata(const SExprs::SExpr s) {
     ) { return ErrMsg("expected md"); }
 
     // list.children[1] is by construction an sexpr.
-    return Metadata(list.children[1]);
+    return Metadata(list.children[1], span(list.children[1]));
 }
 
 /// <tid>
@@ -43,37 +44,38 @@ Result<TypeId, ErrMsg> parseTypeId(const SExprs::SExpr s) {
     const std::string text = std::get<SExprs::Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
     if (text[0] != '~') { return ErrMsg("type id must start with %"); }
-    return TypeId(text);
+    return TypeId(text, span(s));
 }
 
 /// <type>
 Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
+    const Span sp = SExprs::span(s);
     if (SExprs::isAtom(s)) {
         const SExprs::Atom atom = std::get<SExprs::Atom>(s);
         if (atom.val == "void") {
-            return Type(VoidType());
+            return Type(VoidType(sp));
         } else if (atom.val == "ptr") {
-            return Type(PtrType());
+            return Type(PtrType(sp));
         } else if (atom.val == "bool") {
-            return Type(BoolType());
+            return Type(BoolType(sp));
         } else if (atom.val.size() > 1 && atom.val[0] == 'i') {
             using Kind = IntType::Kind;
             // + 1 to skip the 'i'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 8) { return Type(IntType(Kind::I8)); }
-            else if (width == 16) { return Type(IntType(Kind::I16)); }
-            else if (width == 32) { return Type(IntType(Kind::I32)); }
-            else if (width == 64) { return Type(IntType(Kind::I64)); }
-            else if (width == 128) { return Type(IntType(Kind::I128)); }
+            if (width == 8) { return Type(IntType(Kind::I8, sp)); }
+            else if (width == 16) { return Type(IntType(Kind::I16, sp)); }
+            else if (width == 32) { return Type(IntType(Kind::I32, sp)); }
+            else if (width == 64) { return Type(IntType(Kind::I64, sp)); }
+            else if (width == 128) { return Type(IntType(Kind::I128, sp)); }
             else { return ErrMsg("bad width for int"); }
         } else if (!atom.val.empty() && atom.val[0] == 'f') {
             using Kind = FloatType::Kind;
             // + 1 to skip the 'f'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 16) { return Type(FloatType(Kind::F16)); }
-            else if (width == 32) { return Type(FloatType(Kind::F32)); }
-            else if (width == 64) { return Type(FloatType(Kind::F64)); }
-            else if (width == 128) { return Type(FloatType(Kind::F128)); }
+            if (width == 16) { return Type(FloatType(Kind::F16, sp)); }
+            else if (width == 32) { return Type(FloatType(Kind::F32, sp)); }
+            else if (width == 64) { return Type(FloatType(Kind::F64, sp)); }
+            else if (width == 128) { return Type(FloatType(Kind::F128, sp)); }
             else { return ErrMsg("bad width for float"); }
         } else if (!atom.val.empty() && atom.val[0] == '~') {
             const Result<TypeId, ErrMsg> id = parseTypeId(s);
@@ -103,7 +105,7 @@ Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
             return ErrMsg("seq type slots too large");
         }
 
-        return Type(AggType(slots));
+        return Type(AggType(slots, sp));
     }
 }
 
@@ -113,7 +115,7 @@ Result<LocalId, ErrMsg> parseLocalId(const SExprs::SExpr s) {
     const std::string text = std::get<SExprs::Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("local id invalid (too short)"); }
     if (text[0] != '%') { return ErrMsg("local id must start with %"); }
-    return LocalId(text);
+    return LocalId(text, span(s));
 }
 
 /// <gid>
@@ -122,7 +124,7 @@ Result<GlobalId, ErrMsg> parseGlobalId(const SExprs::SExpr s) {
     const std::string text = std::get<SExprs::Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("global id invalid (too short)"); }
     if (text[0] != '@') { return ErrMsg("global id must start with %"); }
-    return GlobalId(text);
+    return GlobalId(text, span(s));
 }
 
 /// <bid>
@@ -131,7 +133,7 @@ Result<BlockId, ErrMsg> parseBlockId(const SExprs::SExpr s) {
     const std::string text = std::get<SExprs::Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("block id invalid (too short)"); }
     if (text[0] != '!') { return ErrMsg("block id must start with %"); }
-    return BlockId(text);
+    return BlockId(text, span(s));
 }
 
 Result<VarId, ErrMsg> parseVarId(const SExprs::SExpr s) {
@@ -160,7 +162,7 @@ Result<TypedId, ErrMsg> parseTypedId(const SExprs::SExpr s) {
     const Result<Type, ErrMsg> type = parseType(list.children[1]);
     if (isErr(type)) { return getErr(type); }
 
-    return TypedId(getVal(lid), getVal(type));
+    return TypedId(getVal(lid), getVal(type), span(s));
 }
 
 /// <param>
@@ -185,25 +187,26 @@ Result<Param, ErrMsg> parseParam(const SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return Param(getVal(id), getVal(type), md);
+    return Param(getVal(id), getVal(type), md, span(s));
 }
 
 Result<TypedConstant, ErrMsg> parseTypedConst(SExprs::SExpr s);
 /// <const>
 Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
+    const Span sp = span(s);
     if (SExprs::isAtom(s)) {
         const std::string text = std::get<SExprs::Atom>(s).val;
         if (text.empty()) { return ErrMsg("empty constant"); }
-        else if (text == "null") { return Constant(NullConstant()); }
-        else if (text == "true") { return Constant(BoolConstant(true)); }
-        else if (text == "false") { return Constant(BoolConstant(false)); }
+        else if (text == "null") { return Constant(NullConstant(sp)); }
+        else if (text == "true") { return Constant(BoolConstant(true, sp)); }
+        else if (text == "false") { return Constant(BoolConstant(false, sp)); }
         else if (text == "-inf" || text == "+inf" || text == "nan") {
-            return Constant(FloatConstant(text));
+            return Constant(FloatConstant(text, sp));
         } else { // Try for an int or numeric float.
             const auto numStart =
                 text[0] == '-' ? text.cbegin() + 1 : text.cbegin();
             if (std::all_of(numStart, text.cend(), isDigit)) {
-                return Constant(IntConstant(text));
+                return Constant(IntConstant(text, sp));
             }
 
             const auto dotPos = std::find(numStart, text.cend(), '.');
@@ -225,7 +228,7 @@ Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
                 }
             }
 
-            return Constant(FloatConstant(text));
+            return Constant(FloatConstant(text, sp));
         }
     } else {
         assert(SExprs::isList(s));
@@ -253,7 +256,7 @@ Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
             }
         }
 
-        return Constant(SeqConstant(vals));
+        return Constant(SeqConstant(vals, sp));
     }
 }
 
@@ -271,7 +274,7 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExprs::SExpr s) {
     const Result<Type, ErrMsg> type = parseType(elems[1]);
     if (isErr(type)) { return ErrMsg("expected type"); }
 
-    return TypedConstant(getVal(constant), getVal(type));
+    return TypedConstant(getVal(constant), getVal(type), span(s));
 }
 
 Result<Preamble, ErrMsg> parsePreamble(SExprs::SExpr s) {
@@ -348,7 +351,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return Preamble(version, source, md);
+    return Preamble(version, source, md, span(s));
 }
 
 Result<GVal, ErrMsg> parseGVal(SExprs::SExpr s) {
@@ -435,7 +438,7 @@ Result<Variable, ErrMsg> parseVariable(SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return Variable(gid, gval, md);
+    return Variable(gid, gval, md, span(s));
 }
 
 Result<std::vector<Variable>, ErrMsg> parseVariables(SExprs::SExpr s) {
@@ -493,7 +496,7 @@ Result<Statement, ErrMsg> parsePhiStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(PhiStmt(getVal(lid), operands, md));
+    return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseCallStmt(SExprs::List l) {
@@ -528,7 +531,7 @@ Result<Statement, ErrMsg> parseCallStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(CallStmt(lid, getVal(callee), args, md));
+    return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseBrStmt(SExprs::List l) {
@@ -548,7 +551,7 @@ Result<Statement, ErrMsg> parseBrStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(BrStmt(getVal(target), md));
+    return Statement(BrStmt(getVal(target), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseBrifStmt(SExprs::List l) {
@@ -575,7 +578,7 @@ Result<Statement, ErrMsg> parseBrifStmt(SExprs::List l) {
     }
 
     return Statement(
-        BrifStmt(getVal(val), getVal(ifTarget), getVal(elseTarget), md)
+        BrifStmt(getVal(val), getVal(ifTarget), getVal(elseTarget), md, span(l))
     );
 }
 
@@ -587,7 +590,7 @@ Result<Statement, ErrMsg> parseRet(SExprs::List l) {
     }
 
     if (elems.size() == 1) {
-        return Statement(RetStmt(std::nullopt, std::nullopt));
+        return Statement(RetStmt(std::nullopt, std::nullopt, span(l)));
     } else if (elems.size() == 2) {
         const Result<Val, ErrMsg> val = parseVal(elems[1]);
         if (isErr(val)) {
@@ -595,9 +598,9 @@ Result<Statement, ErrMsg> parseRet(SExprs::List l) {
             if (isErr(md)) {
                 return ErrMsg("expected val or metadata");
             }
-            return Statement(RetStmt(std::nullopt, getVal(md)));
+            return Statement(RetStmt(std::nullopt, getVal(md), span(l)));
         } else {
-            return Statement(RetStmt(getVal(val), std::nullopt));
+            return Statement(RetStmt(getVal(val), std::nullopt, span(l)));
         }
     } else {
         assert(elems.size() == 3);
@@ -608,7 +611,7 @@ Result<Statement, ErrMsg> parseRet(SExprs::List l) {
         const Result<Metadata, ErrMsg> md = parseMetadata(elems[2]);
         if (isErr(md)) { return getErr(md); }
 
-        return Statement(RetStmt(getVal(val), getVal(md)));
+        return Statement(RetStmt(getVal(val), getVal(md), span(l)));
     }
     assert(false);
 }
@@ -645,7 +648,9 @@ Result<Statement, ErrMsg> parseCmpStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(CmpStmt(getVal(lid), op, getVal(v1), getVal(v2), md));
+    return Statement(
+        CmpStmt(getVal(lid), op, getVal(v1), getVal(v2), md, span(l))
+    );
 }
 
 Result<Statement, ErrMsg> parseAllocStmt(SExprs::List l) {
@@ -674,7 +679,7 @@ Result<Statement, ErrMsg> parseAllocStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(AllocStmt(kind, getVal(lid), md));
+    return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseStoreStmt(SExprs::List l) {
@@ -697,7 +702,7 @@ Result<Statement, ErrMsg> parseStoreStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(StoreStmt(getVal(val), getVal(dst), md));
+    return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseLoadStmt(SExprs::List l) {
@@ -720,7 +725,7 @@ Result<Statement, ErrMsg> parseLoadStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(LoadStmt(getVal(tlid), getVal(src), md));
+    return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseFieldStmt(SExprs::List l) {
@@ -746,7 +751,9 @@ Result<Statement, ErrMsg> parseFieldStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(FieldStmt(getVal(lid), getVal(src), getVal(index), md));
+    return Statement(
+        FieldStmt(getVal(lid), getVal(src), getVal(index), md, span(l))
+    );
 }
 
 Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
@@ -772,11 +779,17 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
     }
 
     if (SExprs::atomEq(elems[0], "add")) {
-        return Statement(AddStmt(getVal(lid), getVal(v1), getVal(v2), md));
+        return Statement(
+            AddStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+        );
     } else if (SExprs::atomEq(elems[0], "sub")) {
-        return Statement(SubStmt(getVal(lid), getVal(v1), getVal(v2), md));
+        return Statement(
+            SubStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+        );
     } else if (SExprs::atomEq(elems[0], "mul")) {
-        return Statement(MulStmt(getVal(lid), getVal(v1), getVal(v2), md));
+        return Statement(
+            MulStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+        );
     } else {
         assert(false);
     }
@@ -819,11 +832,11 @@ Result<Statement, ErrMsg> parseDivRemStmt(SExprs::List l) {
     if (SExprs::atomEq(elems[0], "div")) {
         const DivStmt::Kind kind =
             sign ? DivStmt::Kind::SIGNED : DivStmt::Kind::UNSIGNED;
-        return Statement(DivStmt(kind, lid, left, right, md));
+        return Statement(DivStmt(kind, lid, left, right, md, span(l)));
     } else if (SExprs::atomEq(elems[0], "rem")) {
         const RemStmt::Kind kind =
             sign ? RemStmt::Kind::SIGNED : RemStmt::Kind::UNSIGNED;
-        return Statement(RemStmt(kind, lid, left, right, md));
+        return Statement(RemStmt(kind, lid, left, right, md, span(l)));
     } else {
         assert(false);
     }
@@ -848,7 +861,7 @@ Result<Statement, ErrMsg> parseNotStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(NotStmt(getVal(lid), getVal(val), md));
+    return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(SExprs::List l) {
@@ -874,14 +887,20 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(SExprs::List l) {
     }
 
     if (SExprs::atomEq(elems[0], "and")) {
-        return Statement(AndStmt(getVal(lid), getVal(left), getVal(right), md));
+        return Statement(
+            AndStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
+        );
     } else if (SExprs::atomEq(elems[0], "or")) {
-        return Statement(OrStmt(getVal(lid), getVal(left), getVal(right), md));
+        return Statement(
+            OrStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
+        );
     } else if (SExprs::atomEq(elems[0], "xor")) {
-        return Statement(XorStmt(getVal(lid), getVal(left), getVal(right), md));
+        return Statement(
+            XorStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
+        );
     } else if (SExprs::atomEq(elems[0], "shiftl")) {
         return Statement(
-            ShiftlStmt(getVal(lid), getVal(left), getVal(right), md)
+            ShiftlStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
     } else {
         assert(false);
@@ -920,7 +939,7 @@ Result<Statement, ErrMsg> parseShiftrStmt(SExprs::List l) {
     }
 
     return Statement(
-        ShiftrStmt(kind, getVal(lid), getVal(left), getVal(right), md)
+        ShiftrStmt(kind, getVal(lid), getVal(left), getVal(right), md, span(l))
     );
 }
 
@@ -944,7 +963,7 @@ Result<Statement, ErrMsg> parseAssignStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(AssignStmt(getVal(lid), getVal(val), md));
+    return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseVarargStmt(SExprs::List l) {
@@ -967,7 +986,7 @@ Result<Statement, ErrMsg> parseVarargStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(VarargStmt(getVal(tlid), getVal(val), md));
+    return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseBlackholeStmt(SExprs::List l) {
@@ -987,7 +1006,7 @@ Result<Statement, ErrMsg> parseBlackholeStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(BlackholeStmt(getVal(tlid), md));
+    return Statement(BlackholeStmt(getVal(tlid), md, span(l)));
 }
 
 Result<Statement, ErrMsg> parseStmt(SExprs::SExpr s) {
@@ -1053,7 +1072,7 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return BasicBlock(getVal(bid), stmts, md);
+    return BasicBlock(getVal(bid), stmts, md, span(s));
 }
 
 Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExprs::SExpr s) {
@@ -1135,7 +1154,7 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return TypeAlias(getVal(tid), type, md);
+    return TypeAlias(getVal(tid), type, md, span(s));
 }
 
 Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExprs::SExpr s) {
@@ -1200,7 +1219,7 @@ Result<Function, ErrMsg> parseFunction(SExprs::SExpr s) {
         md.emplace(getVal(mdr));
     }
 
-    return Function(gid, params, vaParam, type, bbs, md);
+    return Function(gid, params, vaParam, type, bbs, md, span(s));
 }
 
 Result<std::vector<Function>, ErrMsg> parseFunctions(SExprs::SExpr s) {
@@ -1275,7 +1294,8 @@ Result<Program, ErrMsg> parseProgram(SExprs::SExprSeq ss) {
         getVal(types),
         getVal(variables),
         getVal(functions),
-        md
+        md,
+        Span(span(*(ss.begin())).start, span(*(ss.end() - 1)).end)
     );
 }
 
