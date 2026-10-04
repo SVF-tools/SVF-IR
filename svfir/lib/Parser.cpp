@@ -62,7 +62,7 @@ ErrMsg shortId(const std::string &kind) {
 }
 
 /// That IDs need to start with a special character. kind should be capitalised.
-ErrMsg noSpecialCharId(const std::string &kind, const char &ch) {
+ErrMsg noSpecialCharId(const std::string &kind, const std::string &ch) {
     return ErrMsg(kind + " IDs must begin with a " + ch + ".");
 }
 
@@ -87,7 +87,7 @@ Result<TypeId, ErrMsg> parseTypeId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("type ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Type"); }
-    if (text[0] != '~') { return noSpecialCharId("Type", '~'); }
+    if (text[0] != '~') { return noSpecialCharId("Type", "~"); }
     return TypeId(text, span(s));
 }
 
@@ -176,7 +176,7 @@ Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("local ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Local"); }
-    if (text[0] != '%') { return noSpecialCharId("Local", '%'); }
+    if (text[0] != '%') { return noSpecialCharId("Local", "%"); }
     return LocalId(text, span(s));
 }
 
@@ -185,7 +185,7 @@ Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("global ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Global"); }
-    if (text[0] != '@') { return noSpecialCharId("Global", '@'); }
+    if (text[0] != '@') { return noSpecialCharId("Global", "@"); }
     return GlobalId(text, span(s));
 }
 
@@ -194,7 +194,7 @@ Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("basic block ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Basic block"); }
-    if (text[0] != '!') { return noSpecialCharId("Basic block", '!'); }
+    if (text[0] != '!') { return noSpecialCharId("Basic block", "!"); }
     return BlockId(text, span(s));
 }
 
