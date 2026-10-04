@@ -77,8 +77,9 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
     const std::string kw = std::get<Atom>(list.children[0]).val;
     if (kw != "md") { return badKw("metadata", "md", kw); }
 
-    // list.children[1] is by construction an sexpr.
-    return Metadata(list.children[1], span(list.children[1]));
+    ++it;
+    if (it == end) { listCutShort("metadata", "sexpr data"); }
+    return Metadata(*it, span(*it));
 }
 
 /// <tid>
