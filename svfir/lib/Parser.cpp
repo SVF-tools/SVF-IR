@@ -15,50 +15,45 @@
 namespace {
 
 using namespace SVFIR;
+using namespace SVFIR::SExprs;
 
 /// So we can use with std::all_of. It gets confused using std::isdigit
 /// directly due to overloads.
 bool isDigit(const char c) { return std::isdigit(c); }
 
 /// <md>
-Result<Metadata, ErrMsg> parseMetadata(const SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for metadata"); }
-    const SExprs::List list = std::get<SExprs::List>(s);
+Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for metadata"); }
+    const List list = std::get<List>(s);
 
     if (list.children.size() != 2) {
         return ErrMsg("md must be a list of 2 elems");
     }
 
-    if (
-        !isAtom(list.children[0]) ||
-        std::get<SExprs::Atom>(list.children[0]).val != "md"
-    ) { return ErrMsg("expected md"); }
+    if (!atomEq(list.children[0], "md")) { return ErrMsg("expected md"); }
 
     // list.children[1] is by construction an sexpr.
     return Metadata(list.children[1], span(list.children[1]));
 }
 
 /// <tid>
-Result<TypeId, ErrMsg> parseTypeId(const SExprs::SExpr s) {
-    if (!SExprs::isAtom(s)) { return ErrMsg("expected atom for type id"); }
-    const std::string text = std::get<SExprs::Atom>(s).val;
+Result<TypeId, ErrMsg> parseTypeId(const SExpr s) {
+    if (!isAtom(s)) { return ErrMsg("expected atom for type id"); }
+    const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
     if (text[0] != '~') { return ErrMsg("type id must start with %"); }
     return TypeId(text, span(s));
 }
 
 /// <type>
-Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
-    const Span sp = SExprs::span(s);
-    if (SExprs::isAtom(s)) {
-        const SExprs::Atom atom = std::get<SExprs::Atom>(s);
-        if (atom.val == "void") {
-            return Type(VoidType(sp));
-        } else if (atom.val == "ptr") {
-            return Type(PtrType(sp));
-        } else if (atom.val == "bool") {
-            return Type(BoolType(sp));
-        } else if (atom.val.size() > 1 && atom.val[0] == 'i') {
+Result<Type, ErrMsg> parseType(const SExpr s) {
+    const Span sp = span(s);
+    if (isAtom(s)) {
+        const Atom atom = std::get<Atom>(s);
+        if (atom.val == "void") { return Type(VoidType(sp)); }
+        else if (atom.val == "ptr") { return Type(PtrType(sp)); }
+        else if (atom.val == "bool") { return Type(BoolType(sp)); }
+        else if (atom.val.size() > 1 && atom.val[0] == 'i') {
             using Kind = IntType::Kind;
             // + 1 to skip the 'i'.
             const int width = std::atoi(atom.val.c_str() + 1);
@@ -81,19 +76,17 @@ Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
             const Result<TypeId, ErrMsg> id = parseTypeId(s);
             if (isErr(id)) { return getErr(id); }
             return Type(getVal(id));
-        } else {
-            return ErrMsg("invalid type");
-        }
+        } else { return ErrMsg("invalid type"); }
     } else {
-        assert(SExprs::isList(s));
-        const SExprs::List list = std::get<SExprs::List>(s);
+        assert(isList(s));
+        const List list = std::get<List>(s);
         if (
             list.children.size() != 2 ||
-            !SExprs::atomEq(list.children[0], "agg") ||
+            !atomEq(list.children[0], "agg") ||
             !isAtom(list.children[1])
         ) { return ErrMsg("expected agg type (list of 2 elements)"); }
         const std::string slotsStr =
-            std::get<SExprs::Atom>(list.children[1]).val;
+            std::get<Atom>(list.children[1]).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
             // TODO: what if it starts with 0
             return ErrMsg("seq slots not positive number");
@@ -110,48 +103,46 @@ Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
 }
 
 /// <lid>
-Result<LocalId, ErrMsg> parseLocalId(const SExprs::SExpr s) {
-    if (!SExprs::isAtom(s)) { return ErrMsg("expected atom for local id"); }
-    const std::string text = std::get<SExprs::Atom>(s).val;
+Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
+    if (!isAtom(s)) { return ErrMsg("expected atom for local id"); }
+    const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("local id invalid (too short)"); }
     if (text[0] != '%') { return ErrMsg("local id must start with %"); }
     return LocalId(text, span(s));
 }
 
 /// <gid>
-Result<GlobalId, ErrMsg> parseGlobalId(const SExprs::SExpr s) {
-    if (!SExprs::isAtom(s)) { return ErrMsg("expected atom for global id"); }
-    const std::string text = std::get<SExprs::Atom>(s).val;
+Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
+    if (!isAtom(s)) { return ErrMsg("expected atom for global id"); }
+    const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("global id invalid (too short)"); }
     if (text[0] != '@') { return ErrMsg("global id must start with %"); }
     return GlobalId(text, span(s));
 }
 
 /// <bid>
-Result<BlockId, ErrMsg> parseBlockId(const SExprs::SExpr s) {
-    if (!SExprs::isAtom(s)) { return ErrMsg("expected atom for block id"); }
-    const std::string text = std::get<SExprs::Atom>(s).val;
+Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
+    if (!isAtom(s)) { return ErrMsg("expected atom for block id"); }
+    const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("block id invalid (too short)"); }
     if (text[0] != '!') { return ErrMsg("block id must start with %"); }
     return BlockId(text, span(s));
 }
 
-Result<VarId, ErrMsg> parseVarId(const SExprs::SExpr s) {
+Result<VarId, ErrMsg> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
-    if (!SExprs::isAtom(s)) { return ErrMsg("expected atom for type id"); }
-    const std::string text = std::get<SExprs::Atom>(s).val;
+    if (!isAtom(s)) { return ErrMsg("expected atom for type id"); }
+    const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
     if (text[0] == '%') { return getVal(parseLocalId(s)); }
     else if (text[0] == '@') { return getVal(parseGlobalId(s)); }
     else { return ErrMsg("var id must be local or global (% or @)."); }
 }
 
-Result<TypedId, ErrMsg> parseTypedId(const SExprs::SExpr s) {
-    if (!SExprs::isList(s)) {
-        return ErrMsg("expected list for typed lid");
-    }
+Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for typed lid"); }
 
-    const SExprs::List list = std::get<SExprs::List>(s);
+    const List list = std::get<List>(s);
     if (list.children.size() != 2) {
         return ErrMsg("typed lid must be a list of two elements");
     }
@@ -166,10 +157,10 @@ Result<TypedId, ErrMsg> parseTypedId(const SExprs::SExpr s) {
 }
 
 /// <param>
-Result<Param, ErrMsg> parseParam(const SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for param"); }
+Result<Param, ErrMsg> parseParam(const SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for param"); }
 
-    const SExprs::List list = std::get<SExprs::List>(s);
+    const List list = std::get<List>(s);
     if (!(list.children.size() == 2 || list.children.size() == 3)) {
         return ErrMsg("param is 2 or 3 elements");
     }
@@ -190,12 +181,12 @@ Result<Param, ErrMsg> parseParam(const SExprs::SExpr s) {
     return Param(getVal(id), getVal(type), md, span(s));
 }
 
-Result<TypedConstant, ErrMsg> parseTypedConst(SExprs::SExpr s);
+Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s);
 /// <const>
-Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
+Result<Constant, ErrMsg> parseConst(const SExpr s) {
     const Span sp = span(s);
-    if (SExprs::isAtom(s)) {
-        const std::string text = std::get<SExprs::Atom>(s).val;
+    if (isAtom(s)) {
+        const std::string text = std::get<Atom>(s).val;
         if (text.empty()) { return ErrMsg("empty constant"); }
         else if (text == "null") { return Constant(NullConstant(sp)); }
         else if (text == "true") { return Constant(BoolConstant(true, sp)); }
@@ -231,15 +222,12 @@ Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
             return Constant(FloatConstant(text, sp));
         }
     } else {
-        assert(SExprs::isList(s));
-        SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+        assert(isList(s));
+        SExprSeq elems = std::get<List>(s).children;
         if (elems.empty()) {
             return ErrMsg("seq const needs at least one elem");
         }
-        if (
-            !SExprs::isAtom(elems[0]) ||
-            std::get<SExprs::Atom>(elems[0]).val != "seq"
-        ) { return ErrMsg("expected seq"); }
+        if (!atomEq(elems[0], "seq")) { return ErrMsg("expected seq"); }
 
         std::vector<Val> vals;
         for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
@@ -248,24 +236,18 @@ Result<Constant, ErrMsg> parseConst(const SExprs::SExpr s) {
                 const Result<VarId, ErrMsg> varId = parseVarId(*it);
                 if (isErr(varId)) {
                     return ErrMsg("expected typed const or var id");
-                } else {
-                    vals.push_back(getVal(varId));
-                }
-            } else {
-                vals.push_back(getVal(typedConst));
-            }
+                } else { vals.push_back(getVal(varId)); }
+            } else { vals.push_back(getVal(typedConst)); }
         }
 
         return Constant(SeqConstant(vals, sp));
     }
 }
 
-Result<TypedConstant, ErrMsg> parseTypedConst(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) {
-        return ErrMsg("expected list for typed const");
-    }
+Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for typed const"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2) { return ErrMsg("typed const needs 2 elems"); }
 
     const Result<Constant, ErrMsg> constant = parseConst(elems[0]);
@@ -277,35 +259,33 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExprs::SExpr s) {
     return TypedConstant(getVal(constant), getVal(type), span(s));
 }
 
-Result<Preamble, ErrMsg> parsePreamble(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) {
-        return ErrMsg("expected list for preamble");
-    }
+Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for preamble"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    const SExprSeq elems = std::get<List>(s).children;
     auto it = elems.cbegin();
 
     // Preamble keyword.
-    if (it == elems.cend() || !SExprs::atomEq(*it, "preamble")) {
+    if (it == elems.cend() || !atomEq(*it, "preamble")) {
         return ErrMsg("expected preamble keyword");
     }
 
     // Version.
     ++it;
-    if (it == elems.cend() || !SExprs::isList(*it)) {
+    if (it == elems.cend() || !isList(*it)) {
         return ErrMsg("expected version");
     }
-    const SExprs::List versionList = std::get<SExprs::List>(*it);
+    const List versionList = std::get<List>(*it);
     if (
         versionList.children.size() != 2 ||
-        !SExprs::isAtom(versionList.children[0]) ||
-        !SExprs::isAtom(versionList.children[1])
+        !isAtom(versionList.children[0]) ||
+        !isAtom(versionList.children[1])
     ) { return ErrMsg("version should be a list of 2 atoms"); }
-    if (std::get<SExprs::Atom>(versionList.children[0]).val != "version") {
+    if (!atomEq(versionList.children[0], "version")) {
         return ErrMsg("missing version");
     }
     const std::string versionStr =
-        std::get<SExprs::Atom>(versionList.children[1]).val;
+        std::get<Atom>(versionList.children[1]).val;
     const size_t dotPos = versionStr.find(".", 0);
     if (
         dotPos == std::string::npos ||   // Not found.
@@ -327,20 +307,20 @@ Result<Preamble, ErrMsg> parsePreamble(SExprs::SExpr s) {
 
     // Source.
     ++it;
-    if (it == elems.cend() || !SExprs::isList(*it)) {
+    if (it == elems.cend() || !isList(*it)) {
         return ErrMsg("expected source");
     }
-    const SExprs::List sourceList = std::get<SExprs::List>(*it);
+    const List sourceList = std::get<List>(*it);
     if (
         sourceList.children.size() != 2 ||
-        !SExprs::isAtom(sourceList.children[0]) ||
-        !SExprs::isAtom(sourceList.children[1])
+        !isAtom(sourceList.children[0]) ||
+        !isAtom(sourceList.children[1])
     ) { return ErrMsg("source should be a list of 2 atoms"); }
-    if (std::get<SExprs::Atom>(sourceList.children[0]).val != "source") {
+    if (!atomEq(sourceList.children[0], "source")) {
         return ErrMsg("missing source");
     }
     const std::string source =
-        std::get<SExprs::Atom>(sourceList.children[1]).val;
+        std::get<Atom>(sourceList.children[1]).val;
 
     // Metadata.
     MaybeMetadata md = std::nullopt;
@@ -354,10 +334,10 @@ Result<Preamble, ErrMsg> parsePreamble(SExprs::SExpr s) {
     return Preamble(version, source, md, span(s));
 }
 
-Result<GVal, ErrMsg> parseGVal(SExprs::SExpr s) {
+Result<GVal, ErrMsg> parseGVal(SExpr s) {
     // Try for <gid>.
-    if (SExprs::isAtom(s)) {
-        const std::string text = std::get<SExprs::Atom>(s).val;
+    if (isAtom(s)) {
+        const std::string text = std::get<Atom>(s).val;
         if (!text.empty() && text[0] == '@') {
             const Result<GlobalId, ErrMsg> gid = parseGlobalId(s);
             if (!isErr(gid)) { return GVal(getVal(gid)); }
@@ -367,20 +347,18 @@ Result<GVal, ErrMsg> parseGVal(SExprs::SExpr s) {
     // Try for <typed-const>
     const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
     if (isErr(tc)) {
-        return ErrMsg(
-            "expected gval, not const: " + getErr(tc) + "(nor gid)"
-        );
+        return ErrMsg("expected gval, not const: " + getErr(tc) + "(nor gid)");
     }
     return GVal(getVal(tc));
 }
 
-Result<Val, ErrMsg> parseVal(SExprs::SExpr s) {
-    if (SExprs::isAtom(s)) {
+Result<Val, ErrMsg> parseVal(SExpr s) {
+    if (isAtom(s)) {
         const Result<VarId, ErrMsg> vid = parseVarId(s);
         if (isErr(vid)) { return ErrMsg("expected val" + getErr(vid)); }
         return Val(getVal(vid));
     } else {
-        assert(SExprs::isList(s));
+        assert(isList(s));
         const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
         if (isErr(tc)) { return ErrMsg("expected val" + getErr(tc)); }
         return Val(getVal(tc));
@@ -388,7 +366,7 @@ Result<Val, ErrMsg> parseVal(SExprs::SExpr s) {
     assert(false);
 }
 
-Result<PVal, ErrMsg> parsePVal(SExprs::SExpr s) {
+Result<PVal, ErrMsg> parsePVal(SExpr s) {
     const Result<VarId, ErrMsg> vid = parseVarId(s);
     if (!isErr(vid)) { return PVal(getVal(vid)); }
     const Result<Constant, ErrMsg> constant = parseConst(s);
@@ -399,7 +377,7 @@ Result<PVal, ErrMsg> parsePVal(SExprs::SExpr s) {
     return PVal(std::get<NullConstant>(getVal(constant)));
 }
 
-Result<IVal, ErrMsg> parseIVal(SExprs::SExpr s) {
+Result<IVal, ErrMsg> parseIVal(SExpr s) {
     const Result<VarId, ErrMsg> vid = parseVarId(s);
     if (!isErr(vid)) { return IVal(getVal(vid)); }
     const Result<Constant, ErrMsg> constant = parseConst(s);
@@ -410,10 +388,10 @@ Result<IVal, ErrMsg> parseIVal(SExprs::SExpr s) {
     return IVal(std::get<IntConstant>(getVal(constant)));
 }
 
-Result<Variable, ErrMsg> parseVariable(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for variable"); }
+Result<Variable, ErrMsg> parseVariable(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for variable"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2 && elems.size() != 3) {
         return ErrMsg("variable needs 2-3 elems");
     }
@@ -423,9 +401,8 @@ Result<Variable, ErrMsg> parseVariable(SExprs::SExpr s) {
     const GlobalId gid = getVal(gidr);
 
     std::optional<GVal> gval;
-    if (atomEq(elems[1], "opaque")) {
-        gval = std::nullopt;
-    } else {
+    if (atomEq(elems[1], "opaque")) { gval = std::nullopt; }
+    else {
         const Result<GVal, ErrMsg> gvalr = parseGVal(elems[1]);
         if (isErr(gvalr)) { return ErrMsg("expected gval or opaque"); }
         gval.emplace(getVal(gvalr));
@@ -441,34 +418,29 @@ Result<Variable, ErrMsg> parseVariable(SExprs::SExpr s) {
     return Variable(gid, gval, md, span(s));
 }
 
-Result<std::vector<Variable>, ErrMsg> parseVariables(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for variables"); }
+Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for variables"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    const SExprSeq elems = std::get<List>(s).children;
     if (
         elems.size() < 1 ||
-        !isAtom(elems[0]) ||
-        std::get<SExprs::Atom>(elems[0]).val != "variables"
-    ) {
-        return ErrMsg("expected variables kw");
-    }
+        !atomEq(elems[0], "variables")
+    ) { return ErrMsg("expected variables kw"); }
 
     std::vector<Variable> variables;
     // [0] is 'variables', so ignore it.
     for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
         const Result<Variable, ErrMsg> variable = parseVariable(*it);
-        if (isErr(variable)) {
-            return ErrMsg(getErr(variable));
-        }
+        if (isErr(variable)) { return ErrMsg(getErr(variable)); }
         variables.push_back(getVal(variable));
     }
 
     return variables;
 }
 
-Result<Statement, ErrMsg> parsePhiStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "phi"));
+Result<Statement, ErrMsg> parsePhiStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "phi"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("phi list should be length 3-4");
     }
@@ -476,11 +448,11 @@ Result<Statement, ErrMsg> parsePhiStmt(SExprs::List l) {
     const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
     if (isErr(lid)) { return ErrMsg("expected local id"); }
 
-    if (!SExprs::isList(elems[2])) { return ErrMsg("expected operand list"); }
+    if (!isList(elems[2])) { return ErrMsg("expected operand list"); }
     std::vector<PhiStmt::Operand> operands;
-    for (auto s : std::get<SExprs::List>(elems[2]).children) {
-        if (!SExprs::isList(s)) { return ErrMsg("expected list as operand"); }
-        const SExprs::List pair = std::get<SExprs::List>(s);
+    for (auto s : std::get<List>(elems[2]).children) {
+        if (!isList(s)) { return ErrMsg("expected list as operand"); }
+        const List pair = std::get<List>(s);
         if (pair.children.size() != 2) { return ErrMsg("expected pair"); }
         const Result<Val, ErrMsg> val = parseVal(pair.children[0]);
         if (isErr(val)) { return getErr(val); }
@@ -499,9 +471,9 @@ Result<Statement, ErrMsg> parsePhiStmt(SExprs::List l) {
     return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseCallStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "call"));
+Result<Statement, ErrMsg> parseCallStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "call"));
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("call list should be length 4-5");
     }
@@ -516,9 +488,9 @@ Result<Statement, ErrMsg> parseCallStmt(SExprs::List l) {
     const Result<PVal, ErrMsg> callee = parsePVal(elems[2]);
     if (isErr(callee)) { return getErr(callee); }
 
-    if (!SExprs::isList(elems[3])) { return ErrMsg("expected args list"); }
+    if (!isList(elems[3])) { return ErrMsg("expected args list"); }
     std::vector<Val> args;
-    for (auto s : std::get<SExprs::List>(elems[3]).children) {
+    for (auto s : std::get<List>(elems[3]).children) {
         const Result<Val, ErrMsg> val = parseVal(s);
         if (isErr(val)) { return getErr(val); }
         args.push_back(getVal(val));
@@ -534,9 +506,9 @@ Result<Statement, ErrMsg> parseCallStmt(SExprs::List l) {
     return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseBrStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "br"));
+Result<Statement, ErrMsg> parseBrStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "br"));
     if (elems.size() != 2 && elems.size() != 3) {
         return ErrMsg("br list should be length 2-3");
     }
@@ -554,9 +526,9 @@ Result<Statement, ErrMsg> parseBrStmt(SExprs::List l) {
     return Statement(BrStmt(getVal(target), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseBrifStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "brif"));
+Result<Statement, ErrMsg> parseBrifStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "brif"));
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("brif list should be length 4-5");
     }
@@ -582,9 +554,9 @@ Result<Statement, ErrMsg> parseBrifStmt(SExprs::List l) {
     );
 }
 
-Result<Statement, ErrMsg> parseRet(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "ret"));
+Result<Statement, ErrMsg> parseRet(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "ret"));
     if (elems.size() < 1 || elems.size() > 3) {
         return ErrMsg("ret list should be length 1-3");
     }
@@ -595,9 +567,7 @@ Result<Statement, ErrMsg> parseRet(SExprs::List l) {
         const Result<Val, ErrMsg> val = parseVal(elems[1]);
         if (isErr(val)) {
             const Result<Metadata, ErrMsg> md = parseMetadata(elems[1]);
-            if (isErr(md)) {
-                return ErrMsg("expected val or metadata");
-            }
+            if (isErr(md)) { return ErrMsg("expected val or metadata"); }
             return Statement(RetStmt(std::nullopt, getVal(md), span(l)));
         } else {
             return Statement(RetStmt(getVal(val), std::nullopt, span(l)));
@@ -616,9 +586,9 @@ Result<Statement, ErrMsg> parseRet(SExprs::List l) {
     assert(false);
 }
 
-Result<Statement, ErrMsg> parseCmpStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "cmp"));
+Result<Statement, ErrMsg> parseCmpStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "cmp"));
     if (elems.size() != 5 && elems.size() != 6) {
         return ErrMsg("cmp list should be length 5-6");
     }
@@ -627,12 +597,12 @@ Result<Statement, ErrMsg> parseCmpStmt(SExprs::List l) {
     if (isErr(lid)) { return getErr(lid); }
 
     CmpStmt::Operator op;
-    if (SExprs::atomEq(elems[2], "<")) { op = CmpStmt::Operator::LT; }
-    else if (SExprs::atomEq(elems[2], "<=")) { op = CmpStmt::Operator::LE; }
-    else if (SExprs::atomEq(elems[2], ">")) { op = CmpStmt::Operator::GT; }
-    else if (SExprs::atomEq(elems[2], ">=")) { op = CmpStmt::Operator::GE; }
-    else if (SExprs::atomEq(elems[2], "=")) { op = CmpStmt::Operator::EQ; }
-    else if (SExprs::atomEq(elems[2], "!=")) { op = CmpStmt::Operator::NEQ; }
+    if (atomEq(elems[2], "<")) { op = CmpStmt::Operator::LT; }
+    else if (atomEq(elems[2], "<=")) { op = CmpStmt::Operator::LE; }
+    else if (atomEq(elems[2], ">")) { op = CmpStmt::Operator::GT; }
+    else if (atomEq(elems[2], ">=")) { op = CmpStmt::Operator::GE; }
+    else if (atomEq(elems[2], "=")) { op = CmpStmt::Operator::EQ; }
+    else if (atomEq(elems[2], "!=")) { op = CmpStmt::Operator::NEQ; }
     else { return ErrMsg("expected cmp operator"); }
 
     const Result<Val, ErrMsg> v1 = parseVal(elems[3]);
@@ -653,21 +623,17 @@ Result<Statement, ErrMsg> parseCmpStmt(SExprs::List l) {
     );
 }
 
-Result<Statement, ErrMsg> parseAllocStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "alloc"));
+Result<Statement, ErrMsg> parseAllocStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "alloc"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("alloc list should be length 3-4");
     }
 
     AllocStmt::Kind kind;
-    if (atomEq(elems[1], "heap")) {
-        kind = AllocStmt::Kind::HEAP;
-    } else if (atomEq(elems[1], "stack")) {
-        kind = AllocStmt::Kind::STACK;
-    } else {
-        return ErrMsg("expected heap or stack");
-    }
+    if (atomEq(elems[1], "heap")) { kind = AllocStmt::Kind::HEAP; }
+    else if (atomEq(elems[1], "stack")) { kind = AllocStmt::Kind::STACK; }
+    else { return ErrMsg("expected heap or stack"); }
 
     const Result<LocalId, ErrMsg> lid = parseLocalId(elems[2]);
     if (isErr(lid)) { return getErr(lid); }
@@ -682,9 +648,9 @@ Result<Statement, ErrMsg> parseAllocStmt(SExprs::List l) {
     return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseStoreStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "store"));
+Result<Statement, ErrMsg> parseStoreStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "store"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("store list should be length 3-4");
     }
@@ -705,9 +671,9 @@ Result<Statement, ErrMsg> parseStoreStmt(SExprs::List l) {
     return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseLoadStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "load"));
+Result<Statement, ErrMsg> parseLoadStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "load"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("load list should be length 3-4");
     }
@@ -728,9 +694,9 @@ Result<Statement, ErrMsg> parseLoadStmt(SExprs::List l) {
     return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseFieldStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "field"));
+Result<Statement, ErrMsg> parseFieldStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "field"));
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("field list should be length 4-5");
     }
@@ -756,8 +722,8 @@ Result<Statement, ErrMsg> parseFieldStmt(SExprs::List l) {
     );
 }
 
-Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
+Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
+    const SExprSeq elems = l.children;
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("add/mul/sub list should be length 4-5");
     }
@@ -778,15 +744,15 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    if (SExprs::atomEq(elems[0], "add")) {
+    if (atomEq(elems[0], "add")) {
         return Statement(
             AddStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
         );
-    } else if (SExprs::atomEq(elems[0], "sub")) {
+    } else if (atomEq(elems[0], "sub")) {
         return Statement(
             SubStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
         );
-    } else if (SExprs::atomEq(elems[0], "mul")) {
+    } else if (atomEq(elems[0], "mul")) {
         return Statement(
             MulStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
         );
@@ -795,20 +761,16 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
     }
 }
 
-Result<Statement, ErrMsg> parseDivRemStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
+Result<Statement, ErrMsg> parseDivRemStmt(List l) {
+    const SExprSeq elems = l.children;
     if (elems.size() != 5 && elems.size() != 6) {
         return ErrMsg("div/rem list should be length 5-6");
     }
 
     bool sign;
-    if (SExprs::atomEq(elems[1], "unsigned")) {
-        sign = false;
-    } else if (SExprs::atomEq(elems[1], "signed")) {
-        sign = true;
-    } else {
-        return ErrMsg("expected unsigned or signed");
-    }
+    if (atomEq(elems[1], "unsigned")) { sign = false; }
+    else if (atomEq(elems[1], "signed")) { sign = true; }
+    else { return ErrMsg("expected unsigned or signed"); }
 
     const Result<LocalId, ErrMsg> lidr = parseLocalId(elems[2]);
     if (isErr(lidr)) { return getErr(lidr); }
@@ -829,11 +791,11 @@ Result<Statement, ErrMsg> parseDivRemStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    if (SExprs::atomEq(elems[0], "div")) {
+    if (atomEq(elems[0], "div")) {
         const DivStmt::Kind kind =
             sign ? DivStmt::Kind::SIGNED : DivStmt::Kind::UNSIGNED;
         return Statement(DivStmt(kind, lid, left, right, md, span(l)));
-    } else if (SExprs::atomEq(elems[0], "rem")) {
+    } else if (atomEq(elems[0], "rem")) {
         const RemStmt::Kind kind =
             sign ? RemStmt::Kind::SIGNED : RemStmt::Kind::UNSIGNED;
         return Statement(RemStmt(kind, lid, left, right, md, span(l)));
@@ -842,8 +804,8 @@ Result<Statement, ErrMsg> parseDivRemStmt(SExprs::List l) {
     }
 }
 
-Result<Statement, ErrMsg> parseNotStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
+Result<Statement, ErrMsg> parseNotStmt(List l) {
+    const SExprSeq elems = l.children;
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("not list should be length 3-4");
     }
@@ -864,8 +826,8 @@ Result<Statement, ErrMsg> parseNotStmt(SExprs::List l) {
     return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
+Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
+    const SExprSeq elems = l.children;
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("not list should be length 4-5");
     }
@@ -886,41 +848,36 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    if (SExprs::atomEq(elems[0], "and")) {
+    if (atomEq(elems[0], "and")) {
         return Statement(
             AndStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (SExprs::atomEq(elems[0], "or")) {
+    } else if (atomEq(elems[0], "or")) {
         return Statement(
             OrStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (SExprs::atomEq(elems[0], "xor")) {
+    } else if (atomEq(elems[0], "xor")) {
         return Statement(
             XorStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (SExprs::atomEq(elems[0], "shiftl")) {
+    } else if (atomEq(elems[0], "shiftl")) {
         return Statement(
             ShiftlStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else {
-        assert(false);
-    }
+    } else { assert(false); }
 }
 
-Result<Statement, ErrMsg> parseShiftrStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
+Result<Statement, ErrMsg> parseShiftrStmt(List l) {
+    const SExprSeq elems = l.children;
     if (elems.size() != 5 && elems.size() != 6) {
         return ErrMsg("not list should be length 5-6");
     }
 
     ShiftrStmt::Kind kind;
-    if (SExprs::atomEq(elems[1], "logical")) {
-        kind = ShiftrStmt::Kind::LOGICAL;
-    } else if (SExprs::atomEq(elems[1], "arithmetic")) {
+    if (atomEq(elems[1], "logical")) { kind = ShiftrStmt::Kind::LOGICAL; }
+    else if (atomEq(elems[1], "arithmetic")) {
         kind = ShiftrStmt::Kind::ARITHMETIC;
-    } else {
-        return ErrMsg("expected logical or arithmetic");
-    }
+    } else { return ErrMsg("expected logical or arithmetic"); }
 
     const Result<LocalId, ErrMsg> lid = parseLocalId(elems[2]);
     if (isErr(lid)) { return getErr(lid); }
@@ -943,9 +900,9 @@ Result<Statement, ErrMsg> parseShiftrStmt(SExprs::List l) {
     );
 }
 
-Result<Statement, ErrMsg> parseAssignStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "assign"));
+Result<Statement, ErrMsg> parseAssignStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "assign"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("assign list should be length 3-4");
     }
@@ -966,9 +923,9 @@ Result<Statement, ErrMsg> parseAssignStmt(SExprs::List l) {
     return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseVarargStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "vararg"));
+Result<Statement, ErrMsg> parseVarargStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "vararg"));
     if (elems.size() != 3 && elems.size() != 4) {
         return ErrMsg("vararg list should be length 3-4");
     }
@@ -989,9 +946,9 @@ Result<Statement, ErrMsg> parseVarargStmt(SExprs::List l) {
     return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseBlackholeStmt(SExprs::List l) {
-    const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "blackhole"));
+Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
+    const SExprSeq elems = l.children;
+    assert(atomEq(elems[0], "blackhole"));
     if (elems.size() != 2 && elems.size() != 3) {
         return ErrMsg("blackhole list should be length 2-3");
     }
@@ -1009,12 +966,12 @@ Result<Statement, ErrMsg> parseBlackholeStmt(SExprs::List l) {
     return Statement(BlackholeStmt(getVal(tlid), md, span(l)));
 }
 
-Result<Statement, ErrMsg> parseStmt(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for stmt"); }
-    const SExprs::List l = std::get<SExprs::List>(s);
+Result<Statement, ErrMsg> parseStmt(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for stmt"); }
+    const List l = std::get<List>(s);
 
-    if (!SExprs::isAtom(l.children[0])) { return ErrMsg("expected instr"); }
-    const std::string instr = std::get<SExprs::Atom>(l.children[0]).val;
+    if (!isAtom(l.children[0])) { return ErrMsg("expected instr"); }
+    const std::string instr = std::get<Atom>(l.children[0]).val;
 
     if (instr == "phi") { return parsePhiStmt(l); }
     else if (instr == "call") { return parseCallStmt(l); }
@@ -1046,9 +1003,9 @@ Result<Statement, ErrMsg> parseStmt(SExprs::SExpr s) {
     // TODO: conversions.
 }
 
-Result<BasicBlock, ErrMsg> parseBasicBlock(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected basic block list"); }
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected basic block list"); }
+    const SExprSeq elems = std::get<List>(s).children;
 
     if (elems.size() != 2 && elems.size() != 3) {
         return ErrMsg("basic block should be a list of 2 or 3 elements");
@@ -1058,8 +1015,8 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExprs::SExpr s) {
     if (isErr(bid)) { return getErr(bid); }
 
     std::vector<Statement> stmts;
-    if (!SExprs::isList(elems[1])) { return ErrMsg("expected stmt list"); }
-    for (auto s : std::get<SExprs::List>(elems[1]).children) {
+    if (!isList(elems[1])) { return ErrMsg("expected stmt list"); }
+    for (auto s : std::get<List>(elems[1]).children) {
         const Result<Statement, ErrMsg> stmt = parseStmt(s);
         if (isErr(stmt)) { return getErr(stmt); }
         stmts.push_back(getVal(stmt));
@@ -1075,10 +1032,10 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExprs::SExpr s) {
     return BasicBlock(getVal(bid), stmts, md, span(s));
 }
 
-Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected basic block list"); }
+Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected basic block list"); }
     std::vector<BasicBlock> blocks;
-    for (auto rawBlock : std::get<SExprs::List>(s).children) {
+    for (auto rawBlock : std::get<List>(s).children) {
         const Result<BasicBlock, ErrMsg> block = parseBasicBlock(rawBlock);
         if (isErr(block)) { return getErr(block); }
         blocks.push_back(getVal(block));
@@ -1088,17 +1045,16 @@ Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExprs::SExpr s) {
 }
 
 Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
-parseFunctionParams(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected params list"); }
+parseFunctionParams(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected params list"); }
     std::vector<Param> params;
     std::optional<LocalId> varargParam = std::nullopt;
-    const SExprs::SExprSeq rawParams = std::get<SExprs::List>(s).children;
+    const SExprSeq rawParams = std::get<List>(s).children;
     for (size_t i = 0; i < rawParams.size(); ++i) {
-        const SExprs::SExpr rawParam = rawParams[i];
+        const SExpr rawParam = rawParams[i];
         const Result<Param, ErrMsg> param = parseParam(rawParam);
-        if (!isErr(param)) {
-            params.push_back(getVal(param));
-        } else {
+        if (!isErr(param)) { params.push_back(getVal(param)); }
+        else {
             assert(isErr(param));
             if (i == rawParams.size() - 1) {
                 // We might have a vararg parameter.
@@ -1109,14 +1065,9 @@ parseFunctionParams(SExprs::SExpr s) {
                     if (
                         lid.id.size() >= 5 &&
                         lid.id.substr(lid.id.size() - 3, lid.id.size()) == "..."
-                    ) {
-                        varargParam.emplace(lid);
-                    } else {
-                        return ErrMsg("expected param or vararg param");
-                    }
-                } else {
-                    return ErrMsg("expected param or vararg param");
-                }
+                    ) { varargParam.emplace(lid); }
+                    else { return ErrMsg("expected param or vararg param"); }
+                } else { return ErrMsg("expected param or vararg param"); }
             } else {
                 // No, we expected a parameter and got an error.
                 return ErrMsg(getErr(param));
@@ -1127,10 +1078,10 @@ parseFunctionParams(SExprs::SExpr s) {
     return std::make_tuple(params, varargParam);
 }
 
-Result<TypeAlias, ErrMsg> parseTypeAlias(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list (type alias)"); }
+Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list (type alias)"); }
 
-    SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 2 && elems.size() != 3) {
         return ErrMsg("type alias should be a 2-3 size list");
     }
@@ -1139,9 +1090,8 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExprs::SExpr s) {
     if (isErr(tid)) { return getErr(tid); }
 
     std::optional<Type> type;
-    if (SExprs::atomEq(elems[1], "opaque")) {
-        type = std::nullopt;
-    } else {
+    if (atomEq(elems[1], "opaque")) { type = std::nullopt; }
+    else {
         const Result<Type, ErrMsg> typer = parseType(elems[1]);
         if (isErr(typer)) { return ErrMsg("expected type or opaque"); }
         type.emplace(getVal(typer));
@@ -1157,15 +1107,11 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExprs::SExpr s) {
     return TypeAlias(getVal(tid), type, md, span(s));
 }
 
-Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for function"); }
+Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for function"); }
 
-    SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
-    if (
-        elems.empty() ||
-        !isAtom(elems[0]) ||
-        std::get<SExprs::Atom>(elems[0]).val != "types"
-    ) {
+    SExprSeq elems = std::get<List>(s).children;
+    if (elems.empty() || !atomEq(elems[0], "types")) {
         return ErrMsg("expected types kw");
     }
 
@@ -1180,10 +1126,10 @@ Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExprs::SExpr s) {
     return tas;
 }
 
-Result<Function, ErrMsg> parseFunction(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for function"); }
+Result<Function, ErrMsg> parseFunction(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for function"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
+    const SExprSeq elems = std::get<List>(s).children;
     if (elems.size() != 4 && elems.size() != 5) {
         return ErrMsg("function needs 3-5 elems");
     }
@@ -1203,9 +1149,8 @@ Result<Function, ErrMsg> parseFunction(SExprs::SExpr s) {
     const Type type = getVal(typer);
 
     std::optional<std::vector<BasicBlock>> bbs;
-    if (atomEq(elems[3], "opaque")) {
-        bbs = std::nullopt;
-    } else {
+    if (atomEq(elems[3], "opaque")) { bbs = std::nullopt; }
+    else {
         const Result<std::vector<BasicBlock>, ErrMsg> bbsr =
             parseFunctionBlocks(elems[3]);
         if (isErr(bbsr)) { return ErrMsg("expected basic blocks or opaque"); }
@@ -1222,15 +1167,11 @@ Result<Function, ErrMsg> parseFunction(SExprs::SExpr s) {
     return Function(gid, params, vaParam, type, bbs, md, span(s));
 }
 
-Result<std::vector<Function>, ErrMsg> parseFunctions(SExprs::SExpr s) {
-    if (!SExprs::isList(s)) { return ErrMsg("expected list for functions"); }
+Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
+    if (!isList(s)) { return ErrMsg("expected list for functions"); }
 
-    const SExprs::SExprSeq elems = std::get<SExprs::List>(s).children;
-    if (
-        elems.size() < 1 ||
-        !isAtom(elems[0]) ||
-        std::get<SExprs::Atom>(elems[0]).val != "functions"
-    ) {
+    const SExprSeq elems = std::get<List>(s).children;
+    if (elems.size() < 1 || !atomEq(elems[0], "functions")) {
         return ErrMsg("expected functions kw");
     }
 
@@ -1238,44 +1179,34 @@ Result<std::vector<Function>, ErrMsg> parseFunctions(SExprs::SExpr s) {
     // [0] is 'functions', so ignore it.
     for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
         const Result<Function, ErrMsg> function = parseFunction(*it);
-        if (isErr(function)) {
-            return ErrMsg(getErr(function));
-        }
+        if (isErr(function)) { return ErrMsg(getErr(function)); }
         functions.push_back(getVal(function));
     }
 
     return functions;
 }
 
-Result<Program, ErrMsg> parseProgram(SExprs::SExprSeq ss) {
+Result<Program, ErrMsg> parseProgram(SExprSeq ss) {
     auto it = ss.cbegin();
 
     if (it == ss.cend()) { return ErrMsg("expected preamble"); }
     const Result<Preamble, ErrMsg> preamble = parsePreamble(*it);
-    if (isErr(preamble)) {
-        return getErr(preamble);
-    }
+    if (isErr(preamble)) { return getErr(preamble); }
 
     ++it;
     if (it == ss.cend()) { return ErrMsg("expected types"); }
     const Result<std::vector<TypeAlias>, ErrMsg> types = parseTypes(*it);
-    if (isErr(types)) {
-        return getErr(types);
-    }
+    if (isErr(types)) { return getErr(types); }
 
     ++it;
     if (it == ss.cend()) { return ErrMsg("expected variables"); }
     const Result<std::vector<Variable>, ErrMsg> variables = parseVariables(*it);
-    if (isErr(variables)) {
-        return getErr(variables);
-    }
+    if (isErr(variables)) { return getErr(variables); }
 
     ++it;
     if (it == ss.cend()) { return ErrMsg("expected functions"); }
     const Result<std::vector<Function>, ErrMsg> functions = parseFunctions(*it);
-    if (isErr(functions)) {
-        return getErr(functions);
-    }
+    if (isErr(functions)) { return getErr(functions); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
@@ -1284,9 +1215,7 @@ Result<Program, ErrMsg> parseProgram(SExprs::SExprSeq ss) {
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != ss.cend()) {
-            return ErrMsg("extra elements to program");
-        }
+        if (it + 1 != ss.cend()) { return ErrMsg("extra elements to program"); }
     }
 
     return Program(
