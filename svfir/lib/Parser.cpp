@@ -43,16 +43,29 @@ ErrMsg listCutShort(
     );
 }
 
+/// Error parsing encompassing as we expected keyword kw but got actual.
+ErrMsg badKw(
+    const std::string &encompassing,
+    const std::string &kw,
+    const std::string &actual
+) {
+    return ErrMsg(
+        "Expected " + kw + " " +
+        "(got " + actual + ") " +
+        "while parsing " + encompassing + "."
+    );
+}
+
 /// <md>
 Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
     if (!isList(s)) { return notAList("metadata"); }
     const List list = std::get<List>(s);
 
-    if (list.children.size() != 2) {
-        return ErrMsg("md must be a list of 2 elems");
-    }
-
-    if (!atomEq(list.children[0], "md")) { return ErrMsg("expected md"); }
+    auto it = list.children.cbegin(), end = list.children.cend();
+    if (it == end) { listCutShort("metadata", "'md'"); }
+    if (!isAtom(list.children[0])) { notAnAtom("'md'"); }
+    const std::string kw = std::get<Atom>(list.children[0]).val;
+    if (kw != "md") { return badKw("metadata", "md", kw); }
 
     // list.children[1] is by construction an sexpr.
     return Metadata(list.children[1], span(list.children[1]));
