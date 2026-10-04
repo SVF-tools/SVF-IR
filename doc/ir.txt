@@ -11,12 +11,9 @@
 <var-id> : <lid> | <gid>
 <typed-lid> : '(' <lid> <type> ')'
 
-<scalar-type> : 'void'
-              | 'f'('16'|'32'|'64'|'128')  ; TODO
-              | 'i'('8'|'16'|'32'|'64')    ; TODO
-              | 'ptr'
-              | 'bool'
-              | ; TODO 'byte'
+<int-type> : 'i'('8'|'16'|'32'|'64')    ; TODO
+<float-type> : 'f'('16'|'32'|'64'|'128')  ; TODO
+<scalar-type> : 'void' | 'ptr' | 'bool' | <int-type> | <float-type>
 
 <seq-type> : '(' 'seq' ('0'|<pos-number>) ')'
 
