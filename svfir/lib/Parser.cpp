@@ -209,6 +209,7 @@ Result<VarId, ErrMsg> parseVarId(const SExpr s) {
     else { return noSpecialCharId("Local/global (var)", "%/@"); }
 }
 
+/// <typed-id>
 Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
     if (!isList(s)) { return notAList("typed (local) ID"); }
 
