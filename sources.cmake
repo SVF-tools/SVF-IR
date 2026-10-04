@@ -5,7 +5,7 @@ set(SVFIR_HEADERS
 )
 
 set(SVFIR_SOURCES
-  svfir/lib/Ast.cpp svfir/lib/InputStream.cpp svfir/lib/Parser.cpp
-  svfir/lib/Pretty.cpp svfir/lib/SExprs.cpp svfir/lib/Span.cpp
-  svfir/lib/Version.cpp
+  svfir/lib/Ast.cpp svfir/lib/GetSpan.cpp svfir/lib/InputStream.cpp
+  svfir/lib/Parser.cpp svfir/lib/Pretty.cpp svfir/lib/SExprs.cpp
+  svfir/lib/Span.cpp svfir/lib/Version.cpp
 )
