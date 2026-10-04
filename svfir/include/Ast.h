@@ -188,9 +188,7 @@ struct Variable final {
         const MaybeMetadata md
     ) : id(id), val(val), md(md) { }
 
-    /// We have a variable declaration when the value is missing and a variable
-    /// definition when the value is present.
-    bool isDefinition(void) const;
+    bool isOpaque(void) const;
 };
 
 /// <param>
@@ -231,9 +229,7 @@ struct Function final {
         md(md)
     { }
 
-    /// We have a function declaration when the body is missing and a function
-    /// definition when the body is present.
-    bool isDefinition(void) const;
+    bool isOpaque(void) const;
 };
 
 /// <type-alias>
@@ -249,7 +245,6 @@ struct TypeAlias final {
         const MaybeMetadata md
     ) : id(id), type(type), md(md) { }
 
-    /// This alias is opaque when the type it refers to is missing.
     bool isOpaque(void) const;
 };
 
