@@ -198,14 +198,15 @@ Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
     return BlockId(text, span(s));
 }
 
+/// <var-id>
 Result<VarId, ErrMsg> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
-    if (!isAtom(s)) { return notAnAtom("local or global ID"); }
+    if (!isAtom(s)) { return notAnAtom("local/global (var) ID"); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
+    if (text.size() < 2) { return shortId("Local/global (var)"); }
     if (text[0] == '%') { return getVal(parseLocalId(s)); }
     else if (text[0] == '@') { return getVal(parseGlobalId(s)); }
-    else { return ErrMsg("var id must be local or global (% or @)."); }
+    else { return noSpecialCharId("Local/global (var)", "%/@"); }
 }
 
 Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
