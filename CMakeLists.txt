@@ -4,7 +4,7 @@ project(
   SVFIR
   VERSION 0.0
   DESCRIPTION "SVFIR is an IR to target for SVF to consume"
-  HOMEPAGE_URL "https://github.com/SVF-Tools/SVFIR"
+  HOMEPAGE_URL "https://github.com/SVF-Tools/SVF-IR"
   LANGUAGES CXX
 )
 
