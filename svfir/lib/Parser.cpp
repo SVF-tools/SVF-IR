@@ -213,14 +213,15 @@ Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
     if (!isList(s)) { return notAList("typed (local) ID"); }
 
     const List list = std::get<List>(s);
-    if (list.children.size() != 2) {
-        return ErrMsg("typed lid must be a list of two elements");
-    }
+    auto it = list.children.cbegin(), end = list.children.cend();
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(list.children[0]);
+    if (it == end) { listCutShort("typed (local) ID", "ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Type, ErrMsg> type = parseType(list.children[1]);
+    ++it;
+    if (it == end) { listCutShort("typed (local) ID", "type"); }
+    const Result<Type, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     return TypedId(getVal(lid), getVal(type), span(s));
