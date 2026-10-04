@@ -233,19 +233,21 @@ Result<Param, ErrMsg> parseParam(const SExpr s) {
     if (!isList(s)) { return notAList("Param"); }
 
     const List list = std::get<List>(s);
-    if (!(list.children.size() == 2 || list.children.size() == 3)) {
-        return ErrMsg("param is 2 or 3 elements");
-    }
+    auto it = list.children.cbegin(), end = list.children.cend();
 
-    const Result<LocalId, ErrMsg> id = parseLocalId(list.children[0]);
+    if (it == end) { listCutShort("parameter", "ID"); }
+    const Result<LocalId, ErrMsg> id = parseLocalId(*it);
     if (isErr(id)) { return getErr(id); }
 
-    const Result<Type, ErrMsg> type = parseType(list.children[1]);
+    ++it;
+    if (it == end) { listCutShort("parameter", "type"); }
+    const Result<Type, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (list.children.size() == 3) {
-        Result<Metadata, ErrMsg> mdr = parseMetadata(list.children[2]);
+    if (it != end) {
+        Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
