@@ -175,8 +175,8 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
 Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("local ID"); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return ErrMsg("local id invalid (too short)"); }
-    if (text[0] != '%') { return ErrMsg("local id must start with %"); }
+    if (text.size() < 2) { return shortId("Local"); }
+    if (text[0] != '%') { return noSpecialCharId("Local", "%"); }
     return LocalId(text, span(s));
 }
 
@@ -184,8 +184,8 @@ Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
 Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("global ID"); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return ErrMsg("global id invalid (too short)"); }
-    if (text[0] != '@') { return ErrMsg("global id must start with %"); }
+    if (text.size() < 2) { return shortId("Global"); }
+    if (text[0] != '@') { return noSpecialCharId("Global", "@"); }
     return GlobalId(text, span(s));
 }
 
