@@ -56,6 +56,16 @@ ErrMsg badKw(
     );
 }
 
+/// That IDs need two characters. kind should be capitalised.
+ErrMsg shortId(const std::string &kind) {
+    return ErrMsg(kind + " IDs must be two or more characters");
+}
+
+/// That IDs need to start with a special character. kind should be capitalised.
+ErrMsg noSpecialCharId(const std::string &kind, const std::string &ch) {
+    return ErrMsg(kind + " IDs must begin with a " + ch + ".");
+}
+
 /// <md>
 Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
     if (!isList(s)) { return notAList("metadata"); }
@@ -75,8 +85,8 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
 Result<TypeId, ErrMsg> parseTypeId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("type ID"); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return ErrMsg("type id invalid (too short)"); }
-    if (text[0] != '~') { return ErrMsg("type id must start with %"); }
+    if (text.size() < 2) { return shortId("Type"); }
+    if (text[0] != '~') { return noSpecialCharId("Type", "~"); }
     return TypeId(text, span(s));
 }
 
