@@ -87,12 +87,9 @@ Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
         const SExprs::List list = std::get<SExprs::List>(s);
         if (
             list.children.size() != 2 ||
-            !(
-                isAtom(list.children[0]) &&
-                std::get<SExprs::Atom>(list.children[0]).val == "seq"
-            ) ||
+            !SExprs::atomEq(list.children[0], "agg") ||
             !isAtom(list.children[1])
-        ) { return ErrMsg("expected seq type (list of 2 elements)"); }
+        ) { return ErrMsg("expected agg type (list of 2 elements)"); }
         const std::string slotsStr =
             std::get<SExprs::Atom>(list.children[1]).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
@@ -106,7 +103,7 @@ Result<Type, ErrMsg> parseType(const SExprs::SExpr s) {
             return ErrMsg("seq type slots too large");
         }
 
-        return Type(SeqType(slots));
+        return Type(AggType(slots));
     }
 }
 
@@ -726,11 +723,11 @@ Result<Statement, ErrMsg> parseLoadStmt(SExprs::List l) {
     return Statement(LoadStmt(getVal(tlid), getVal(src), md));
 }
 
-Result<Statement, ErrMsg> parseIndexStmt(SExprs::List l) {
+Result<Statement, ErrMsg> parseFieldStmt(SExprs::List l) {
     const SExprs::SExprSeq elems = l.children;
-    assert(SExprs::atomEq(elems[0], "index"));
+    assert(SExprs::atomEq(elems[0], "field"));
     if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("index list should be length 4-5");
+        return ErrMsg("field list should be length 4-5");
     }
 
     const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
@@ -749,7 +746,7 @@ Result<Statement, ErrMsg> parseIndexStmt(SExprs::List l) {
         md.emplace(getVal(mdr));
     }
 
-    return Statement(IndexStmt(getVal(lid), getVal(src), getVal(index), md));
+    return Statement(FieldStmt(getVal(lid), getVal(src), getVal(index), md));
 }
 
 Result<Statement, ErrMsg> parseAddMulSubStmt(SExprs::List l) {
@@ -1009,7 +1006,7 @@ Result<Statement, ErrMsg> parseStmt(SExprs::SExpr s) {
     else if (instr == "alloc") { return parseAllocStmt(l); }
     else if (instr == "store") { return parseStoreStmt(l); }
     else if (instr == "load") { return parseLoadStmt(l); }
-    else if (instr == "index") { return parseIndexStmt(l); }
+    else if (instr == "field") { return parseFieldStmt(l); }
     else if (instr == "add" || instr == "sub" || instr == "mul") {
         return parseAddMulSubStmt(l);
     } else if (instr == "div" || instr == "rem") {

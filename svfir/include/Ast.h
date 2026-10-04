@@ -50,10 +50,10 @@ struct PtrType final { };
 struct BoolType final { };
 
 /// <seq-type>
-struct SeqType final {
+struct AggType final {
     const uint64_t slots;
 
-    SeqType(const uint64_t slots) : slots(slots) { }
+    AggType(const uint64_t slots) : slots(slots) { }
 };
 
 /// <tid>
@@ -65,7 +65,7 @@ struct TypeId final {
 
 /// <type>
 using Type = std::variant<
-    VoidType, IntType, FloatType, PtrType, BoolType, SeqType, TypeId
+    VoidType, IntType, FloatType, PtrType, BoolType, AggType, TypeId
 >;
 
 /// <lid>
@@ -392,13 +392,13 @@ struct LoadStmt final {
 };
 
 /// <mem-inst> (4)
-struct IndexStmt final {
+struct FieldStmt final {
     const LocalId id;
     const PVal src;
     const IVal index;
     const MaybeMetadata md;
 
-    IndexStmt(
+    FieldStmt(
         const LocalId id,
         const PVal src,
         const IVal index,
@@ -622,7 +622,7 @@ struct BlackholeStmt final {
 using Statement = std::variant<
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt,
     CmpStmt,
-    AllocStmt, StoreStmt, LoadStmt, IndexStmt,
+    AllocStmt, StoreStmt, LoadStmt, FieldStmt,
     // TODO conversions...
     AddStmt, SubStmt, MulStmt, DivStmt, RemStmt,
     NotStmt, AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt,
@@ -648,13 +648,13 @@ struct BasicBlock final {
 /// pretty printing.
 using AnyNode = std::variant<
     Metadata,
-    VoidType, IntType, FloatType, PtrType, BoolType, SeqType, TypeId,
+    VoidType, IntType, FloatType, PtrType, BoolType, AggType, TypeId,
     LocalId, GlobalId, BlockId, TypedId,
     IntConstant, FloatConstant, NullConstant, BoolConstant, SeqConstant,
     TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
-    LoadStmt, IndexStmt, AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
+    LoadStmt, FieldStmt, AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
     AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt, AssignStmt, VarargStmt,
     BlackholeStmt, BasicBlock,
     Type, VarId, Constant, Val, PVal, IVal, GVal, Statement

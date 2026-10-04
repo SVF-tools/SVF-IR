@@ -84,8 +84,8 @@ struct Pretty {
 
     std::string operator()(const BoolType &) { return "bool"; }
 
-    std::string operator()(const SeqType &st) {
-        return "(seq " + std::to_string(st.slots) + ")";
+    std::string operator()(const AggType &st) {
+        return "(agg " + std::to_string(st.slots) + ")";
     }
 
     std::string operator()(const TypeId &tid) { return tid.id; }
@@ -271,9 +271,9 @@ struct Pretty {
         );
     }
 
-    std::string operator()(const IndexStmt &i) {
+    std::string operator()(const FieldStmt &i) {
         return par(
-            "index " +
+            "field " +
             pretty(i.id) + " " +
             pretty(i.src) + " " +
             pretty(i.index) + " " +

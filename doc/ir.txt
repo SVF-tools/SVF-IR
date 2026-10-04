@@ -15,9 +15,9 @@
 <float-type> : 'f'('16'|'32'|'64'|'128')  ; TODO
 <scalar-type> : 'void' | 'ptr' | 'bool' | <int-type> | <float-type>
 
-<seq-type> : '(' 'seq' ('0'|<pos-number>) ')'
+<agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
 
-<type> : <scalar-type> | <seq-type> | <tid>
+<type> : <scalar-type> | <agg-type> | <tid>
 
 <int-const> : '-'?<digit>+
 <flt-const> : <int-const>'.'<digit>+('e''-'?<digit>+)? | '-inf' | '+inf' | 'nan'
@@ -85,7 +85,7 @@
 <mem-stmt> : '(' 'alloc' ('heap'|'stack') <lid> <md>? ')'
            | '(' 'store' <val> <pval> <md>? ')'
            | '(' 'load' <typed-lid> <pval> <md>? ')'
-           | '(' 'index' <lid> <pval> <ival> <md>? ')'
+           | '(' 'field' <lid> <pval> <ival> <md>? ')'
 
 <conversion-stmt> : '(' 'reinterpret' <lid> <val> <tid> <md>? ')'
                   | '(' 'trunc' <lid> <val> <tid> <md>? ')'
