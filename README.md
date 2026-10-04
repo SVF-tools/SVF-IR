@@ -13,6 +13,11 @@ repository will host multiple translators to SVF-IR.
 
 The syntax of the textual format is defined in `doc/ir.txt`.
 
+## Making changes
+
+* Adding or removing source files requires updating `sources.cmake`.
+* Making changes to the definition requires updating `doc/ir.txt`.
+
 ## TODO
 
 * Tests.
