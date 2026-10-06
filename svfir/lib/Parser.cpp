@@ -17,6 +17,9 @@ namespace {
 using namespace SVFIR;
 using namespace SVFIR::SExprs;
 
+// TODO: Things like "if you intended an x here, note: err" can have err
+// referring to a similar message, no good.
+
 /// So we can use with std::all_of. It gets confused using std::isdigit
 /// directly due to overloads.
 bool isDigit(const char c) { return std::isdigit(c); }
@@ -575,48 +578,59 @@ Result<IVal, ErrMsg> parseIVal(SExpr s) {
     assert(false);
 }
 
+/// <variable>
 Result<Variable, ErrMsg> parseVariable(SExpr s) {
     if (!isList(s)) { return notAList("variable"); }
 
-    const SExprSeq elems = std::get<List>(s).children;
-    if (elems.size() != 2 && elems.size() != 3) {
-        return ErrMsg("variable needs 2-3 elems");
-    }
+    const List list = std::get<List>(s);
+    auto it = list.children.cbegin(), end = list.children.cend();
 
-    const Result<GlobalId, ErrMsg> gidr = parseGlobalId(elems[0]);
-    if (isErr(gidr)) { return ErrMsg("expected gid"); }
-    const GlobalId gid = getVal(gidr);
+    if (it == end) { return listCutShort("variable", "variable name"); }
+    const Result<GlobalId, ErrMsg> gid = parseGlobalId(*it);
+    if (isErr(gid)) { return getErr(gid); }
 
+    ++it;
+    if (it == end) { return listCutShort("variable", "value/opaqueness"); }
     std::optional<GVal> gval;
-    if (atomEq(elems[1], "opaque")) { gval = std::nullopt; }
+    if (atomEq(*it, "opaque")) { gval = std::nullopt; }
     else {
-        const Result<GVal, ErrMsg> gvalr = parseGVal(elems[1]);
-        if (isErr(gvalr)) { return ErrMsg("expected gval or opaque"); }
-        gval.emplace(getVal(gvalr));
+        const Result<GVal, ErrMsg> gvalr = parseGVal(*it);
+        if (isErr(gvalr)) {
+            return ErrMsg(
+                "Expected global ID, typed constant, or 'opaque' as "
+                "variable value. If you intended a value here, note: " +
+                getErr(gvalr)
+            );
+        } else { gval.emplace(getVal(gvalr)); }
     }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 3) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[2]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
-    return Variable(gid, gval, md, span(s));
+    // TODO: ++it, check length.
+
+    return Variable(getVal(gid), gval, md, span(s));
 }
 
+/// <variables>
 Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
     if (!isList(s)) { return notAList("variables"); }
+    const List list = std::get<List>(s);
+    auto it = list.children.cbegin(), end = list.children.cend();
 
-    const SExprSeq elems = std::get<List>(s).children;
-    if (
-        elems.size() < 1 ||
-        !atomEq(elems[0], "variables")
-    ) { return ErrMsg("expected variables kw"); }
+    if (it == end) { return listCutShort("variables", "'variables'"); }
+    if (!isAtom(*it)) { return notAnAtom("'variables'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw != "variables") { return badKw("variables", "variables", kw); }
 
+    ++it;
     std::vector<Variable> variables;
-    // [0] is 'variables', so ignore it.
-    for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
+    for (; it != end; ++it) {
         const Result<Variable, ErrMsg> variable = parseVariable(*it);
         if (isErr(variable)) { return ErrMsg(getErr(variable)); }
         variables.push_back(getVal(variable));
