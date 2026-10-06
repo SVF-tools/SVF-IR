@@ -17,6 +17,9 @@ namespace {
 using namespace SVFIR;
 using namespace SVFIR::SExprs;
 
+// TODO: Lists need to be checked that they don't have too many elements, e.g.,
+// (version 1.5 x).
+
 // TODO: Things like "if you intended an x here, note: err" can have err
 // referring to a similar message, no good.
 
@@ -420,8 +423,6 @@ Result<Version, ErrMsg> parseVersion(SExpr s) {
         );
     }
 
-    // TODO: ++it, if too long.
-
     return Version(majorVersion, minorVersion);
 }
 
@@ -469,8 +470,6 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
-
-    // TODO: ++it length
 
     return Preamble(getVal(version), source, md, span(s));
 }
@@ -611,8 +610,6 @@ Result<Variable, ErrMsg> parseVariable(SExpr s) {
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
-
-    // TODO: ++it, check length.
 
     return Variable(getVal(gid), gval, md, span(s));
 }
