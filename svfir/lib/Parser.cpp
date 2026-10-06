@@ -72,13 +72,13 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
     const List list = std::get<List>(s);
 
     auto it = list.children.cbegin(), end = list.children.cend();
-    if (it == end) { listCutShort("metadata", "'md'"); }
-    if (!isAtom(list.children[0])) { notAnAtom("'md'"); }
+    if (it == end) { return listCutShort("metadata", "'md'"); }
+    if (!isAtom(list.children[0])) { return notAnAtom("'md'"); }
     const std::string kw = std::get<Atom>(list.children[0]).val;
     if (kw != "md") { return badKw("metadata", "md", kw); }
 
     ++it;
-    if (it == end) { listCutShort("metadata", "sexpr data"); }
+    if (it == end) { return listCutShort("metadata", "sexpr data"); }
     return Metadata(*it, span(*it));
 }
 
@@ -142,15 +142,15 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
         const List list = std::get<List>(s);
 
         auto it = list.children.cbegin(), end = list.children.cend();
-        if (it == end) { listCutShort("aggregate type", "'agg'"); }
-        if (!isAtom(*it)) { notAnAtom("'agg'"); }
+        if (it == end) { return listCutShort("aggregate type", "'agg'"); }
+        if (!isAtom(*it)) { return notAnAtom("'agg'"); }
         const std::string kw = std::get<Atom>(*it).val;
         if (kw != "agg") { badKw("aggregate type", "'agg'", kw); }
 
 
         ++it;
-        if (it == end) { listCutShort("aggregate type", "number of slots"); }
-        if (!isAtom(*it)) { notAnAtom("number of slots"); }
+        if (it == end) { return listCutShort("aggregate type", "number of slots"); }
+        if (!isAtom(*it)) { return notAnAtom("number of slots"); }
         const std::string slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
             // TODO: what if it starts with 0
@@ -216,12 +216,12 @@ Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { listCutShort("typed (local) ID", "ID"); }
+    if (it == end) { return listCutShort("typed (local) ID", "ID"); }
     const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { listCutShort("typed (local) ID", "type"); }
+    if (it == end) { return listCutShort("typed (local) ID", "type"); }
     const Result<Type, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
@@ -235,12 +235,12 @@ Result<Param, ErrMsg> parseParam(const SExpr s) {
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { listCutShort("parameter", "ID"); }
+    if (it == end) { return listCutShort("parameter", "ID"); }
     const Result<LocalId, ErrMsg> id = parseLocalId(*it);
     if (isErr(id)) { return getErr(id); }
 
     ++it;
-    if (it == end) { listCutShort("parameter", "type"); }
+    if (it == end) { return listCutShort("parameter", "type"); }
     const Result<Type, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
