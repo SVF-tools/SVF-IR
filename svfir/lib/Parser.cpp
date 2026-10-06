@@ -686,34 +686,48 @@ Result<Statement, ErrMsg> parsePhiStmt(List l) {
     return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
 }
 
+/// To be called on (call ...) only.
 Result<Statement, ErrMsg> parseCallStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "call"));
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("call list should be length 4-5");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "call"));
 
+    ++it;
+    if (it == end) {
+        return listCutShort("call statement", "local ID or 'void'");
+    }
+    if (!isAtom(*it)) { return notAnAtom("local ID or 'void'"); }
     std::optional<LocalId> lid = std::nullopt;
-    if (!atomEq(elems[1], "void")) {
-        const Result<LocalId, ErrMsg> lidr = parseLocalId(elems[1]);
-        if (isErr(lidr)) { return getErr(lidr); }
+    if (!atomEq(*it, "void")) {
+        // Try a local ID.
+        const Result<LocalId, ErrMsg> lidr = parseLocalId(*it);
+        if (isErr(lidr)) {
+            return ErrMsg(
+                "Expected a local ID or 'void'. "
+                "If you intended a local ID here, note: " + getErr(lidr)
+            );
+        }
         lid.emplace(getVal(lidr));
     }
 
-    const Result<PVal, ErrMsg> callee = parsePVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("call statement", "callee"); }
+    const Result<PVal, ErrMsg> callee = parsePVal(*it);
     if (isErr(callee)) { return getErr(callee); }
 
-    if (!isList(elems[3])) { return notAList("call arguments"); }
+    ++it;
+    if (it == end) { return listCutShort("call statement", "arguments"); }
+    if (!isList(*it)) { return notAList("call arguments"); }
     std::vector<Val> args;
-    for (auto s : std::get<List>(elems[3]).children) {
-        const Result<Val, ErrMsg> val = parseVal(s);
+    for (const auto a : std::get<List>(*it).children) {
+        const Result<Val, ErrMsg> val = parseVal(a);
         if (isErr(val)) { return getErr(val); }
         args.push_back(getVal(val));
     }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
