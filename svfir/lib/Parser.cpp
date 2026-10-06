@@ -873,24 +873,31 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
     );
 }
 
+/// To be called on (alloc ...) only.
 Result<Statement, ErrMsg> parseAllocStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "alloc"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("alloc list should be length 3-4");
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "alloc"));
+
+    ++it;
+    if (it == end) { return listCutShort("allocation statement", "kind"); }
+    if (!isAtom(*it)) { return notAnAtom("'heap' or 'stack'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    AllocStmt::Kind kind;
+    if (kw == "heap") { kind = AllocStmt::Kind::HEAP; }
+    else if (kw == "stack") { kind = AllocStmt::Kind::STACK; }
+    else {
+        return badKw("allocation statement (kind)", "'heap' or 'stack'", kw);
     }
 
-    AllocStmt::Kind kind;
-    if (atomEq(elems[1], "heap")) { kind = AllocStmt::Kind::HEAP; }
-    else if (atomEq(elems[1], "stack")) { kind = AllocStmt::Kind::STACK; }
-    else { return ErrMsg("expected heap or stack"); }
-
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("allocation statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
