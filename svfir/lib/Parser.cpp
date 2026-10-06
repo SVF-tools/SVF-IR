@@ -260,62 +260,92 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s);
 Result<Constant, ErrMsg> parseConst(const SExpr s) {
     const Span sp = span(s);
     if (isAtom(s)) {
-        const std::string text = std::get<Atom>(s).val;
-        if (text.empty()) { return ErrMsg("empty constant"); }
-        else if (text == "null") { return Constant(NullConstant(sp)); }
-        else if (text == "true") { return Constant(BoolConstant(true, sp)); }
-        else if (text == "false") { return Constant(BoolConstant(false, sp)); }
-        else if (text == "-inf" || text == "+inf" || text == "nan") {
-            return Constant(FloatConstant(text, sp));
-        } else { // Try for an int or numeric float.
-            const auto numStart =
-                text[0] == '-' ? text.cbegin() + 1 : text.cbegin();
-            if (std::all_of(numStart, text.cend(), isDigit)) {
-                return Constant(IntConstant(text, sp));
+        const std::string val = std::get<Atom>(s).val;
+        if (val.empty()) { return ErrMsg("Expected constant, got empty atom"); }
+        else if (val == "null") { return Constant(NullConstant(sp)); }
+        else if (val == "true") { return Constant(BoolConstant(true, sp)); }
+        else if (val == "false") { return Constant(BoolConstant(false, sp)); }
+        else if (val == "-inf" || val == "+inf" || val == "nan") {
+            return Constant(FloatConstant(val, sp));
+        } else {  // Try for an int or numeric float.
+            // But first, a small-effort check if the user *may* have intended
+            // a numeric constant.
+            if (val[0] != '-' && !isDigit(val[0])) {
+                return ErrMsg("Invalid constant, got '" + val + "'.");
             }
 
-            const auto dotPos = std::find(numStart, text.cend(), '.');
-            if (dotPos == text.cend()) {
-                return ErrMsg("float constant needs a .");
+            const auto numStart =
+                val[0] == '-' ? val.cbegin() + 1 : val.cbegin();
+            if (std::all_of(numStart, val.cend(), isDigit)) {
+                return Constant(IntConstant(val, sp));
             }
-            if (dotPos + 1 == text.cend()) {
-                return ErrMsg("float constant needs digit(s) after .");
+
+            const auto dotPos = std::find(numStart, val.cend(), '.');
+            if (dotPos == val.cend()) {
+                return ErrMsg(
+                    "Invalid constant, got '" + val + "'. "
+                    "If you intended a float constant, a '.' is required."
+                );
+            }
+            if (dotPos + 1 == val.cend()) {
+                return ErrMsg(
+                    "Invalid constant, got '" + val + "'. "
+                    "If you intended a float constant, "
+                    "at least one digit is required after the '.'."
+                );
             }
 
             auto it = dotPos + 1;
-            for (; it != text.cend(); ++it) { }
-            if (it != text.cend()) {
-                if (*it != 'e') { return ErrMsg("float expected e"); }
+            for (; it != val.cend(); ++it) { }
+            if (it != val.cend()) {
+                if (*it != 'e') {
+                    return ErrMsg(
+                        "Invalid constant, got '" + val + "'. "
+                        "If you intended a float constant, "
+                        "you may have intended the exponent signifier 'e'."
+                    );
+                }
                 ++it;
                 if (*it == '-') { ++it; }
-                if (!std::all_of(it, text.cend(), isDigit)) {
-                    return ErrMsg("exponent must be digits");
+                if (!std::all_of(it, val.cend(), isDigit)) {
+                    return ErrMsg(
+                        "Invalid constant, got '" + val + "'. "
+                        "If you intended a float constant, "
+                        "the exponent must be a positive or negative integer."
+                    );
                 }
             }
 
-            return Constant(FloatConstant(text, sp));
+            return Constant(FloatConstant(val, sp));
         }
     } else {
         assert(isList(s));
         SExprSeq elems = std::get<List>(s).children;
-        if (elems.empty()) {
-            return ErrMsg("seq const needs at least one elem");
-        }
-        if (!atomEq(elems[0], "seq")) { return ErrMsg("expected seq"); }
+        auto it = elems.cbegin(), end = elems.cend();
+        if (it == end) { return ErrMsg("Invalid constant, given empty list."); }
 
+        if (!isAtom(*it)) { return notAnAtom("'seq'"); }
+        const std::string kw = std::get<Atom>(*it).val;
+        if (kw != "seq") { return badKw("sequence (constant)", "seq", kw); }
+
+        ++it;
         std::vector<Val> vals;
-        for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
-            const Result<TypedConstant, ErrMsg> typedConst = parseTypedConst(*it);
-            if (isErr(typedConst)) {
-                const Result<VarId, ErrMsg> varId = parseVarId(*it);
-                if (isErr(varId)) {
-                    return ErrMsg("expected typed const or var id");
-                } else { vals.push_back(getVal(varId)); }
-            } else { vals.push_back(getVal(typedConst)); }
+        for (; it != end; ++it) {
+            const Result<TypedConstant, ErrMsg> tc = parseTypedConst(*it);
+            if (isErr(tc)) {
+                const Result<VarId, ErrMsg> vi = parseVarId(*it);
+                if (isErr(vi)) {
+                    return ErrMsg(
+                        "Elements of a sequence must be a typed constant "
+                        "or a local/global (var) ID."
+                    );
+                } else { vals.push_back(getVal(vi)); }
+            } else { vals.push_back(getVal(tc)); }
         }
 
         return Constant(SeqConstant(vals, sp));
     }
+    assert(false);
 }
 
 Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
