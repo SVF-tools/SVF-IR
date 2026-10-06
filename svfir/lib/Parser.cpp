@@ -552,15 +552,27 @@ Result<PVal, ErrMsg> parsePVal(SExpr s) {
     assert(false);
 }
 
+/// <ival>
 Result<IVal, ErrMsg> parseIVal(SExpr s) {
+    if (!isAtom(s)) {
+        return notAnAtom("Global/local (var) ID or integer constant.");
+    }
+
+    const Result<Constant, ErrMsg> c = parseConst(s);
+    if (!isErr(c) && std::holds_alternative<IntConstant>(getVal(c))) {
+        return IVal(std::get<IntConstant>(getVal(c)));
+    }
+
     const Result<VarId, ErrMsg> vid = parseVarId(s);
     if (!isErr(vid)) { return IVal(getVal(vid)); }
-    const Result<Constant, ErrMsg> constant = parseConst(s);
-    if (
-        isErr(constant) ||
-        !std::holds_alternative<IntConstant>(getVal(constant))
-    ) { return ErrMsg("expected pval"); }
-    return IVal(std::get<IntConstant>(getVal(constant)));
+    else {
+        return ErrMsg(
+            "Expected an integer constant or a local/global (var) ID. "
+            "If you intended a local/global (var) ID here, note: " +
+            getErr(vid)
+        );
+    }
+    assert(false);
 }
 
 Result<Variable, ErrMsg> parseVariable(SExpr s) {
