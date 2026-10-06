@@ -149,7 +149,9 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
 
 
         ++it;
-        if (it == end) { return listCutShort("aggregate type", "number of slots"); }
+        if (it == end) {
+            return listCutShort("aggregate type", "number of slots");
+        }
         if (!isAtom(*it)) { return notAnAtom("number of slots"); }
         const std::string slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
@@ -322,7 +324,7 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
         assert(isList(s));
         SExprSeq elems = std::get<List>(s).children;
         auto it = elems.cbegin(), end = elems.cend();
-        if (it == end) { return ErrMsg("Invalid constant, given empty list."); }
+        if (it == end) { return listCutShort("sequence", "'seq'"); }
 
         if (!isAtom(*it)) { return notAnAtom("'seq'"); }
         const std::string kw = std::get<Atom>(*it).val;
@@ -370,7 +372,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     auto it = elems.cbegin();
 
     // Preamble keyword.
-    if (it == elems.cend()) { return listCutShort("preamble", "keyword"); }
+    if (it == elems.cend()) { return listCutShort("preamble", "'preamble'"); }
     if (!atomEq(*it, "preamble")) {
         return ErrMsg("expected preamble keyword");
     }
