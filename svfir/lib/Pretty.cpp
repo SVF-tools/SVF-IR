@@ -225,10 +225,10 @@ struct Pretty {
     }
 
     std::string operator()(const RetStmt &ret) {
-        const std::string maybeVal =
-            ret.val.has_value() ? " " + pretty(ret.val.value()) : "";
+        const std::string val =
+            ret.val.has_value() ? pretty(ret.val.value()) : "void";
         const std::string maybeMd = maybePrettyMd(ret.md);
-        return par("ret" + maybeVal + maybeMd);
+        return par("ret " + val + maybeMd);
     }
 
     std::string operator()(const CmpStmt &cmp) {

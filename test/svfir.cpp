@@ -102,7 +102,7 @@ bool roundtrip(void) {
         "      (store %33 %5)\n"
         "      (br !13)))\n"
         "    (!30 (\n"
-        "      (ret))))))";
+        "      (ret void))))))";
     const Result<Program, ErrMsg> res2 = parseString(program2);
     TEST(!isErr(res2));
     TEST(pretty(getVal(res2)) == program2);

@@ -373,6 +373,7 @@ struct BrifStmt final : public Node {
 
 /// <control-inst> (5)/return
 struct RetStmt final : public Node {
+    // No val indicates void.
     const std::optional<Val> val;
     const MaybeMetadata md;
 

@@ -78,7 +78,7 @@
                | '(' 'call' ('void'|<lid>) <pval> '(' <val>* ')' <md>? ')'
                | '(' 'br' <bid> <md>? ')'
                | '(' 'brif' <val> <bid> <bid> <md>? ')'
-               | '(' 'ret' <val>? <md>? ')'
+               | '(' 'ret' (<val>|'void') <md>? ')'
 
 <cmp-stmt> : '(' 'cmp' <lid> <cmp-op> <val> <val> <md>? ')'
 

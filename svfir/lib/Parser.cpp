@@ -788,36 +788,36 @@ Result<Statement, ErrMsg> parseBrifStmt(List l) {
     );
 }
 
+/// To be called on (ret ...) only.
 Result<Statement, ErrMsg> parseRet(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "ret"));
-    if (elems.size() < 1 || elems.size() > 3) {
-        return ErrMsg("ret list should be length 1-3");
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "ret"));
+
+    ++it;
+    if (it == end) {
+        return listCutShort("return statement", "value or 'void'");
+    }
+    std::optional<Val> val;
+    if (atomEq(*it, "void")) { val = std::nullopt; }
+    else {
+        const Result<Val, ErrMsg> valr = parseVal(*it);
+        if (isErr(valr)) {
+            return ErrMsg(
+                "Expected a value or 'void'. "
+                "If you intended a value here, note: " + getErr(valr)
+            );
+        } else { val.emplace(getVal(valr)); }
     }
 
-    if (elems.size() == 1) {
-        return Statement(RetStmt(std::nullopt, std::nullopt, span(l)));
-    } else if (elems.size() == 2) {
-        const Result<Val, ErrMsg> val = parseVal(elems[1]);
-        if (isErr(val)) {
-            const Result<Metadata, ErrMsg> md = parseMetadata(elems[1]);
-            if (isErr(md)) { return ErrMsg("expected val or metadata"); }
-            return Statement(RetStmt(std::nullopt, getVal(md), span(l)));
-        } else {
-            return Statement(RetStmt(getVal(val), std::nullopt, span(l)));
-        }
-    } else {
-        assert(elems.size() == 3);
-
-        const Result<Val, ErrMsg> val = parseVal(elems[1]);
-        if (isErr(val)) { return getErr(val); }
-
-        const Result<Metadata, ErrMsg> md = parseMetadata(elems[2]);
-        if (isErr(md)) { return getErr(md); }
-
-        return Statement(RetStmt(getVal(val), getVal(md), span(l)));
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        if (isErr(mdr)) { return getErr(mdr); }
+        md.emplace(getVal(mdr));
     }
-    assert(false);
+
+    return RetStmt(val, md, span(l));
 }
 
 Result<Statement, ErrMsg> parseCmpStmt(List l) {
