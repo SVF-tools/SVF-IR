@@ -961,25 +961,30 @@ Result<Statement, ErrMsg> parseLoadStmt(List l) {
     return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
 }
 
+/// To be called on (field ...) only.
 Result<Statement, ErrMsg> parseFieldStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "field"));
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("field list should be length 4-5");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "field"));
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("field statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<PVal, ErrMsg> src = parsePVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("field statement", "source pointer"); }
+    const Result<PVal, ErrMsg> src = parsePVal(*it);
     if (isErr(src)) { return getErr(src); }
 
-    const Result<IVal, ErrMsg> index = parseIVal(elems[3]);
+    ++it;
+    if (it == end) { return listCutShort("field statement", "field index"); }
+    const Result<IVal, ErrMsg> index = parseIVal(*it);
     if (isErr(index)) { return getErr(index); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
