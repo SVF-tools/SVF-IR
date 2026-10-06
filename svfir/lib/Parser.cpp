@@ -994,39 +994,51 @@ Result<Statement, ErrMsg> parseFieldStmt(List l) {
     );
 }
 
+/// To be called on (add/mul/sub ...) only.
 Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
-    const SExprSeq elems = l.children;
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("add/mul/sub list should be length 4-5");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(
+        it != end &&
+        (atomEq(*it, "add") || atomEq(*it, "sub") || atomEq(*it, "mul"))
+    );
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    const std::string kind = std::get<Atom>(*it).val;
+    const std::string stmtDesc = kind + " statement";
+
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Val, ErrMsg> v1 = parseVal(elems[2]);
-    if (isErr(v1)) { return getErr(v1); }
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "left operand"); }
+    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (isErr(left)) { return getErr(left); }
 
-    const Result<Val, ErrMsg> v2 = parseVal(elems[3]);
-    if (isErr(v2)) { return getErr(v2); }
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "right operand"); }
+    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (isErr(right)) { return getErr(right); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
-    if (atomEq(elems[0], "add")) {
+    if (kind == "add") {
         return Statement(
-            AddStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+            AddStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (atomEq(elems[0], "sub")) {
+    } else if (kind == "sub") {
         return Statement(
-            SubStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+            SubStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (atomEq(elems[0], "mul")) {
+    } else if (kind == "mul") {
         return Statement(
-            MulStmt(getVal(lid), getVal(v1), getVal(v2), md, span(l))
+            MulStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
     } else {
         assert(false);
