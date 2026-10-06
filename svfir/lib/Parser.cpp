@@ -350,17 +350,20 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
     assert(false);
 }
 
+/// <typed-const>
 Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
     if (!isList(s)) { return notAList("typed constant"); }
 
-    const SExprSeq elems = std::get<List>(s).children;
-    if (elems.size() != 2) { return ErrMsg("typed const needs 2 elems"); }
+    const List list = std::get<List>(s);
+    auto it = list.children.cbegin(), end = list.children.cend();
+    if (it == end) { return listCutShort("typed constant", "constant"); }
 
-    const Result<Constant, ErrMsg> constant = parseConst(elems[0]);
-    if (isErr(constant)) { return ErrMsg("expected constant"); }
+    const Result<Constant, ErrMsg> constant = parseConst(*it);
+    if (isErr(constant)) { return getErr(constant); }
 
-    const Result<Type, ErrMsg> type = parseType(elems[1]);
-    if (isErr(type)) { return ErrMsg("expected type"); }
+    ++it;
+    const Result<Type, ErrMsg> type = parseType(*it);
+    if (isErr(type)) { return getErr(type); }
 
     return TypedConstant(getVal(constant), getVal(type), span(s));
 }
