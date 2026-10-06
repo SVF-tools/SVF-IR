@@ -732,19 +732,20 @@ Result<Statement, ErrMsg> parseCallStmt(List l) {
     return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
 }
 
+/// To be called on (br ...) only.
 Result<Statement, ErrMsg> parseBrStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "br"));
-    if (elems.size() != 2 && elems.size() != 3) {
-        return ErrMsg("br list should be length 2-3");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "br"));
 
-    const Result<BlockId, ErrMsg> target = parseBlockId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("branch statement", "target ID"); }
+    const Result<BlockId, ErrMsg> target = parseBlockId(*it);
     if (isErr(target)) { return getErr(target); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 3) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[2]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
@@ -752,25 +753,32 @@ Result<Statement, ErrMsg> parseBrStmt(List l) {
     return Statement(BrStmt(getVal(target), md, span(l)));
 }
 
+/// To be called on (brif ...) only.
 Result<Statement, ErrMsg> parseBrifStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "brif"));
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("brif list should be length 4-5");
-    }
+    static const std::string brifDesc = "conditional branch statement";
 
-    const Result<Val, ErrMsg> val = parseVal(elems[1]);
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "brif"));
+
+    ++it;
+    if (it == end) { return listCutShort(brifDesc, "condition value"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
-    const Result<BlockId, ErrMsg> ifTarget = parseBlockId(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort(brifDesc, "if target ID"); }
+    const Result<BlockId, ErrMsg> ifTarget = parseBlockId(*it);
     if (isErr(ifTarget)) { return getErr(ifTarget); }
 
-    const Result<BlockId, ErrMsg> elseTarget = parseBlockId(elems[3]);
+    ++it;
+    if (it == end) { return listCutShort(brifDesc, "else target ID"); }
+    const Result<BlockId, ErrMsg> elseTarget = parseBlockId(*it);
     if (isErr(elseTarget)) { return getErr(elseTarget); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
