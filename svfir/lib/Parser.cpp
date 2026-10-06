@@ -81,7 +81,7 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
     if (it == end) { return listCutShort("metadata", "'md'"); }
     if (!isAtom(*it)) { return notAnAtom("'md'"); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "md") { return badKw("metadata", "md", kw); }
+    if (kw != "md") { return badKw("metadata", "'md'", kw); }
 
     ++it;
     if (it == end) { return listCutShort("metadata", "sexpr data"); }
@@ -334,7 +334,7 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
 
         if (!isAtom(*it)) { return notAnAtom("'seq'"); }
         const std::string kw = std::get<Atom>(*it).val;
-        if (kw != "seq") { return badKw("sequence (constant)", "seq", kw); }
+        if (kw != "seq") { return badKw("sequence (constant)", "'seq'", kw); }
 
         ++it;
         std::vector<Val> vals;
@@ -383,7 +383,7 @@ Result<Version, ErrMsg> parseVersion(SExpr s) {
     if (it == vend) { return listCutShort("version", "'version'"); }
     if (!isAtom(*it)) { return notAnAtom("'version'"); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "version") { return badKw("version", "version", kw); }
+    if (kw != "version") { return badKw("version", "'version'", kw); }
 
     ++it;
     if (it == vend) { return listCutShort("version", "version number"); }
@@ -437,7 +437,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     if (it == end) { return listCutShort("preamble", "'preamble'"); }
     if (!isAtom(*it)) { return notAnAtom("'preamble'"); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "preamble") { return badKw("preamble", "preamble", kw); }
+    if (kw != "preamble") { return badKw("preamble", "'preamble'", kw); }
 
     // Version.
     ++it;
@@ -455,7 +455,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     if (sit == send) { return listCutShort("source", "'source'"); }
     if (!isAtom(*sit)) { return notAnAtom("'source'"); }
     const std::string skw = std::get<Atom>(*sit).val;
-    if (skw != "source") { return badKw("source", "source", kw); }
+    if (skw != "source") { return badKw("source", "'source'", kw); }
 
     ++sit;
     if (sit == send) { return listCutShort("source", "source descriptor"); }
@@ -623,7 +623,7 @@ Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
     if (it == end) { return listCutShort("variables", "'variables'"); }
     if (!isAtom(*it)) { return notAnAtom("'variables'"); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "variables") { return badKw("variables", "variables", kw); }
+    if (kw != "variables") { return badKw("variables", "'variables'", kw); }
 
     ++it;
     std::vector<Variable> variables;
