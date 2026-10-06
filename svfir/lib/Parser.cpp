@@ -820,40 +820,56 @@ Result<Statement, ErrMsg> parseRet(List l) {
     return RetStmt(val, md, span(l));
 }
 
+/// To be called on (cmp ...) only.
 Result<Statement, ErrMsg> parseCmpStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "cmp"));
-    if (elems.size() != 5 && elems.size() != 6) {
-        return ErrMsg("cmp list should be length 5-6");
-    }
+    static const std::string cmpDesc = "comparison statement";
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "cmp"));
+
+    ++it;
+    if (it == end) { return listCutShort(cmpDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
+    ++it;
     CmpStmt::Operator op;
-    if (atomEq(elems[2], "<")) { op = CmpStmt::Operator::LT; }
-    else if (atomEq(elems[2], "<=")) { op = CmpStmt::Operator::LE; }
-    else if (atomEq(elems[2], ">")) { op = CmpStmt::Operator::GT; }
-    else if (atomEq(elems[2], ">=")) { op = CmpStmt::Operator::GE; }
-    else if (atomEq(elems[2], "=")) { op = CmpStmt::Operator::EQ; }
-    else if (atomEq(elems[2], "!=")) { op = CmpStmt::Operator::NEQ; }
-    else { return ErrMsg("expected cmp operator"); }
+    if (!isAtom(*it)) { return notAnAtom("comparison operator"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw == "<") { op = CmpStmt::Operator::LT; }
+    else if (kw == "<=") { op = CmpStmt::Operator::LE; }
+    else if (kw == ">") { op = CmpStmt::Operator::GT; }
+    else if (kw == ">=") { op = CmpStmt::Operator::GE; }
+    else if (kw == "=") { op = CmpStmt::Operator::EQ; }
+    else if (kw == "!=") { op = CmpStmt::Operator::NEQ; }
+    else {
+        return badKw(
+            "comparison statement (operator)",
+            "'<', '<=', '>', '>=', '=', or '!='",
+            kw
+        );
+    }
 
-    const Result<Val, ErrMsg> v1 = parseVal(elems[3]);
-    if (isErr(v1)) { return getErr(v1); }
+    ++it;
+    if (it == end) { return listCutShort(cmpDesc, "left operand"); }
+    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (isErr(left)) { return getErr(left); }
 
-    const Result<Val, ErrMsg> v2 = parseVal(elems[4]);
-    if (isErr(v2)) { return getErr(v2); }
+    ++it;
+    if (it == end) { return listCutShort(cmpDesc, "right operand"); }
+    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (isErr(right)) { return getErr(right); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 6) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[5]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
     return Statement(
-        CmpStmt(getVal(lid), op, getVal(v1), getVal(v2), md, span(l))
+        CmpStmt(getVal(lid), op, getVal(left), getVal(right), md, span(l))
     );
 }
 
