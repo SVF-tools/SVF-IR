@@ -368,78 +368,108 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
     return TypedConstant(getVal(constant), getVal(type), span(s));
 }
 
+/// Version in preamble.
+Result<Version, ErrMsg> parseVersion(SExpr s) {
+    if (!isList(s)) { return notAList("version"); }
+    const List list = std::get<List>(s);
+
+    auto it = list.children.cbegin(), vend = list.children.cend();
+    if (it == vend) { return listCutShort("version", "'version'"); }
+    if (!isAtom(*it)) { return notAnAtom("'version'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw != "version") { return badKw("version", "version", kw); }
+
+    ++it;
+    if (it == vend) { return listCutShort("version", "version number"); }
+    if (!isAtom(*it)) { return notAnAtom("version number"); }
+    const std::string versionStr = std::get<Atom>(*it).val;
+
+    const size_t dot = versionStr.find(".", 0);
+    if (dot == std::string::npos) {
+        return ErrMsg("Version number missing '.'.");
+    } else if (dot == 0) {
+        return ErrMsg("Version number missing major version (before '.').");
+    } else if (dot == versionStr.size() - 1) {
+        return ErrMsg("Version number missing minor version (after '.').");
+    }
+
+    const std::string majorStr = versionStr.substr(0, dot);
+    if (!std::all_of(majorStr.cbegin(), majorStr.cend(), isDigit)) {
+        return ErrMsg("Major version contains non-digit.");
+    }
+    const long majorVersion = std::strtoul(majorStr.c_str(), nullptr, 10);
+    if (majorVersion > UINT16_MAX) {
+        return ErrMsg(
+            "Major version too large. "
+            "(Max: " + std::to_string(UINT16_MAX) + ".)"
+        );
+    }
+
+    const std::string minorStr = versionStr.substr(0, dot);
+    if (!std::all_of(minorStr.cbegin(), minorStr.cend(), isDigit)) {
+        return ErrMsg("Minor version contains non-digit.");
+    }
+    const long minorVersion = std::strtoul(minorStr.c_str(), nullptr, 10);
+    if (minorVersion > UINT16_MAX) {
+        return ErrMsg(
+            "Minor version too large. "
+            "(Max: " + std::to_string(UINT16_MAX) + ".)"
+        );
+    }
+
+    // TODO: ++it, if too long.
+
+    return Version(majorVersion, minorVersion);
+}
+
+/// <preamble>
 Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     if (!isList(s)) { return notAList("preamble"); }
 
-    const SExprSeq elems = std::get<List>(s).children;
-    auto it = elems.cbegin();
+    const List list = std::get<List>(s);
+    auto it = list.children.cbegin(), end = list.children.cend();
 
     // Preamble keyword.
-    if (it == elems.cend()) { return listCutShort("preamble", "'preamble'"); }
-    if (!atomEq(*it, "preamble")) {
-        return ErrMsg("expected preamble keyword");
-    }
+    if (it == end) { return listCutShort("preamble", "'preamble'"); }
+    if (!isAtom(*it)) { return notAnAtom("'preamble'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw != "preamble") { return badKw("preamble", "preamble", kw); }
 
     // Version.
     ++it;
-    if (it == elems.cend()) { return listCutShort("preamble", "version"); }
-    if (!isList(*it)) { return notAList("version"); }
-    const List versionList = std::get<List>(*it);
-    if (
-        versionList.children.size() != 2 ||
-        !isAtom(versionList.children[0]) ||
-        !isAtom(versionList.children[1])
-    ) { return ErrMsg("version should be a list of 2 atoms"); }
-    if (!atomEq(versionList.children[0], "version")) {
-        return ErrMsg("missing version");
-    }
-    const std::string versionStr =
-        std::get<Atom>(versionList.children[1]).val;
-    const size_t dotPos = versionStr.find(".", 0);
-    if (
-        dotPos == std::string::npos ||   // Not found.
-        dotPos == 0 ||                   // No major version.
-        dotPos == versionStr.size() - 1  // No minor version.
-    ) { return ErrMsg("version expected to be [major].[minor]"); }
-    const std::string majorStr = versionStr.substr(0, dotPos);
-    const std::string minorStr =
-        versionStr.substr(dotPos + 1, versionStr.size());
-    if (
-        !std::all_of(majorStr.cbegin(), majorStr.cend(), isDigit) ||
-        !std::all_of(minorStr.cbegin(), minorStr.cend(), isDigit)
-     ) { return ErrMsg("non-number in version"); }
-    const long majorVersion = std::strtoul(minorStr.c_str(), nullptr, 10);
-    if (majorVersion > UINT16_MAX) { return ErrMsg("major version too large"); }
-    const long minorVersion = std::strtoul(majorStr.c_str(), nullptr, 10);
-    if (minorVersion > UINT16_MAX) { return ErrMsg("minor version too large"); }
-    const Version version = Version(majorVersion, minorVersion);
+    if (it == end) { return listCutShort("preamble", "version"); }
+    const Result<Version, ErrMsg> version = parseVersion(*it);
+    if (isErr(version)) { return getErr(version); }
 
     // Source.
     ++it;
-    if (it == elems.cend()) { return listCutShort("preamble", "source"); }
+    if (it == end) { return listCutShort("preamble", "source"); }
     if (!isList(*it)) { return notAList("source"); }
+
     const List sourceList = std::get<List>(*it);
-    if (
-        sourceList.children.size() != 2 ||
-        !isAtom(sourceList.children[0]) ||
-        !isAtom(sourceList.children[1])
-    ) { return ErrMsg("source should be a list of 2 atoms"); }
-    if (!atomEq(sourceList.children[0], "source")) {
-        return ErrMsg("missing source");
-    }
-    const std::string source =
-        std::get<Atom>(sourceList.children[1]).val;
+    auto sit = sourceList.children.cbegin(), send = sourceList.children.cend();
+    if (sit == send) { return listCutShort("source", "'source'"); }
+    if (!isAtom(*sit)) { return notAnAtom("'source'"); }
+    const std::string skw = std::get<Atom>(*sit).val;
+    if (skw != "source") { return badKw("source", "source", kw); }
+
+    ++sit;
+    if (sit == send) { return listCutShort("source", "source descriptor"); }
+    if (!isAtom(*sit)) { return notAnAtom("source descriptor"); }
+    const std::string source = std::get<Atom>(*sit).val;
 
     // Metadata.
     MaybeMetadata md = std::nullopt;
     ++it;
-    if (it != elems.cend()) {
+    if (it != end) {
         Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
-    return Preamble(version, source, md, span(s));
+    // TODO: ++it length
+
+    return Preamble(getVal(version), source, md, span(s));
 }
 
 Result<GVal, ErrMsg> parseGVal(SExpr s) {
