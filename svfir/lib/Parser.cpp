@@ -639,32 +639,46 @@ Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
     return variables;
 }
 
+/// To be called on (phi ...) only.
 Result<Statement, ErrMsg> parsePhiStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "phi"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("phi list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "phi"));
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
-    if (isErr(lid)) { return ErrMsg("expected local id"); }
+    ++it;
+    if (it == end) { return listCutShort("phi statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (isErr(lid)) { return getErr(lid); }
 
-    if (!isList(elems[2])) { return notAList("phi operands"); }
+    ++it;
+    if (!isList(*it)) { return notAList("phi operands"); }
     std::vector<PhiStmt::Operand> operands;
-    for (auto s : std::get<List>(elems[2]).children) {
+    for (auto s : std::get<List>(*it).children) {
         if (!isList(s)) { return notAList("phi operand"); }
         const List pair = std::get<List>(s);
-        if (pair.children.size() != 2) { return ErrMsg("expected pair"); }
+
+        if (pair.children.size() != 2) {
+            return ErrMsg(
+                "Phi operands must be value/block ID pairs. This operand has " +
+                std::to_string(pair.children.size()) + " elements."
+            );
+        }
+
         const Result<Val, ErrMsg> val = parseVal(pair.children[0]);
         if (isErr(val)) { return getErr(val); }
+
         const Result<BlockId, ErrMsg> bid = parseBlockId(pair.children[1]);
         if (isErr(bid)) { return getErr(bid); }
+
         operands.push_back(PhiStmt::Operand(getVal(val), getVal(bid)));
     }
+    if (operands.empty()) {
+        return ErrMsg("Phi statements must have at least one operand.");
+    }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
