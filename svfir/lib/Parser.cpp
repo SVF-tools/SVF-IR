@@ -472,22 +472,33 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     return Preamble(getVal(version), source, md, span(s));
 }
 
+/// <gval>
 Result<GVal, ErrMsg> parseGVal(SExpr s) {
-    // Try for <gid>.
+    static const std::string expectation =
+        "Expected a typed constant or a global ID.";
     if (isAtom(s)) {
-        const std::string text = std::get<Atom>(s).val;
-        if (!text.empty() && text[0] == '@') {
-            const Result<GlobalId, ErrMsg> gid = parseGlobalId(s);
-            if (!isErr(gid)) { return GVal(getVal(gid)); }
+        // Try for <gid>.
+        const Result<GlobalId, ErrMsg> gid = parseGlobalId(s);
+        if (!isErr(gid)) { return GVal(getVal(gid)); }
+        else {
+            return ErrMsg(
+                expectation + " "
+                "If you intended a global ID here, note: " + getErr(gid)
+            );
+        }
+    } else {
+        // Try for <typed-const>
+        assert(isList(s));
+        const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
+        if (!isErr(tc)) { return GVal(getVal(tc)); }
+        else {
+            return ErrMsg(
+                expectation + " "
+                "If you intended a typed constant here, note: " + getErr(tc)
+            );
         }
     }
-
-    // Try for <typed-const>
-    const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
-    if (isErr(tc)) {
-        return ErrMsg("expected gval, not const: " + getErr(tc) + "(nor gid)");
-    }
-    return GVal(getVal(tc));
+    assert(false);
 }
 
 Result<Val, ErrMsg> parseVal(SExpr s) {
