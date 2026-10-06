@@ -905,22 +905,27 @@ Result<Statement, ErrMsg> parseAllocStmt(List l) {
     return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
 }
 
+/// To be called on (store ...) only.
 Result<Statement, ErrMsg> parseStoreStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "store"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("store list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "store"));
 
-    const Result<Val, ErrMsg> val = parseVal(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("store statement", "value"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
-    const Result<PVal, ErrMsg> dst = parsePVal(elems[2]);
+    ++it;
+    if (it == end) {
+        return listCutShort("store statement", "destination pointer");
+    }
+    const Result<PVal, ErrMsg> dst = parsePVal(*it);
     if (isErr(dst)) { return getErr(dst); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
@@ -928,22 +933,27 @@ Result<Statement, ErrMsg> parseStoreStmt(List l) {
     return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
 }
 
+/// To be called on (load ...) only.
 Result<Statement, ErrMsg> parseLoadStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "load"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("load list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "load"));
 
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(elems[1]);
+    ++it;
+    if (it == end) {
+        return listCutShort("load statement", "(typed) local ID");
+    }
+    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
-    const Result<PVal, ErrMsg> src = parsePVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("load statement", "source pointer"); }
+    const Result<PVal, ErrMsg> src = parsePVal(*it);
     if (isErr(src)) { return getErr(src); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
