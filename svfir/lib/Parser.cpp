@@ -76,8 +76,8 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
 
     auto it = list.children.cbegin(), end = list.children.cend();
     if (it == end) { return listCutShort("metadata", "'md'"); }
-    if (!isAtom(list.children[0])) { return notAnAtom("'md'"); }
-    const std::string kw = std::get<Atom>(list.children[0]).val;
+    if (!isAtom(*it)) { return notAnAtom("'md'"); }
+    const std::string kw = std::get<Atom>(*it).val;
     if (kw != "md") { return badKw("metadata", "md", kw); }
 
     ++it;
