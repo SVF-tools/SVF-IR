@@ -501,16 +501,30 @@ Result<GVal, ErrMsg> parseGVal(SExpr s) {
     assert(false);
 }
 
+/// <val>
 Result<Val, ErrMsg> parseVal(SExpr s) {
+    static const std::string expectation =
+        "Expected a typed constant or a local/global (var) ID.";
     if (isAtom(s)) {
         const Result<VarId, ErrMsg> vid = parseVarId(s);
-        if (isErr(vid)) { return ErrMsg("expected val" + getErr(vid)); }
-        return Val(getVal(vid));
+        if (!isErr(vid)) { return Val(getVal(vid)); }
+        else {
+            return ErrMsg(
+                expectation + " "
+                "If you intended a local/global (var) ID here, note: " +
+                getErr(vid)
+            );
+        }
     } else {
         assert(isList(s));
         const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
-        if (isErr(tc)) { return ErrMsg("expected val" + getErr(tc)); }
-        return Val(getVal(tc));
+        if (!isErr(tc)) { return Val(getVal(tc)); }
+        else {
+            return ErrMsg(
+                expectation + " "
+                "If you intended a typed constant here, note: " + getErr(tc)
+            );
+        }
     }
     assert(false);
 }
