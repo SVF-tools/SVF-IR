@@ -1409,7 +1409,7 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("basic block", "statement list"); }
-    if (!isList(*it)) { return ErrMsg("basic block statements"); }
+    if (!isList(*it)) { return notAlist("basic block"); }
     std::vector<Statement> stmts;
     for (auto s : std::get<List>(*it).children) {
         const Result<Statement, ErrMsg> stmt = parseStmt(s);
