@@ -1232,22 +1232,25 @@ Result<Statement, ErrMsg> parseShiftrStmt(List l) {
     );
 }
 
+/// To be called on (assign ...) only.
 Result<Statement, ErrMsg> parseAssignStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "assign"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("assign list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "assign"));
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("assign statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Val, ErrMsg> val = parseVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("assign statement", "value"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
