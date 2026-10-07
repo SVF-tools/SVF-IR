@@ -1102,21 +1102,25 @@ Result<Statement, ErrMsg> parseDivRemStmt(List l) {
     }
 }
 
+/// To be called on (not ...) only.
 Result<Statement, ErrMsg> parseNotStmt(List l) {
-    const SExprSeq elems = l.children;
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("not list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "not"));
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("not statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Val, ErrMsg> val = parseVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("not statement", "operand"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[5]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
@@ -1124,41 +1128,58 @@ Result<Statement, ErrMsg> parseNotStmt(List l) {
     return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
+/// To be called on (and/or/xor/shiftl ...) only.
 Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
-    const SExprSeq elems = l.children;
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("not list should be length 4-5");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(
+        it != end &&
+        (
+            atomEq(*it, "and") ||
+            atomEq(*it, "or") ||
+            atomEq(*it, "xor") ||
+            atomEq(*it, "shiftl")
+        )
+    );
 
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[1]);
+    const std::string kind = std::get<Atom>(*it).val;
+    const std::string stmtDesc = kind + " statement";
+
+    ++it;
+    if (it == end) { listCutShort(stmtDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Val, ErrMsg> left = parseVal(elems[2]);
+    ++it;
+    if (it == end) { listCutShort(stmtDesc, "left operand"); }
+    const Result<Val, ErrMsg> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
-    const Result<Val, ErrMsg> right = parseVal(elems[3]);
+    ++it;
+    if (it == end) { listCutShort(stmtDesc, "right operand"); }
+    const Result<Val, ErrMsg> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
-    if (atomEq(elems[0], "and")) {
+    if (kind == "and") {
         return Statement(
             AndStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (atomEq(elems[0], "or")) {
+    } else if (kind == "or") {
         return Statement(
             OrStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (atomEq(elems[0], "xor")) {
+    } else if (kind == "xor") {
         return Statement(
             XorStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
-    } else if (atomEq(elems[0], "shiftl")) {
+    } else if (kind == "shiftl") {
         return Statement(
             ShiftlStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
         );
