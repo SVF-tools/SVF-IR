@@ -472,16 +472,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
     if (!isAtom(*sit)) { return notAnAtom("source descriptor"); }
     const std::string source = std::get<Atom>(*sit).val;
 
-    // Metadata.
-    MaybeMetadata md = std::nullopt;
-    ++it;
-    if (it != end) {
-        Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
-        if (isErr(mdr)) { return getErr(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("preamble"); }
-    }
+    if (it + 1 != end) { return listTooLong("preamble"); }
 
     return Preamble(getVal(version), source, md, span(s));
 }

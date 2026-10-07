@@ -48,7 +48,6 @@
   '(' 'preamble'
   '(' 'version' <digit>+'.'<digit>+ ')'
   '(' 'source' <atom> ')'
-  <md>?
   ')'
 
 <function> : '(' <gid> '(' <param>* (<lid>'...')? ')' <type> ('(' <basic-block>+ ')'|'opaque') <md>? ')'
