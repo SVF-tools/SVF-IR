@@ -49,6 +49,11 @@ ErrMsg listCutShort(
     );
 }
 
+/// Error parsing l because there are too many elements.
+ErrMsg listTooLong(const std::string &l) {
+    return ErrMsg("Too many elements while parsing " + l);
+}
+
 /// Error parsing encompassing as we expected keyword kw but got actual.
 ErrMsg badKw(
     const std::string &encompassing,
@@ -1572,36 +1577,38 @@ Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
     return tas;
 }
 
+/// <program>
 Result<Program, ErrMsg> parseProgram(SExprSeq ss) {
-    auto it = ss.cbegin();
+    auto it = ss.cbegin(), end = ss.cend();
 
-    if (it == ss.cend()) { return ErrMsg("expected preamble"); }
+    // TODO: the listCutShort language may be inappropriate for an SExprSeq.
+    if (it == end) { return listCutShort("program", "preamble"); }
     const Result<Preamble, ErrMsg> preamble = parsePreamble(*it);
     if (isErr(preamble)) { return getErr(preamble); }
 
     ++it;
-    if (it == ss.cend()) { return ErrMsg("expected types"); }
+    if (it == end) { return listCutShort("program", "types"); }
     const Result<std::vector<TypeAlias>, ErrMsg> types = parseTypes(*it);
     if (isErr(types)) { return getErr(types); }
 
     ++it;
-    if (it == ss.cend()) { return ErrMsg("expected variables"); }
+    if (it == end) { return listCutShort("program", "variables"); }
     const Result<std::vector<Variable>, ErrMsg> variables = parseVariables(*it);
     if (isErr(variables)) { return getErr(variables); }
 
     ++it;
-    if (it == ss.cend()) { return ErrMsg("expected functions"); }
+    if (it == end) { return listCutShort("program", "functions"); }
     const Result<std::vector<Function>, ErrMsg> functions = parseFunctions(*it);
     if (isErr(functions)) { return getErr(functions); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
-    if (it != ss.cend()) {
+    if (it != end) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != ss.cend()) { return ErrMsg("extra elements to program"); }
+        if (it + 1 != end) { return listTooLong("program"); }
     }
 
     return Program(
