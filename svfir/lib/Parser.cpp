@@ -1305,39 +1305,42 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
     return Statement(BlackholeStmt(getVal(tlid), md, span(l)));
 }
 
+/// <stmt>
 Result<Statement, ErrMsg> parseStmt(SExpr s) {
     if (!isList(s)) { return notAList("statement"); }
     const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (!isAtom(l.children[0])) { return notAnAtom("statement keyword"); }
-    const std::string instr = std::get<Atom>(l.children[0]).val;
+    if (it == end) { return listCutShort("statement", "statement kind"); }
+    if (!isAtom(*it)) { return notAnAtom("statement kind"); }
+    const std::string kind = std::get<Atom>(*it).val;
 
-    if (instr == "phi") { return parsePhiStmt(l); }
-    else if (instr == "call") { return parseCallStmt(l); }
-    else if (instr == "br") { return parseBrStmt(l); }
-    else if (instr == "brif") { return parseBrifStmt(l); }
-    else if (instr == "ret") { return parseRet(l); }
-    else if (instr == "cmp") { return parseCmpStmt(l); }
-    else if (instr == "alloc") { return parseAllocStmt(l); }
-    else if (instr == "store") { return parseStoreStmt(l); }
-    else if (instr == "load") { return parseLoadStmt(l); }
-    else if (instr == "field") { return parseFieldStmt(l); }
-    else if (instr == "add" || instr == "sub" || instr == "mul") {
+    if (kind == "phi") { return parsePhiStmt(l); }
+    else if (kind == "call") { return parseCallStmt(l); }
+    else if (kind == "br") { return parseBrStmt(l); }
+    else if (kind == "brif") { return parseBrifStmt(l); }
+    else if (kind == "ret") { return parseRet(l); }
+    else if (kind == "cmp") { return parseCmpStmt(l); }
+    else if (kind == "alloc") { return parseAllocStmt(l); }
+    else if (kind == "store") { return parseStoreStmt(l); }
+    else if (kind == "load") { return parseLoadStmt(l); }
+    else if (kind == "field") { return parseFieldStmt(l); }
+    else if (kind == "add" || kind == "sub" || kind == "mul") {
         return parseAddMulSubStmt(l);
-    } else if (instr == "div" || instr == "rem") {
+    } else if (kind == "div" || kind == "rem") {
         return parseDivRemStmt(l);
-    } else if (instr == "not") { return parseNotStmt(l); }
+    } else if (kind == "not") { return parseNotStmt(l); }
     else if (
-        instr == "and" ||
-        instr == "or" ||
-        instr == "xor" ||
-        instr == "shiftl"
+        kind == "and" ||
+        kind == "or" ||
+        kind == "xor" ||
+        kind == "shiftl"
     ) { return parseAndOrXorShiftlStmt(l); }
-    else if (instr == "shiftr") { return parseShiftrStmt(l); }
-    else if (instr == "assign") { return parseAssignStmt(l); }
-    else if (instr == "vararg") { return parseVarargStmt(l); }
-    else if (instr == "blackhole") { return parseBlackholeStmt(l); }
-    else { return ErrMsg("unknown instruction"); }
+    else if (kind == "shiftr") { return parseShiftrStmt(l); }
+    else if (kind == "assign") { return parseAssignStmt(l); }
+    else if (kind == "vararg") { return parseVarargStmt(l); }
+    else if (kind == "blackhole") { return parseBlackholeStmt(l); }
+    else { return ErrMsg("Unknown statement kind: '" + kind + "'"); }
     assert(false);
     // TODO: conversions.
 }
