@@ -1514,28 +1514,35 @@ Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
     return functions;
 }
 
+/// <type-alias>
 Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
     if (!isList(s)) { return notAList("type alias"); }
+    const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
 
-    SExprSeq elems = std::get<List>(s).children;
-    if (elems.size() != 2 && elems.size() != 3) {
-        return ErrMsg("type alias should be a 2-3 size list");
-    }
-
-    const Result<TypeId, ErrMsg> tid = parseTypeId(elems[0]);
+    if (it == end) { return listCutShort("type alias", "name (type ID)"); }
+    const Result<TypeId, ErrMsg> tid = parseTypeId(*it);
     if (isErr(tid)) { return getErr(tid); }
 
+    ++it;
+    if (it == end) { return listCutShort("type alias", "type/'opaque'"); }
     std::optional<Type> type;
-    if (atomEq(elems[1], "opaque")) { type = std::nullopt; }
+    if (atomEq(*it, "opaque")) { type = std::nullopt; }
     else {
-        const Result<Type, ErrMsg> typer = parseType(elems[1]);
-        if (isErr(typer)) { return ErrMsg("expected type or opaque"); }
+        const Result<Type, ErrMsg> typer = parseType(*it);
+        if (isErr(typer)) {
+            return ErrMsg(
+                "Expected a type to alias or 'opaque'."
+                "If you intended a type here, note: " + getErr(typer)
+            );
+        }
         type.emplace(getVal(typer));
     }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 3) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[2]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
@@ -1543,17 +1550,20 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
     return TypeAlias(getVal(tid), type, md, span(s));
 }
 
+/// <types>
 Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
     if (!isList(s)) { return notAList("top-level type aliases"); }
+    const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
 
-    SExprSeq elems = std::get<List>(s).children;
-    if (elems.empty() || !atomEq(elems[0], "types")) {
-        return ErrMsg("expected types kw");
-    }
+    if (it == end) { return listCutShort("type aliases", "'types'"); }
+    if (!isAtom(*it)) { return notAnAtom("'types'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw != "types") { return badKw("type aliases", "'types'", kw); }
 
+    ++it;
     std::vector<TypeAlias> tas;
-    // [0] is 'types', so ignore it.
-    for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
+    for (; it != end; ++it) {
         const Result<TypeAlias, ErrMsg> ta = parseTypeAlias(*it);
         if (isErr(ta)) { return getErr(ta); }
         tas.push_back(getVal(ta));
