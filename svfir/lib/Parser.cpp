@@ -1415,14 +1415,14 @@ parseFunctionParams(List l) {
                     ) { varargParam.emplace(id); }
                     else {
                         return ErrMsg(
-                            "Expected a parameter or a vararg parameter."
+                            "Expected a parameter or a vararg parameter. "
                             "A vararg parameter must end in '...'"
                         );
                     }
                 } else {
                     return ErrMsg(
-                        "Expected a parameter or a vararg parameter."
-                        "A vararg parameter must end in '...'."
+                        "Expected a parameter or a vararg parameter. "
+                        "A vararg parameter must end in '...'. "
                         "If you intended a vararg parameter here, also note: " +
                         getErr(idr)
                     );
@@ -1477,7 +1477,7 @@ Result<Function, ErrMsg> parseFunction(SExpr s) {
         bbsr = parseFunctionBlocks(std::get<List>(*it));
         if (isErr(bbsr)) {
             return ErrMsg(
-                "Expected a basic block list or 'opaque' as the function boy."
+                "Expected a basic block list or 'opaque' as the function body. "
                 "If you intended a basic block list here, note: " + getErr(bbsr)
             );
         }
@@ -1537,7 +1537,7 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
         const Result<Type, ErrMsg> typer = parseType(*it);
         if (isErr(typer)) {
             return ErrMsg(
-                "Expected a type to alias or 'opaque'."
+                "Expected a type to alias or 'opaque'. "
                 "If you intended a type here, note: " + getErr(typer)
             );
         }
