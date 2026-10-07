@@ -1258,22 +1258,25 @@ Result<Statement, ErrMsg> parseAssignStmt(List l) {
     return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
+/// To be called on (vararg ...) only.
 Result<Statement, ErrMsg> parseVarargStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "vararg"));
-    if (elems.size() != 3 && elems.size() != 4) {
-        return ErrMsg("vararg list should be length 3-4");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "vararg"));
 
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("vararg statement", "(typed) ID"); }
+    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
-    const Result<IVal, ErrMsg> val = parseIVal(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("vararg statement", "index"); }
+    const Result<IVal, ErrMsg> val = parseIVal(*it);
     if (isErr(val)) { return getErr(val); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 4) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
