@@ -1186,30 +1186,43 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
     } else { assert(false); }
 }
 
+/// To be called on (shiftr ...) only.
 Result<Statement, ErrMsg> parseShiftrStmt(List l) {
-    const SExprSeq elems = l.children;
-    if (elems.size() != 5 && elems.size() != 6) {
-        return ErrMsg("not list should be length 5-6");
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "shiftr"));
+
+    ++it;
+    if (it == end) {
+        return listCutShort("shiftr statement", "'logical'/'arithmetic'");
+    }
+    if (!isAtom(*it)) { return notAnAtom("'logical'/'arithmetic'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    ShiftrStmt::Kind kind;
+    if (kw == "logical") { kind = ShiftrStmt::Kind::LOGICAL; }
+    else if (kw == "arithmetic") { kind = ShiftrStmt::Kind::ARITHMETIC; }
+    else {
+        return badKw("shiftr statement (kind)", "'logical'/'arithmetic'", kw);
     }
 
-    ShiftrStmt::Kind kind;
-    if (atomEq(elems[1], "logical")) { kind = ShiftrStmt::Kind::LOGICAL; }
-    else if (atomEq(elems[1], "arithmetic")) {
-        kind = ShiftrStmt::Kind::ARITHMETIC;
-    } else { return ErrMsg("expected logical or arithmetic"); }
-
-    const Result<LocalId, ErrMsg> lid = parseLocalId(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort("shiftr statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    const Result<Val, ErrMsg> left = parseVal(elems[3]);
+    ++it;
+    if (it == end) { return listCutShort("shiftr statement", "left operand"); }
+    const Result<Val, ErrMsg> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
-    const Result<Val, ErrMsg> right = parseVal(elems[4]);
+    ++it;
+    if (it == end) { return listCutShort("shiftr statement", "right operand"); }
+    const Result<Val, ErrMsg> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 6) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[5]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
