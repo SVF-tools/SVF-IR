@@ -1389,37 +1389,129 @@ Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
 }
 
 Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
-parseFunctionParams(SExpr s) {
-    if (!isList(s)) { return notAList("function parameter list"); }
+parseFunctionParams(List l) {
     std::vector<Param> params;
     std::optional<LocalId> varargParam = std::nullopt;
-    const SExprSeq rawParams = std::get<List>(s).children;
-    for (size_t i = 0; i < rawParams.size(); ++i) {
-        const SExpr rawParam = rawParams[i];
-        const Result<Param, ErrMsg> param = parseParam(rawParam);
+    for (size_t i = 0; i < l.children.size(); ++i) {
+        const Result<Param, ErrMsg> param = parseParam(l.children[i]);
         if (!isErr(param)) { params.push_back(getVal(param)); }
         else {
             assert(isErr(param));
-            if (i == rawParams.size() - 1) {
+            if (i == l.children.size() - 1) {
                 // We might have a vararg parameter.
-                const Result<LocalId, ErrMsg> lidr = parseLocalId(rawParam);
-                if (!isErr(lidr)) {
-                    const LocalId lid = getVal(lidr);
-                    // 5: 1 for %, 1+ for name, 3 for ...
+                const Result<LocalId, ErrMsg> idr = parseLocalId(l.children[i]);
+                if (!isErr(idr)) {
+                    const LocalId id = getVal(idr);
+                    // Why 5? 1 for %, 1+ for the name, 3 for '...'.
                     if (
-                        lid.id.size() >= 5 &&
-                        lid.id.substr(lid.id.size() - 3, lid.id.size()) == "..."
-                    ) { varargParam.emplace(lid); }
-                    else { return ErrMsg("expected param or vararg param"); }
-                } else { return ErrMsg("expected param or vararg param"); }
+                        id.id.size() >= 5 &&
+                        // Last three characters are ...
+                        id.id.substr(id.id.size() - 3, id.id.size()) == "..."
+                    ) { varargParam.emplace(id); }
+                    else {
+                        return ErrMsg(
+                            "Expected a parameter or a vararg parameter."
+                            "A vararg parameter must end in '...'"
+                        );
+                    }
+                } else {
+                    return ErrMsg(
+                        "Expected a parameter or a vararg parameter."
+                        "A vararg parameter must end in '...'."
+                        "If you intended a vararg parameter here, also note: " +
+                        getErr(idr)
+                    );
+                }
             } else {
-                // No, we expected a parameter and got an error.
+                // No, we definitely expected a parameter and got an error.
                 return ErrMsg(getErr(param));
             }
         }
     }
 
     return std::make_tuple(params, varargParam);
+}
+
+/// <function>
+Result<Function, ErrMsg> parseFunction(SExpr s) {
+    if (!isList(s)) { return notAList("function"); }
+    const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
+
+    if (it == end) { return listCutShort("function", "name"); }
+    const Result<GlobalId, ErrMsg> gidr = parseGlobalId(*it);
+    if (isErr(gidr)) { return getErr(gidr); }
+    const GlobalId gid = getVal(gidr);
+
+    ++it;
+    if (it == end) { return listCutShort("function", "parameters"); }
+    if (!isList(*it)) { return notAList("function parameters"); }
+    Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
+    paramsr = parseFunctionParams(std::get<List>(*it));
+    if (isErr(paramsr)) { return getErr(paramsr); }
+    const std::vector<Param> params = std::get<0>(getVal(paramsr));
+    const std::optional<LocalId> vaParam = std::get<1>(getVal(paramsr));
+
+    ++it;
+    if (it == end) { return listCutShort("function", "return type"); }
+    const Result<Type, ErrMsg> typer = parseType(*it);
+    if (isErr(typer)) { return getErr(typer); }
+    const Type type = getVal(typer);
+
+    ++it;
+    if (it == end) { return listCutShort("function", "basic block list/opaque"); }
+    std::optional<std::vector<BasicBlock>> bbs;
+    if (isAtom(*it)) {
+        const std::string kw = std::get<Atom>(*it).val;
+        if (kw != "opaque") {
+            badKw("function (body)", "opaque (or basic block list)", kw);
+        }
+    } else {
+        assert(isList(*it));
+        const Result<std::vector<BasicBlock>, ErrMsg>
+        bbsr = parseFunctionBlocks(std::get<List>(*it));
+        if (isErr(bbsr)) {
+            return ErrMsg(
+                "Expected a basic block list or 'opaque' as the function boy."
+                "If you intended a basic block list here, note: " + getErr(bbsr)
+            );
+        }
+        bbs.emplace(getVal(bbsr));
+    }
+
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        if (isErr(mdr)) { return getErr(mdr); }
+        md.emplace(getVal(mdr));
+    }
+
+    return Function(gid, params, vaParam, type, bbs, md, span(s));
+}
+
+/// <functions>
+Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
+    if (!isList(s)) { return notAList("top-level functions"); }
+    const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
+
+    if (it == end) { return listCutShort("functions", "'functions'"); }
+    if (!isAtom(*it)) { return notAnAtom("'functions'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    if (kw != "functions") {
+        return badKw("functions list", "'functions'", kw);
+    }
+
+    ++it;
+    std::vector<Function> functions;
+    for (; it != end; ++it) {
+        const Result<Function, ErrMsg> function = parseFunction(*it);
+        if (isErr(function)) { return getErr(function); }
+        functions.push_back(getVal(function));
+    }
+
+    return functions;
 }
 
 Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
@@ -1468,66 +1560,6 @@ Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
     }
 
     return tas;
-}
-
-Result<Function, ErrMsg> parseFunction(SExpr s) {
-    if (!isList(s)) { return notAList("function"); }
-
-    const SExprSeq elems = std::get<List>(s).children;
-    if (elems.size() != 4 && elems.size() != 5) {
-        return ErrMsg("function needs 3-5 elems");
-    }
-
-    const Result<GlobalId, ErrMsg> gidr = parseGlobalId(elems[0]);
-    if (isErr(gidr)) { return getErr(gidr); }
-    const GlobalId gid = getVal(gidr);
-
-    Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
-    paramsr = parseFunctionParams(elems[1]);
-    if (isErr(paramsr)) { return getErr(paramsr); }
-    const std::vector<Param> params = std::get<0>(getVal(paramsr));
-    const std::optional<LocalId> vaParam = std::get<1>(getVal(paramsr));
-
-    const Result<Type, ErrMsg> typer = parseType(elems[2]);
-    if (isErr(typer)) { return getErr(typer); }
-    const Type type = getVal(typer);
-
-    std::optional<std::vector<BasicBlock>> bbs;
-    if (atomEq(elems[3], "opaque")) { bbs = std::nullopt; }
-    else {
-        const Result<std::vector<BasicBlock>, ErrMsg> bbsr =
-            parseFunctionBlocks(elems[3]);
-        if (isErr(bbsr)) { return ErrMsg("expected basic blocks or opaque"); }
-        bbs.emplace(getVal(bbsr));
-    }
-
-    MaybeMetadata md = std::nullopt;
-    if (elems.size() == 5) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[4]);
-        if (isErr(mdr)) { return getErr(mdr); }
-        md.emplace(getVal(mdr));
-    }
-
-    return Function(gid, params, vaParam, type, bbs, md, span(s));
-}
-
-Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
-    if (!isList(s)) { return notAList("top-level functions"); }
-
-    const SExprSeq elems = std::get<List>(s).children;
-    if (elems.size() < 1 || !atomEq(elems[0], "functions")) {
-        return ErrMsg("expected functions kw");
-    }
-
-    std::vector<Function> functions;
-    // [0] is 'functions', so ignore it.
-    for (auto it = elems.cbegin() + 1; it != elems.cend(); ++it) {
-        const Result<Function, ErrMsg> function = parseFunction(*it);
-        if (isErr(function)) { return ErrMsg(getErr(function)); }
-        functions.push_back(getVal(function));
-    }
-
-    return functions;
 }
 
 Result<Program, ErrMsg> parseProgram(SExprSeq ss) {
