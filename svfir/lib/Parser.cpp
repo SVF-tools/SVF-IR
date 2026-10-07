@@ -17,9 +17,6 @@ namespace {
 using namespace SVFIR;
 using namespace SVFIR::SExprs;
 
-// TODO: Lists need to be checked that they don't have too many elements, e.g.,
-// (version 1.5 x).
-
 // TODO: Things like "if you intended an x here, note: err" can have err
 // referring to a similar message, no good.
 
@@ -90,6 +87,7 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("metadata", "sexpr data"); }
+    if (it + 1 != end) { return listTooLong("metadata"); }
     return Metadata(*it, span(*it));
 }
 
@@ -180,6 +178,8 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
             );
         }
 
+        if (it + 1 != end) { return listTooLong("aggregate type"); }
+
         return Type(AggType(slots, sp));
     }
 }
@@ -263,6 +263,7 @@ Result<Param, ErrMsg> parseParam(const SExpr s) {
         Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+        if (it + 1 != end) { return listTooLong("aggregate type"); }
     }
 
     return Param(getVal(id), getVal(type), md, span(s));
@@ -376,6 +377,8 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
     const Result<Type, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
+    if (it + 1 != end) { return listTooLong("typed constant"); }
+
     return TypedConstant(getVal(constant), getVal(type), span(s));
 }
 
@@ -384,14 +387,14 @@ Result<Version, ErrMsg> parseVersion(SExpr s) {
     if (!isList(s)) { return notAList("version"); }
     const List list = std::get<List>(s);
 
-    auto it = list.children.cbegin(), vend = list.children.cend();
-    if (it == vend) { return listCutShort("version", "'version'"); }
+    auto it = list.children.cbegin(), end = list.children.cend();
+    if (it == end) { return listCutShort("version", "'version'"); }
     if (!isAtom(*it)) { return notAnAtom("'version'"); }
     const std::string kw = std::get<Atom>(*it).val;
     if (kw != "version") { return badKw("version", "'version'", kw); }
 
     ++it;
-    if (it == vend) { return listCutShort("version", "version number"); }
+    if (it == end) { return listCutShort("version", "version number"); }
     if (!isAtom(*it)) { return notAnAtom("version number"); }
     const std::string versionStr = std::get<Atom>(*it).val;
 
@@ -427,6 +430,8 @@ Result<Version, ErrMsg> parseVersion(SExpr s) {
             "(Max: " + std::to_string(UINT16_MAX) + ".)"
         );
     }
+
+    if (it + 1 != end) { return listTooLong("version"); }
 
     return Version(majorVersion, minorVersion);
 }
@@ -474,6 +479,8 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
         Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("preamble"); }
     }
 
     return Preamble(getVal(version), source, md, span(s));
@@ -614,6 +621,8 @@ Result<Variable, ErrMsg> parseVariable(SExpr s) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("variable"); }
     }
 
     return Variable(getVal(gid), gval, md, span(s));
@@ -683,6 +692,8 @@ Result<Statement, ErrMsg> parsePhiStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("phi statement"); }
     }
 
     return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
@@ -732,6 +743,8 @@ Result<Statement, ErrMsg> parseCallStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("call statement"); }
     }
 
     return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
@@ -753,6 +766,8 @@ Result<Statement, ErrMsg> parseBrStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("br statement"); }
     }
 
     return Statement(BrStmt(getVal(target), md, span(l)));
@@ -786,6 +801,10 @@ Result<Statement, ErrMsg> parseBrifStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) {
+            return listTooLong("conditional branch statement");
+        }
     }
 
     return Statement(
@@ -820,6 +839,8 @@ Result<Statement, ErrMsg> parseRet(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("return statement"); }
     }
 
     return RetStmt(val, md, span(l));
@@ -871,6 +892,8 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("comparison statement"); }
     }
 
     return Statement(
@@ -905,6 +928,8 @@ Result<Statement, ErrMsg> parseAllocStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("allocation statement"); }
     }
 
     return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
@@ -933,6 +958,8 @@ Result<Statement, ErrMsg> parseStoreStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("store statement"); }
     }
 
     return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
@@ -961,6 +988,8 @@ Result<Statement, ErrMsg> parseLoadStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("load statement"); }
     }
 
     return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
@@ -992,6 +1021,8 @@ Result<Statement, ErrMsg> parseFieldStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("field statement"); }
     }
 
     return Statement(
@@ -1031,6 +1062,8 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong(stmtDesc); }
     }
 
     if (kind == "add") {
@@ -1092,6 +1125,8 @@ Result<Statement, ErrMsg> parseDivRemStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong(stmtDesc); }
     }
 
     if (kind == "div") {
@@ -1128,6 +1163,8 @@ Result<Statement, ErrMsg> parseNotStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("not statement"); }
     }
 
     return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
@@ -1170,6 +1207,8 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong(stmtDesc); }
     }
 
     if (kind == "and") {
@@ -1230,6 +1269,8 @@ Result<Statement, ErrMsg> parseShiftrStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("shiftr statement"); }
     }
 
     return Statement(
@@ -1243,12 +1284,12 @@ Result<Statement, ErrMsg> parseAssignStmt(List l) {
     assert(it != end && atomEq(*it, "assign"));
 
     ++it;
-    if (it == end) { return listCutShort("assign statement", "local ID"); }
+    if (it == end) { return listCutShort("assignment statement", "local ID"); }
     const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("assign statement", "value"); }
+    if (it == end) { return listCutShort("assignment statement", "value"); }
     const Result<Val, ErrMsg> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
@@ -1258,6 +1299,8 @@ Result<Statement, ErrMsg> parseAssignStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("assignment statement"); }
     }
 
     return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
@@ -1284,6 +1327,8 @@ Result<Statement, ErrMsg> parseVarargStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("vararg statement"); }
     }
 
     return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
@@ -1305,6 +1350,8 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("blackhole statement"); }
     }
 
     return Statement(BlackholeStmt(getVal(tlid), md, span(l)));
@@ -1376,6 +1423,8 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("basic block"); }
     }
 
     return BasicBlock(getVal(bid), stmts, md, span(s));
@@ -1490,6 +1539,8 @@ Result<Function, ErrMsg> parseFunction(SExpr s) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("function"); }
     }
 
     return Function(gid, params, vaParam, type, bbs, md, span(s));
@@ -1550,6 +1601,8 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
         const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("type alias"); }
     }
 
     return TypeAlias(getVal(tid), type, md, span(s));
