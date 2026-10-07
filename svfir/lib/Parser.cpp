@@ -1045,41 +1045,55 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
     }
 }
 
+
+/// To be called on (div/rem ...) only.
 Result<Statement, ErrMsg> parseDivRemStmt(List l) {
-    const SExprSeq elems = l.children;
-    if (elems.size() != 5 && elems.size() != 6) {
-        return ErrMsg("div/rem list should be length 5-6");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && (atomEq(*it, "div") || atomEq(*it, "rem")));
 
+    const std::string kind = std::get<Atom>(*it).val;
+    const std::string stmtDesc = kind + " statement";
+
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'"); }
+    if (!isAtom(*it)) { return notAnAtom("'signed'/'unsigned'"); }
+    const std::string kw = std::get<Atom>(*it).val;
     bool sign;
-    if (atomEq(elems[1], "unsigned")) { sign = false; }
-    else if (atomEq(elems[1], "signed")) { sign = true; }
-    else { return ErrMsg("expected unsigned or signed"); }
+    if (kw == "unsigned") { sign = false; }
+    else if (kw == "signed") { sign = true; }
+    else { return badKw(stmtDesc + " (sign)", "'signed'/'unsigned'", kw); }
 
-    const Result<LocalId, ErrMsg> lidr = parseLocalId(elems[2]);
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lidr = parseLocalId(*it);
     if (isErr(lidr)) { return getErr(lidr); }
     const LocalId lid = getVal(lidr);
 
-    const Result<Val, ErrMsg> leftr = parseVal(elems[3]);
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "left operand"); }
+    const Result<Val, ErrMsg> leftr = parseVal(*it);
     if (isErr(leftr)) { return getErr(leftr); }
     const Val left = getVal(leftr);
 
-    const Result<Val, ErrMsg> rightr = parseVal(elems[4]);
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "right operand"); }
+    const Result<Val, ErrMsg> rightr = parseVal(*it);
     if (isErr(rightr)) { return getErr(rightr); }
     const Val right = getVal(rightr);
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 6) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[5]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
 
-    if (atomEq(elems[0], "div")) {
+    if (kind == "div") {
         const DivStmt::Kind kind =
             sign ? DivStmt::Kind::SIGNED : DivStmt::Kind::UNSIGNED;
         return Statement(DivStmt(kind, lid, left, right, md, span(l)));
-    } else if (atomEq(elems[0], "rem")) {
+    } else if (kind == "rem") {
         const RemStmt::Kind kind =
             sign ? RemStmt::Kind::SIGNED : RemStmt::Kind::UNSIGNED;
         return Statement(RemStmt(kind, lid, left, right, md, span(l)));
