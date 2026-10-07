@@ -1284,19 +1284,20 @@ Result<Statement, ErrMsg> parseVarargStmt(List l) {
     return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
 }
 
+/// To be called on (blackhole ...) only.
 Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
-    const SExprSeq elems = l.children;
-    assert(atomEq(elems[0], "blackhole"));
-    if (elems.size() != 2 && elems.size() != 3) {
-        return ErrMsg("blackhole list should be length 2-3");
-    }
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "blackhole"));
 
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(elems[1]);
+    ++it;
+    if (it == end) { return listCutShort("blackhole statement", "(typed) ID"); }
+    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 3) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[3]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
