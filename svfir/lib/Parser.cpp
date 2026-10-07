@@ -1345,28 +1345,30 @@ Result<Statement, ErrMsg> parseStmt(SExpr s) {
     // TODO: conversions.
 }
 
+/// <basic-block>
 Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
     if (!isList(s)) { return ErrMsg("basic block"); }
-    const SExprSeq elems = std::get<List>(s).children;
+    const List l = std::get<List>(s);
+    auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (elems.size() != 2 && elems.size() != 3) {
-        return ErrMsg("basic block should be a list of 2 or 3 elements");
-    }
-
-    const Result<BlockId, ErrMsg> bid = parseBlockId(elems[0]);
+    if (it == end) { return listCutShort("basic block", "block ID"); }
+    const Result<BlockId, ErrMsg> bid = parseBlockId(*it);
     if (isErr(bid)) { return getErr(bid); }
 
+    ++it;
+    if (it == end) { return listCutShort("basic block", "statement list"); }
+    if (!isList(*it)) { return ErrMsg("basic block statements"); }
     std::vector<Statement> stmts;
-    if (!isList(elems[1])) { return ErrMsg("basic block's statements"); }
-    for (auto s : std::get<List>(elems[1]).children) {
+    for (auto s : std::get<List>(*it).children) {
         const Result<Statement, ErrMsg> stmt = parseStmt(s);
         if (isErr(stmt)) { return getErr(stmt); }
         stmts.push_back(getVal(stmt));
     }
 
+    ++it;
     MaybeMetadata md = std::nullopt;
-    if (elems.size() == 3) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(elems[2]);
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
     }
