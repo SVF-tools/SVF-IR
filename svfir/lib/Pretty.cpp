@@ -287,7 +287,53 @@ struct Pretty {
             pretty(i.index) + " " +
             maybePrettyMd(i.md)
         );
-     }
+    }
+
+    std::string operator()(const ReinterpretStmt &r) {
+        return par(
+            "reinterpret " +
+            pretty(r.id) + " " +
+            pretty(r.val) + " " +
+            pretty(r.type) + " " +
+            maybePrettyMd(r.md)
+        );
+    }
+
+    std::string operator()(const ConvertStmt &c) {
+        return par(
+            "convert " +
+            pretty(c.id) + " " +
+            pretty(c.val) + " " +
+            pretty(c.type) + " " +
+            maybePrettyMd(c.md)
+        );
+    }
+
+    std::string operator()(const IntTruncStmt &i) {
+        return par(
+            "inttrunc " +
+            pretty(i.id) + " " +
+            pretty(i.val) + " " +
+            pretty(i.type) + " " +
+            maybePrettyMd(i.md)
+        );
+    }
+
+    std::string operator()(const IntExtStmt &i) {
+        std::string kind;
+        if (i.kind == IntExtStmt::Kind::ZERO) { kind = "zero"; }
+        else if (i.kind == IntExtStmt::Kind::SIGN) { kind = "sign"; }
+        else { assert(false); }
+
+        return par(
+            "intext " +
+            kind + " " +
+            pretty(i.id) + " " +
+            pretty(i.val) + " " +
+            pretty(i.type) + " " +
+            maybePrettyMd(i.md)
+        );
+    }
 
     std::string operator()(const AddStmt &a) {
         return par(

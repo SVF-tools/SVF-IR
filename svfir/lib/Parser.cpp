@@ -1021,6 +1021,130 @@ Result<Statement, ErrMsg> parseFieldStmt(List l) {
     );
 }
 
+/// To be called on (reinterpret/convert ...) only.
+Result<Statement, ErrMsg> parseReinterpretConvertStmt(List l) {
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && (atomEq(*it, "reinterpret") || atomEq(*it, "convert")));
+
+    const std::string kind = std::get<Atom>(*it).val;
+    const std::string stmtDesc = kind + " statement";
+
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (isErr(lid)) { return getErr(lid); }
+
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "value"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (isErr(val)) { return getErr(val); }
+
+    ++it;
+    if (it == end) { return listCutShort(stmtDesc, "type"); }
+    const Result<Type, ErrMsg> type = parseType(*it);
+    if (isErr(type)) { return getErr(type); }
+
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        if (isErr(mdr)) { return getErr(mdr); }
+        md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong(stmtDesc); }
+    }
+
+    if (kind == "reinterpret") {
+        return Statement(ReinterpretStmt(
+            getVal(lid), getVal(val), getVal(type), md, span(l)
+        ));
+    } else if (kind == "convert") {
+        return Statement(
+            ConvertStmt(getVal(lid), getVal(val), getVal(type), md, span(l))
+        );
+    }
+    assert(false);
+}
+
+/// To be called on (inttrunc ...) only.
+Result<Statement, ErrMsg> parseIntTruncStmt(List l) {
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "inttrunc"));
+
+    ++it;
+    if (it == end) { return listCutShort("inttrunc statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (isErr(lid)) { return getErr(lid); }
+
+    ++it;
+    if (it == end) { return listCutShort("inttrunc statement", "value"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (isErr(val)) { return getErr(val); }
+
+    ++it;
+    if (it == end) { return listCutShort("inttrunc statement", "type"); }
+    const Result<Type, ErrMsg> type = parseType(*it);
+    if (isErr(type)) { return getErr(type); }
+
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        if (isErr(mdr)) { return getErr(mdr); }
+        md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("inttrunc statement"); }
+    }
+
+    return Statement(
+        IntTruncStmt(getVal(lid), getVal(val), getVal(type), md, span(l))
+    );
+}
+
+/// To be called on (intext ...) only.
+Result<Statement, ErrMsg> parseIntExtStmt(List l) {
+    auto it = l.children.cbegin(), end = l.children.cend();
+    assert(it != end && atomEq(*it, "intext"));
+
+    ++it;
+    if (it == end) { return listCutShort("intext statement", "'zero'/'sign'"); }
+    if (!isAtom(*it)) { return notAnAtom("'zero'/'sign'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    IntExtStmt::Kind kind;
+    if (kw == "zero") { kind = IntExtStmt::Kind::ZERO; }
+    else if (kw == "sign") { kind = IntExtStmt::Kind::SIGN; }
+    else { return badKw("intext statement (kind)", "'zero'/'sign'", kw); }
+
+    ++it;
+    if (it == end) { return listCutShort("intext statement", "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (isErr(lid)) { return getErr(lid); }
+
+    ++it;
+    if (it == end) { return listCutShort("intext statement", "left operand"); }
+    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (isErr(val)) { return getErr(val); }
+
+    ++it;
+    if (it == end) { return listCutShort("intext statement", "type"); }
+    const Result<Type, ErrMsg> type = parseType(*it);
+    if (isErr(type)) { return getErr(type); }
+
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        if (isErr(mdr)) { return getErr(mdr); }
+        md.emplace(getVal(mdr));
+
+        if (it + 1 != end) { return listTooLong("intextstatement"); }
+    }
+
+    return Statement(
+        IntExtStmt(kind, getVal(lid), getVal(val), getVal(type), md, span(l))
+    );
+}
+
 /// To be called on (add/mul/sub ...) only.
 Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
@@ -1368,6 +1492,11 @@ Result<Statement, ErrMsg> parseStmt(SExpr s) {
     else if (kind == "store") { return parseStoreStmt(l); }
     else if (kind == "load") { return parseLoadStmt(l); }
     else if (kind == "field") { return parseFieldStmt(l); }
+    else if (kind == "reinterpret" || kind == "convert") {
+        return parseReinterpretConvertStmt(l);
+    }
+    else if (kind == "inttrunc") { return parseIntTruncStmt(l); }
+    else if (kind == "intext") { return parseIntExtStmt(l); }
     else if (kind == "add" || kind == "sub" || kind == "mul") {
         return parseAddMulSubStmt(l);
     } else if (kind == "div" || kind == "rem") {

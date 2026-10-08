@@ -462,6 +462,81 @@ struct FieldStmt final : public Node {
     ) : Node(span), id(id), src(src), index(index), md(md) { }
 };
 
+/// <conversion-stmt> (1)
+struct ReinterpretStmt final : public Node {
+    const LocalId id;
+    const Val val;
+    const Type type;
+    const MaybeMetadata md;
+
+    ReinterpretStmt(
+        const LocalId id,
+        const Val val,
+        const Type type,
+        const MaybeMetadata md,
+        const Span span
+    ) : Node(span), id(id), val(val), type(type), md(md) { }
+};
+
+/// <conversion-stmt> (2)
+struct ConvertStmt final : public Node {
+    const LocalId id;
+    const Val val;
+    const Type type;
+    const MaybeMetadata md;
+
+    ConvertStmt(
+        const LocalId id,
+        const Val val,
+        const Type type,
+        const MaybeMetadata md,
+        const Span span
+    ) : Node(span), id(id), val(val), type(type), md(md) { }
+};
+
+/// <conversion-stmt> (3)
+struct IntTruncStmt final : public Node {
+    const LocalId id;
+    const Val val;
+    const Type type;
+    const MaybeMetadata md;
+
+    IntTruncStmt(
+        const LocalId id,
+        const Val val,
+        const Type type,
+        const MaybeMetadata md,
+        const Span span
+    ) : Node(span), id(id), val(val), type(type), md(md) { }
+};
+
+/// <conversion-stmt> (4)
+struct IntExtStmt final : public Node {
+    enum class Kind { ZERO, SIGN };
+
+    const Kind kind;
+    const LocalId id;
+    const Val val;
+    const Type type;
+    const MaybeMetadata md;
+
+    IntExtStmt(
+        const Kind kind,
+        const LocalId id,
+        const Val val,
+        const Type type,
+        const MaybeMetadata md,
+        Span span
+    ) :
+        Node(span),
+        kind(kind),
+        id(id),
+        val(val),
+        type(type),
+        md(md)
+    { }
+};
+
 /// <arith-inst> (1)
 struct AddStmt final : public Node {
     const LocalId id;
@@ -691,7 +766,7 @@ using Statement = std::variant<
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt,
     CmpStmt,
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
-    // TODO conversions...
+    ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
     AddStmt, SubStmt, MulStmt, DivStmt, RemStmt,
     NotStmt, AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt,
     AssignStmt, VarargStmt, BlackholeStmt
@@ -723,7 +798,8 @@ using AnyNode = std::variant<
     TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
-    LoadStmt, FieldStmt, AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
+    LoadStmt, FieldStmt, ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
+    AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
     AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt, AssignStmt, VarargStmt,
     BlackholeStmt, BasicBlock,
     Type, VarId, Constant, Val, PVal, IVal, GVal, Statement

@@ -86,13 +86,10 @@
            | '(' 'load' <typed-lid> <pval> <md>? ')'
            | '(' 'field' <lid> <pval> <ival> <md>? ')'
 
-<conversion-stmt> : '(' 'reinterpret' <lid> <val> <tid> <md>? ')'
-                  | '(' 'trunc' <lid> <val> <tid> <md>? ')'
-                  | '(' 'extend' ('zero'|'sign') <lid> <val> <tid> <md>? ')'
-                  | '(' 'flt2int' <lid> <val> <tid> <md>? ')'
-                  | '(' 'int2flt' <lid> <val> <tid> <md>? ')'
-                  ??? | '(' 'int2ptr' <lid> <val> <tid> <md>? ')'
-                  ??? | '(' 'ptr2int' <lid> <val> <tid> <md>? ')'
+<conversion-stmt> : '(' 'reinterpret' <lid> <val> <type> <md>? ')'
+                  | '(' 'convert' <lid> <val> <type> <md>? ')'
+                  | '(' 'inttrunc' <lid> <val> <type> <md>? ')'
+                  | '(' 'intext' ('zero'|'sign') <lid> <val> <type> <md>? ')'
 
 <arith-stmt> : '(' 'add' <lid> <val> <val> <md>? ')'
              | '(' 'sub' <lid> <val> <val> <md>? ')'
