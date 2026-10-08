@@ -57,6 +57,15 @@ std::string par(const std::string &s) {
 }
 
 struct Pretty {
+    // Delete catch-all so compiler catches missing overloads.
+    template<class T> void operator()(const T &) = delete;
+
+    // Need to recurse further.
+    template <typename... T>
+    std::string operator()(const std::variant<T...> &v) {
+        return std::visit(Pretty(), v);
+    }
+
     std::string operator()(const Metadata &md) {
         return "(md " + SExprs::toString(md.data) + ")";
     }
@@ -425,38 +434,6 @@ struct Pretty {
     std::string operator()(const BasicBlock &b) {
         std::string stmts = prettyVec(b.stmts, "\n");
         return par(pretty(b.id) + " (\n" + indent(stmts) + ")");
-    }
-
-    std::string operator()(const Type &t) {
-        return std::visit(Pretty(), t);
-    }
-
-    std::string operator()(const VarId &v) {
-        return std::visit(Pretty(), v);
-    }
-
-    std::string operator()(const Constant &c) {
-        return std::visit(Pretty(), c);
-    }
-
-    std::string operator()(const Val &v) {
-        return std::visit(Pretty(), v);
-    }
-
-    std::string operator()(const PVal &v) {
-        return std::visit(Pretty(), v);
-    }
-
-    std::string operator()(const IVal &v) {
-        return std::visit(Pretty(), v);
-    }
-
-    std::string operator()(const GVal &v) {
-        return std::visit(Pretty(), v);
-    }
-
-    std::string operator()(const Statement &s) {
-        return std::visit(Pretty(), s);
     }
 };
 
