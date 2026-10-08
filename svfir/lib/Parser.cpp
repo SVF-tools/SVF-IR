@@ -474,7 +474,7 @@ Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
 
     if (it + 1 != end) { return listTooLong("preamble"); }
 
-    return Preamble(getVal(version), source, md, span(s));
+    return Preamble(getVal(version), source, span(s));
 }
 
 /// <gval>
@@ -1400,7 +1400,7 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("basic block", "statement list"); }
-    if (!isList(*it)) { return notAlist("basic block"); }
+    if (!isList(*it)) { return notAList("basic block"); }
     std::vector<Statement> stmts;
     for (auto s : std::get<List>(*it).children) {
         const Result<Statement, ErrMsg> stmt = parseStmt(s);

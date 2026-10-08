@@ -124,7 +124,6 @@ struct Pretty {
         return "(preamble\n" +
             indent("(version " + p.version.toString() + ")") + "\n" +
             indent("(source " + p.source + ")") + "\n" +
-            (p.md.has_value() ? indent(pretty(p.md.value())) + "\n" : "") +
             ")";
     }
 

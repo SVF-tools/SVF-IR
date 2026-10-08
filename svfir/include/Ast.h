@@ -186,14 +186,12 @@ using GVal = std::variant<GlobalId, TypedConstant>;
 struct Preamble final : public Node {
     const Version version;
     const std::string source;
-    const MaybeMetadata md;
 
     Preamble(
         const Version version,
         const std::string source,
-        const MaybeMetadata md,
         const Span span
-    ) : Node(span), version(version), source(source), md(md) { }
+    ) : Node(span), version(version), source(source) { }
 };
 
 /// <variable>
