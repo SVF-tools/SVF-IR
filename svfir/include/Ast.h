@@ -61,11 +61,6 @@ struct PtrType final : public Node {
     PtrType(const Span span) : Node(span) { }
 };
 
-/// <scalar-type> (5)
-struct BoolType final : public Node {
-    BoolType(const Span span) : Node(span) { }
-};
-
 /// <seq-type>
 struct AggType final : public Node {
     const uint64_t slots;
@@ -83,7 +78,7 @@ struct TypeId final : public Node {
 
 /// <type>
 using Type = std::variant<
-    VoidType, IntType, FloatType, PtrType, BoolType, AggType, TypeId
+    VoidType, IntType, FloatType, PtrType, AggType, TypeId
 >;
 
 /// <lid>
@@ -143,13 +138,6 @@ struct NullConstant final : public Node {
     NullConstant(const Span span) : Node(span) { }
 };
 
-/// <bool-const>
-struct BoolConstant final : public Node {
-    const bool val;
-
-    BoolConstant(const bool val, const Span span) : Node(span), val(val) { }
-};
-
 /// <val>
 using Val = std::variant<VarId, struct TypedConstant>;
 
@@ -163,7 +151,7 @@ struct SeqConstant final : public Node {
 
 /// <const>
 using Constant = std::variant<
-    IntConstant, FloatConstant, NullConstant, BoolConstant, SeqConstant
+    IntConstant, FloatConstant, NullConstant, SeqConstant
 >;
 
 /// <typed-const>
@@ -794,9 +782,9 @@ struct BasicBlock final : public Node {
 /// pretty printing.
 using AnyNode = std::variant<
     Metadata,
-    VoidType, IntType, FloatType, PtrType, BoolType, AggType, TypeId,
+    VoidType, IntType, FloatType, PtrType, AggType, TypeId,
     LocalId, GlobalId, BlockId, TypedId,
-    IntConstant, FloatConstant, NullConstant, BoolConstant, SeqConstant,
+    IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,

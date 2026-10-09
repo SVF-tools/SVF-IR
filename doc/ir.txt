@@ -13,7 +13,7 @@
 
 <int-type> : 'i'('8'|'16'|'32'|'64')    ; TODO
 <float-type> : 'f'('16'|'32'|'64'|'128')  ; TODO
-<scalar-type> : 'void' | 'ptr' | 'bool' | <int-type> | <float-type>
+<scalar-type> : 'void' | 'ptr' | <int-type> | <float-type>
 
 <agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
 
@@ -22,16 +22,11 @@
 <int-const> : '-'?<digit>+
 <flt-const> : <int-const>'.'<digit>+('e''-'?<digit>+)? | '-inf' | '+inf' | 'nan'
 <null-const> : 'null'
-<bool-const> : 'true' | 'false'
 
 ; TODO: Maybe some shortcut like '(' <type> (<const>|<var-id>)* ')'
 <seq-const> : '(' 'seq' (<typed-const>|<var-id>)* ')'
 
-<const> : <int-const>
-        | <flt-const>
-        | <null-const>
-        | <bool-const>
-        | <seq-const>
+<const> : <int-const> | <flt-const> | <null-const> | <seq-const>
 
 <typed-const> : '(' <const> <type> ')'
 
