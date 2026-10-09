@@ -20,6 +20,8 @@ struct Node {
     Node(const Span span) : span(span) { }
 };
 
+using Id = std::string;
+
 using MaybeMetadata = std::optional<struct Metadata>;
 
 struct Metadata final : public Node {
@@ -74,9 +76,9 @@ struct AggType final : public Node {
 
 /// <tid>
 struct TypeId final : public Node {
-    const std::string id;
+    const Id id;
 
-    TypeId(const std::string id, const Span span) : Node(span), id(id) { }
+    TypeId(const Id id, const Span span) : Node(span), id(id) { }
 };
 
 /// <type>
@@ -86,16 +88,16 @@ using Type = std::variant<
 
 /// <lid>
 struct LocalId final : public Node {
-    const std::string id;
+    const Id id;
 
-    LocalId(const std::string id, const Span span) : Node(span), id(id) { }
+    LocalId(const Id id, const Span span) : Node(span), id(id) { }
 };
 
 /// <gid>
 struct GlobalId final : public Node {
-    const std::string id;
+    const Id id;
 
-    GlobalId(const std::string id, const Span span) : Node(span), id(id) { }
+    GlobalId(const Id id, const Span span) : Node(span), id(id) { }
 };
 
 /// <var-id>
@@ -103,9 +105,9 @@ using VarId = std::variant<LocalId, GlobalId>;
 
 /// <bid>
 struct BlockId final : public Node {
-    const std::string id;
+    const Id id;
 
-    BlockId(const std::string id, const Span span) : Node(span), id(id) { }
+    BlockId(const Id id, const Span span) : Node(span), id(id) { }
 };
 
 /// <typed-lid>
