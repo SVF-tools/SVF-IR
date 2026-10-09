@@ -107,7 +107,6 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
         const Atom atom = std::get<Atom>(s);
         if (atom.val == "void") { return Type(VoidType(sp)); }
         else if (atom.val == "ptr") { return Type(PtrType(sp)); }
-        else if (atom.val == "bool") { return Type(BoolType(sp)); }
         else if (atom.val.size() > 1 && atom.val[0] == 'i') {
             using Kind = IntType::Kind;
             // + 1 to skip the 'i'.
@@ -277,8 +276,6 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
         const std::string val = std::get<Atom>(s).val;
         if (val.empty()) { return ErrMsg("Expected constant, got empty atom"); }
         else if (val == "null") { return Constant(NullConstant(sp)); }
-        else if (val == "true") { return Constant(BoolConstant(true, sp)); }
-        else if (val == "false") { return Constant(BoolConstant(false, sp)); }
         else if (val == "-inf" || val == "+inf" || val == "nan") {
             return Constant(FloatConstant(val, sp));
         } else {  // Try for an int or numeric float.

@@ -91,8 +91,6 @@ struct Pretty {
 
     std::string operator()(const PtrType &) { return "ptr"; }
 
-    std::string operator()(const BoolType &) { return "bool"; }
-
     std::string operator()(const AggType &st) {
         return "(agg " + std::to_string(st.slots) + ")";
     }
@@ -114,10 +112,6 @@ struct Pretty {
     std::string operator()(const FloatConstant &fc) { return fc.val; }
 
     std::string operator()(const NullConstant &) { return "null"; }
-
-    std::string operator()(const BoolConstant &bc) {
-        return bc.val ? "true" : "false";
-    }
 
     std::string operator()(const SeqConstant &sc) {
         std::string vals;
