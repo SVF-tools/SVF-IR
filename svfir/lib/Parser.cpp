@@ -92,50 +92,54 @@ Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
 }
 
 /// <tid>
-Result<TypeId, ErrMsg> parseTypeId(const SExpr s) {
+Result<DecTypeId, ErrMsg> parseTypeId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("type ID"); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Type"); }
     if (text[0] != '~') { return noSpecialCharId("Type", "~"); }
-    return TypeId(text, span(s));
+    return DecTypeId(text, span(s));
 }
 
 /// <type>
-Result<Type, ErrMsg> parseType(const SExpr s) {
+Result<DecType, ErrMsg> parseType(const SExpr s) {
     const Span sp = span(s);
     if (isAtom(s)) {
         const Atom atom = std::get<Atom>(s);
-        if (atom.val == "void") { return Type(VoidType(sp)); }
-        else if (atom.val == "ptr") { return Type(PtrType(sp)); }
+        if (atom.val == "void") { return DecType(VoidDecType(sp)); }
+        else if (atom.val == "ptr") { return DecType(PtrDecType(sp)); }
         else if (atom.val.size() > 1 && atom.val[0] == 'i') {
-            using Kind = IntType::Kind;
+            using Kind = IntDecType::Kind;
             // + 1 to skip the 'i'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 8) { return Type(IntType(Kind::I8, sp)); }
-            else if (width == 16) { return Type(IntType(Kind::I16, sp)); }
-            else if (width == 32) { return Type(IntType(Kind::I32, sp)); }
-            else if (width == 64) { return Type(IntType(Kind::I64, sp)); }
-            else if (width == 128) { return Type(IntType(Kind::I128, sp)); }
-            else {
+            if (width == 8) { return DecType(IntDecType(Kind::I8, sp)); }
+            else if (width == 16) { return DecType(IntDecType(Kind::I16, sp)); }
+            else if (width == 32) { return DecType(IntDecType(Kind::I32, sp)); }
+            else if (width == 64) { return DecType(IntDecType(Kind::I64, sp)); }
+            else if (width == 128) {
+                return DecType(IntDecType(Kind::I128, sp));
+            } else {
                 return ErrMsg(
                     "Bad width for int type (" + std::to_string(width) + ")."
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == 'f') {
-            using Kind = FloatType::Kind;
+            using Kind = FloatDecType::Kind;
             // + 1 to skip the 'f'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 16) { return Type(FloatType(Kind::F16, sp)); }
-            else if (width == 32) { return Type(FloatType(Kind::F32, sp)); }
-            else if (width == 64) { return Type(FloatType(Kind::F64, sp)); }
-            else if (width == 128) { return Type(FloatType(Kind::F128, sp)); }
-            else {
+            if (width == 16) { return DecType(FloatDecType(Kind::F16, sp)); }
+            else if (width == 32) {
+                return DecType(FloatDecType(Kind::F32, sp));
+            } else if (width == 64) {
+                return DecType(FloatDecType(Kind::F64, sp));
+            } else if (width == 128) {
+                return DecType(FloatDecType(Kind::F128, sp));
+            } else {
                 return ErrMsg(
                     "Bad width for float type (" + std::to_string(width) + ")."
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == '~') {
-            const Result<TypeId, ErrMsg> id = parseTypeId(s);
+            const Result<DecTypeId, ErrMsg> id = parseTypeId(s);
             if (isErr(id)) {
                 return ErrMsg(
                     "Invalid scalar type.\n"
@@ -143,7 +147,7 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
                     getErr(id)
                 );
             }
-            return Type(getVal(id));
+            return DecType(getVal(id));
         } else { return ErrMsg("Invalid scalar type."); }
     } else {
         assert(isList(s));
@@ -179,7 +183,7 @@ Result<Type, ErrMsg> parseType(const SExpr s) {
 
         if (it + 1 != end) { return listTooLong("aggregate type"); }
 
-        return Type(AggType(slots, sp));
+        return DecType(AggDecType(slots, sp));
     }
 }
 
@@ -234,7 +238,7 @@ Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("typed (local) ID", "type"); }
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     return TypedId(getVal(lid), getVal(type), span(s));
@@ -253,7 +257,7 @@ Result<Param, ErrMsg> parseParam(const SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("parameter", "type"); }
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
@@ -371,7 +375,7 @@ Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
     if (isErr(constant)) { return getErr(constant); }
 
     ++it;
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     if (it + 1 != end) { return listTooLong("typed constant"); }
@@ -1038,7 +1042,7 @@ Result<Statement, ErrMsg> parseReinterpretConvertStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "type"); }
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
@@ -1080,7 +1084,7 @@ Result<Statement, ErrMsg> parseIntTruncStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("inttrunc statement", "type"); }
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
@@ -1124,7 +1128,7 @@ Result<Statement, ErrMsg> parseIntExtStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("intext statement", "type"); }
-    const Result<Type, ErrMsg> type = parseType(*it);
+    const Result<DecType, ErrMsg> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
@@ -1625,9 +1629,9 @@ Result<Function, ErrMsg> parseFunction(SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("function", "return type"); }
-    const Result<Type, ErrMsg> typer = parseType(*it);
+    const Result<DecType, ErrMsg> typer = parseType(*it);
     if (isErr(typer)) { return getErr(typer); }
-    const Type type = getVal(typer);
+    const DecType type = getVal(typer);
 
     ++it;
     if (it == end) { return listCutShort("function", "basic block list/opaque"); }
@@ -1694,15 +1698,15 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("type alias", "name (type ID)"); }
-    const Result<TypeId, ErrMsg> tid = parseTypeId(*it);
+    const Result<DecTypeId, ErrMsg> tid = parseTypeId(*it);
     if (isErr(tid)) { return getErr(tid); }
 
     ++it;
     if (it == end) { return listCutShort("type alias", "type/'opaque'"); }
-    std::optional<Type> type;
+    std::optional<DecType> type;
     if (atomEq(*it, "opaque")) { type = std::nullopt; }
     else {
-        const Result<Type, ErrMsg> typer = parseType(*it);
+        const Result<DecType, ErrMsg> typer = parseType(*it);
         if (isErr(typer)) {
             return ErrMsg(
                 "Expected a type to alias or 'opaque'. "

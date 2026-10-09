@@ -32,53 +32,53 @@ struct Metadata final : public Node {
 };
 
 /// <scalar-type> (1)
-struct VoidType final : public Node {
-    VoidType(const Span span) : Node(span) { }
+struct VoidDecType final : public Node {
+    VoidDecType(const Span span) : Node(span) { }
 };
 
 /// <scalar-type> (2)
-struct IntType final : public Node {
+struct IntDecType final : public Node {
     enum class Kind { I8, I16, I32, I64, I128 };
 
     const Kind kind;
 
-    IntType(const Kind kind, const Span span)
+    IntDecType(const Kind kind, const Span span)
     : Node(span), kind(kind) { }
 };
 
 /// <scalar-type> (3)
-struct FloatType final : public Node {
+struct FloatDecType final : public Node {
     enum class Kind { F16, F32, F64, F128 };
 
     const Kind kind;
 
-    FloatType(const Kind kind, const Span span)
+    FloatDecType(const Kind kind, const Span span)
     : Node(span), kind(kind) { }
 };
 
 /// <scalar-type> (4)
-struct PtrType final : public Node {
-    PtrType(const Span span) : Node(span) { }
+struct PtrDecType final : public Node {
+    PtrDecType(const Span span) : Node(span) { }
 };
 
 /// <seq-type>
-struct AggType final : public Node {
+struct AggDecType final : public Node {
     const uint64_t slots;
 
-    AggType(const uint64_t slots, const Span span)
+    AggDecType(const uint64_t slots, const Span span)
     : Node(span), slots(slots) { }
 };
 
 /// <tid>
-struct TypeId final : public Node {
+struct DecTypeId final : public Node {
     const Id id;
 
-    TypeId(const Id id, const Span span) : Node(span), id(id) { }
+    DecTypeId(const Id id, const Span span) : Node(span), id(id) { }
 };
 
 /// <type>
-using Type = std::variant<
-    VoidType, IntType, FloatType, PtrType, AggType, TypeId
+using DecType = std::variant<
+    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, DecTypeId
 >;
 
 /// <lid>
@@ -108,9 +108,9 @@ struct BlockId final : public Node {
 /// <typed-lid>
 struct TypedId final : public Node {
     const LocalId id;
-    const Type type;
+    const DecType type;
 
-    TypedId(const LocalId id, const Type type, const Span span)
+    TypedId(const LocalId id, const DecType type, const Span span)
     : Node(span), id(id), type(type) { }
 };
 
@@ -157,9 +157,9 @@ using Constant = std::variant<
 /// <typed-const>
 struct TypedConstant final : public Node {
     const Constant constant;
-    const Type type;
+    const DecType type;
 
-    TypedConstant(const Constant constant, const Type type, const Span span)
+    TypedConstant(const Constant constant, const DecType type, const Span span)
     : Node(span), constant(constant), type(type) { }
 };
 
@@ -204,12 +204,12 @@ struct Variable final : public Node {
 /// <param>
 struct Param final : public Node {
     const LocalId id;
-    const Type type;
+    const DecType type;
     const MaybeMetadata md;
 
     Param(
         const LocalId id,
-        const Type type,
+        const DecType type,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), type(type), md(md) { }
@@ -223,7 +223,7 @@ struct Function final : public Node {
     const std::vector<Param> params;
     // 2. the optional final vararg parameter.
     const std::optional<LocalId> varargParam;
-    const Type type;
+    const DecType type;
     const std::optional<std::vector<struct BasicBlock>> body;
     const MaybeMetadata md;
 
@@ -231,7 +231,7 @@ struct Function final : public Node {
         const GlobalId id,
         const std::vector<Param> params,
         const std::optional<LocalId> varargParam,
-        const Type type,
+        const DecType type,
         const std::optional<std::vector<struct BasicBlock>> body,
         const MaybeMetadata md,
         const Span span
@@ -250,14 +250,14 @@ struct Function final : public Node {
 
 /// <type-alias>
 struct TypeAlias final : public Node {
-    const TypeId id;
+    const DecTypeId id;
     // A missing value indicates a declaration, otherwise it's a definition.
-    const std::optional<Type> type;
+    const std::optional<DecType> type;
     const MaybeMetadata md;
 
     TypeAlias(
-        const TypeId id,
-        const std::optional<Type> type,
+        const DecTypeId id,
+        const std::optional<DecType> type,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), type(type), md(md) { }
@@ -456,13 +456,13 @@ struct FieldStmt final : public Node {
 struct ReinterpretStmt final : public Node {
     const LocalId id;
     const Val val;
-    const Type type;
+    const DecType type;
     const MaybeMetadata md;
 
     ReinterpretStmt(
         const LocalId id,
         const Val val,
-        const Type type,
+        const DecType type,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), val(val), type(type), md(md) { }
@@ -472,13 +472,13 @@ struct ReinterpretStmt final : public Node {
 struct ConvertStmt final : public Node {
     const LocalId id;
     const Val val;
-    const Type type;
+    const DecType type;
     const MaybeMetadata md;
 
     ConvertStmt(
         const LocalId id,
         const Val val,
-        const Type type,
+        const DecType type,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), val(val), type(type), md(md) { }
@@ -488,13 +488,13 @@ struct ConvertStmt final : public Node {
 struct IntTruncStmt final : public Node {
     const LocalId id;
     const Val val;
-    const Type type;
+    const DecType type;
     const MaybeMetadata md;
 
     IntTruncStmt(
         const LocalId id,
         const Val val,
-        const Type type,
+        const DecType type,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), val(val), type(type), md(md) { }
@@ -507,14 +507,14 @@ struct IntExtStmt final : public Node {
     const Kind kind;
     const LocalId id;
     const Val val;
-    const Type type;
+    const DecType type;
     const MaybeMetadata md;
 
     IntExtStmt(
         const Kind kind,
         const LocalId id,
         const Val val,
-        const Type type,
+        const DecType type,
         const MaybeMetadata md,
         Span span
     ) :
@@ -782,7 +782,7 @@ struct BasicBlock final : public Node {
 /// pretty printing.
 using AnyNode = std::variant<
     Metadata,
-    VoidType, IntType, FloatType, PtrType, AggType, TypeId,
+    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, DecTypeId,
     LocalId, GlobalId, BlockId, TypedId,
     IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedConstant,
@@ -792,7 +792,7 @@ using AnyNode = std::variant<
     AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
     AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt, AssignStmt, VarargStmt,
     BlackholeStmt, BasicBlock,
-    Type, VarId, Constant, Val, PVal, IVal, GVal, Statement
+    DecType, VarId, Constant, Val, PVal, IVal, GVal, Statement
 >;
 
 }  // namespace SVFIR

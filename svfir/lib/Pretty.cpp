@@ -70,32 +70,32 @@ struct Pretty {
         return "(md " + SExprs::toString(md.data) + ")";
     }
 
-    std::string operator()(const VoidType &) { return "void"; }
+    std::string operator()(const VoidDecType &) { return "void"; }
 
-    std::string operator()(const IntType &it) {
-        if (it.kind == IntType::Kind::I8) { return "i8"; }
-        if (it.kind == IntType::Kind::I16) { return "i16"; }
-        else if (it.kind == IntType::Kind::I32) { return "i32"; }
-        else if (it.kind == IntType::Kind::I64) { return "i64"; }
-        else if (it.kind == IntType::Kind::I128) { return "i128"; }
+    std::string operator()(const IntDecType &it) {
+        if (it.kind == IntDecType::Kind::I8) { return "i8"; }
+        if (it.kind == IntDecType::Kind::I16) { return "i16"; }
+        else if (it.kind == IntDecType::Kind::I32) { return "i32"; }
+        else if (it.kind == IntDecType::Kind::I64) { return "i64"; }
+        else if (it.kind == IntDecType::Kind::I128) { return "i128"; }
         else { assert(false); }
     }
 
-    std::string operator()(const FloatType &ft) {
-        if (ft.kind == FloatType::Kind::F16) { return "f16"; }
-        else if (ft.kind == FloatType::Kind::F32) { return "f32"; }
-        else if (ft.kind == FloatType::Kind::F64) { return "f64"; }
-        else if (ft.kind == FloatType::Kind::F128) { return "f128"; }
+    std::string operator()(const FloatDecType &ft) {
+        if (ft.kind == FloatDecType::Kind::F16) { return "f16"; }
+        else if (ft.kind == FloatDecType::Kind::F32) { return "f32"; }
+        else if (ft.kind == FloatDecType::Kind::F64) { return "f64"; }
+        else if (ft.kind == FloatDecType::Kind::F128) { return "f128"; }
         else { assert(false); }
     }
 
-    std::string operator()(const PtrType &) { return "ptr"; }
+    std::string operator()(const PtrDecType &) { return "ptr"; }
 
-    std::string operator()(const AggType &st) {
+    std::string operator()(const AggDecType &st) {
         return "(agg " + std::to_string(st.slots) + ")";
     }
 
-    std::string operator()(const TypeId &tid) { return tid.id; }
+    std::string operator()(const DecTypeId &tid) { return tid.id; }
 
     std::string operator()(const LocalId &lid) { return lid.id; }
 
