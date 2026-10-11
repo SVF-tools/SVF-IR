@@ -468,7 +468,18 @@ struct Pretty {
     }
 
     std::string operator()(const BlackholeStmt &b) {
-        return par("blackhole " + pretty(b.tid) + " " + maybePrettyMd(b.md));
+        std::string kind;
+        if (b.kind == BlackholeStmt::Kind::UNCONTAINED) {
+            kind = "uncontained";
+        } else if (b.kind == BlackholeStmt::Kind::CONTAINED) {
+            kind = "contained";
+        } else { assert(false); }
+        return par(
+            "blackhole " +
+            kind + " " +
+            pretty(b.tid) + " " +
+            maybePrettyMd(b.md)
+        );
     }
 
     std::string operator()(const BasicBlock &b) {

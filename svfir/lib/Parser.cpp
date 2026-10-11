@@ -1456,6 +1456,23 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
     assert(it != end && atomEq(*it, "blackhole"));
 
     ++it;
+    if (it == end) {
+        return listCutShort("blackhole statement", "'uncontained'/'contained'");
+    }
+    if (!isAtom(*it)) { return notAnAtom("'uncontained'/'contained'"); }
+    const std::string kw = std::get<Atom>(*it).val;
+    BlackholeStmt::Kind kind;
+    if (kw == "uncontained") { kind = BlackholeStmt::Kind::UNCONTAINED; }
+    else if (kw == "contained") { kind = BlackholeStmt::Kind::CONTAINED; }
+    else {
+        return badKw(
+            "blackhole statement (kind)",
+            "'uncontained'/'contained'",
+            kw
+        );
+    }
+
+    ++it;
     if (it == end) { return listCutShort("blackhole statement", "(typed) ID"); }
     const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
@@ -1470,7 +1487,7 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
         if (it + 1 != end) { return listTooLong("blackhole statement"); }
     }
 
-    return Statement(BlackholeStmt(getVal(tlid), md, span(l)));
+    return Statement(BlackholeStmt(kind, getVal(tlid), md, span(l)));
 }
 
 /// <stmt>

@@ -744,11 +744,18 @@ struct VarargStmt final : public Node {
 
 /// <misc-inst> (3)
 struct BlackholeStmt final : public Node {
+    enum class Kind { UNCONTAINED, CONTAINED };
+
+    const Kind kind;
     const TypedId tid;
     const MaybeMetadata md;
 
-    BlackholeStmt(const TypedId tid, const MaybeMetadata md, const Span span)
-    : Node(span), tid(tid), md(md) { }
+    BlackholeStmt(
+        const Kind kind,
+        const TypedId tid,
+        const MaybeMetadata md,
+        const Span span
+    ) : Node(span), kind(kind), tid(tid), md(md) { }
 };
 
 /// <instruction>
