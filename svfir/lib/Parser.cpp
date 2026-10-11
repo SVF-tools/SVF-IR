@@ -846,11 +846,6 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
     assert(it != end && atomEq(*it, "cmp"));
 
     ++it;
-    if (it == end) { return listCutShort(cmpDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
-    if (isErr(lid)) { return getErr(lid); }
-
-    ++it;
     CmpStmt::Operator op;
     if (!isAtom(*it)) { return notAnAtom("comparison operator"); }
     const std::string kw = std::get<Atom>(*it).val;
@@ -867,6 +862,11 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
             kw
         );
     }
+
+    ++it;
+    if (it == end) { return listCutShort(cmpDesc, "local ID"); }
+    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (isErr(lid)) { return getErr(lid); }
 
     ++it;
     if (it == end) { return listCutShort(cmpDesc, "left operand"); }

@@ -74,7 +74,7 @@
                | '(' 'brif' <val> <bid> <bid> <md>? ')'
                | '(' 'ret' (<val>|'void') <md>? ')'
 
-<cmp-stmt> : '(' 'cmp' <lid> <cmp-op> <val> <val> <md>? ')'
+<cmp-stmt> : '(' 'cmp' <cmp-op> <lid> <val> <val> <md>? ')'
 
 <mem-stmt> : '(' 'alloc' ('heap'|'stack') <lid> <md>? ')'
            | '(' 'store' <val> <pval> <md>? ')'

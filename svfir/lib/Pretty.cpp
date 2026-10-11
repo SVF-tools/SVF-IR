@@ -245,8 +245,8 @@ struct Pretty {
 
         return par(
             "cmp " +
-            pretty(cmp.id) + " " +
             op + " " +
+            pretty(cmp.id) + " " +
             pretty(cmp.left) + " " +
             pretty(cmp.right) + " " +
             maybePrettyMd(cmp.md)
