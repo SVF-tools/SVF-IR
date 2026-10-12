@@ -1,3 +1,4 @@
+#include "Err.h"
 #include "Parser.h"
 #include "Ops.h"
 #include "Result.h"
@@ -14,7 +15,7 @@ bool roundtrip(void) {
         "(types)\n"
         "(variables)\n"
         "(functions)";
-    const Result<Program, ErrMsg> res1 = parseString(program1);
+    const Result<Program, Err> res1 = parseString(program1);
     TEST(!isErr(res1));
     TEST(pretty(getVal(res1)) == program1);
 
@@ -103,7 +104,7 @@ bool roundtrip(void) {
         "      (br !13)))\n"
         "    (!30 (\n"
         "      (ret void))))))";
-    const Result<Program, ErrMsg> res2 = parseString(program2);
+    const Result<Program, Err> res2 = parseString(program2);
     TEST(!isErr(res2));
     TEST(pretty(getVal(res2)) == program2);
 
@@ -117,7 +118,7 @@ bool roundtrip(void) {
         "  (@bar opaque))\n"
         "(functions\n"
         "  (@baz ((%0 ptr) %1...) void opaque))";
-    const Result<Program, ErrMsg> res3 = parseString(program3);
+    const Result<Program, Err> res3 = parseString(program3);
     TEST(!isErr(res3));
     TEST(pretty(getVal(res3)) == program3);
 

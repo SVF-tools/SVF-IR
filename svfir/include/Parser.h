@@ -8,11 +8,11 @@
 namespace SVFIR {
 
 /// Parse a <program>, consuming the stream.
-Result<Program, ErrMsg> parse(InputStream &);
+Result<Program, Err> parse(InputStream &);
 
 /// Parses a <program> from given file.
-Result<Program, ErrMsg> parseFile(const std::string filename);
+Result<Program, Err> parseFile(const std::string filename);
 /// Parses a <program> from given string.
-Result<Program, ErrMsg> parseString(const std::string str);
+Result<Program, Err> parseString(const std::string str);
 
 }  // namespace SVFIR

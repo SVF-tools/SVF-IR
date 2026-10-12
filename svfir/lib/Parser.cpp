@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Ast.h"
+#include "Err.h"
 #include "Parser.h"
 #include "Result.h"
 #include "Span.h"
@@ -25,83 +26,91 @@ using namespace SVFIR::SExprs;
 bool isDigit(const char c) { return std::isdigit(c); }
 
 /// Error parsing expected because we need, and don't have, a list.
-ErrMsg notAList(const std::string &expected) {
-    return ErrMsg("Expected a list when trying to parse " + expected + ".");
+Err notAList(const std::string &expected, const Span span) {
+    return Err("Expected a list when trying to parse " + expected + ".", span);
 }
 
 /// Error parsing expected because we need, and don't have, an atom.
-ErrMsg notAnAtom(const std::string &expected) {
-    return ErrMsg("Expected a atom when trying to parse " + expected + ".");
+Err notAnAtom(const std::string &expected, const Span span) {
+    return Err("Expected a atom when trying to parse " + expected + ".", span);
 }
 
 /// Error parsing encompassing as the list is too short trying for an expected.
-ErrMsg listCutShort(
+Err listCutShort(
     const std::string &encompassing,
-    const std::string &expected
+    const std::string &expected,
+    const Span span
 ) {
-    return ErrMsg(
+    return Err(
         "Expected " + expected + " " +
         "while parsing " + encompassing + " " +
-        "(list too short)."
+        "(list too short).",
+        span
     );
 }
 
 /// Error parsing l because there are too many elements.
-ErrMsg listTooLong(const std::string &l) {
-    return ErrMsg("Too many elements while parsing " + l);
+Err listTooLong(const std::string &l, const Span span) {
+    return Err("Too many elements while parsing " + l, span);
 }
 
 /// Error parsing encompassing as we expected keyword kw but got actual.
-ErrMsg badKw(
+Err badKw(
     const std::string &encompassing,
     const std::string &kw,
-    const std::string &actual
+    const std::string &actual,
+    const Span span
 ) {
-    return ErrMsg(
+    return Err(
         "Expected " + kw + " " +
         "(got " + actual + ") " +
-        "while parsing " + encompassing + "."
+        "while parsing " + encompassing + ".",
+        span
     );
 }
 
 /// That IDs need two characters. kind should be capitalised.
-ErrMsg shortId(const std::string &kind) {
-    return ErrMsg(kind + " IDs must be two or more characters");
+Err shortId(const std::string &kind, const Span span) {
+    return Err(kind + " IDs must be two or more characters", span);
 }
 
 /// That IDs need to start with a special character. kind should be capitalised.
-ErrMsg noSpecialCharId(const std::string &kind, const std::string &ch) {
-    return ErrMsg(kind + " IDs must begin with a " + ch + ".");
+Err noSpecialCharId(
+    const std::string &kind,
+    const std::string &ch,
+    const Span span
+) {
+    return Err(kind + " IDs must begin with a " + ch + ".", span);
 }
 
 /// <md>
-Result<Metadata, ErrMsg> parseMetadata(const SExpr s) {
-    if (!isList(s)) { return notAList("metadata"); }
+Result<Metadata, Err> parseMetadata(const SExpr s) {
+    if (!isList(s)) { return notAList("metadata", span(s)); }
     const List list = std::get<List>(s);
 
     auto it = list.children.cbegin(), end = list.children.cend();
-    if (it == end) { return listCutShort("metadata", "'md'"); }
-    if (!isAtom(*it)) { return notAnAtom("'md'"); }
+    if (it == end) { return listCutShort("metadata", "'md'", span(s)); }
+    if (!isAtom(*it)) { return notAnAtom("'md'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "md") { return badKw("metadata", "'md'", kw); }
+    if (kw != "md") { return badKw("metadata", "'md'", kw, span(*it)); }
 
     ++it;
-    if (it == end) { return listCutShort("metadata", "sexpr data"); }
-    if (it + 1 != end) { return listTooLong("metadata"); }
+    if (it == end) { return listCutShort("metadata", "sexpr data", span(s)); }
+    if (it + 1 != end) { return listTooLong("metadata", span(s)); }
     return Metadata(*it, span(*it));
 }
 
 /// <tid>
-Result<DecTypeId, ErrMsg> parseTypeId(const SExpr s) {
-    if (!isAtom(s)) { return notAnAtom("type ID"); }
+Result<DecTypeId, Err> parseTypeId(const SExpr s) {
+    if (!isAtom(s)) { return notAnAtom("type ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Type"); }
-    if (text[0] != '~') { return noSpecialCharId("Type", "~"); }
+    if (text.size() < 2) { return shortId("Type", span(s)); }
+    if (text[0] != '~') { return noSpecialCharId("Type", "~", span(s)); }
     return DecTypeId(text, span(s));
 }
 
 /// <type>
-Result<DecType, ErrMsg> parseType(const SExpr s) {
+Result<DecType, Err> parseType(const SExpr s) {
     const Span sp = span(s);
     if (isAtom(s)) {
         const Atom atom = std::get<Atom>(s);
@@ -118,8 +127,9 @@ Result<DecType, ErrMsg> parseType(const SExpr s) {
             else if (width == 128) {
                 return DecType(IntDecType(Kind::I128, sp));
             } else {
-                return ErrMsg(
-                    "Bad width for int type (" + std::to_string(width) + ")."
+                return Err(
+                    "Bad width for int type (" + std::to_string(width) + ").",
+                    sp
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == 'f') {
@@ -134,151 +144,160 @@ Result<DecType, ErrMsg> parseType(const SExpr s) {
             } else if (width == 128) {
                 return DecType(FloatDecType(Kind::F128, sp));
             } else {
-                return ErrMsg(
-                    "Bad width for float type (" + std::to_string(width) + ")."
+                return Err(
+                    "Bad width for float type (" + std::to_string(width) + ").",
+                    sp
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == '~') {
-            const Result<DecTypeId, ErrMsg> id = parseTypeId(s);
+            const Result<DecTypeId, Err> id = parseTypeId(s);
             if (isErr(id)) {
-                return ErrMsg(
+                return Err(
                     "Invalid scalar type.\n"
-                    "If you intended a type ID here, note: " +
-                    getErr(id)
+                    "If you intended a type ID here, note:\n  " +
+                    getErr(id).toString(),
+                    span(s)
                 );
             }
             return DecType(getVal(id));
-        } else { return ErrMsg("Invalid scalar type."); }
+        } else { return Err("Invalid scalar type.", sp); }
     } else {
         assert(isList(s));
         const List list = std::get<List>(s);
+        const Span sp = span(s);
 
         auto it = list.children.cbegin(), end = list.children.cend();
-        if (it == end) { return listCutShort("aggregate type", "'agg'"); }
-        if (!isAtom(*it)) { return notAnAtom("'agg'"); }
+        if (it == end) { return listCutShort("aggregate type", "'agg'", sp); }
+        if (!isAtom(*it)) { return notAnAtom("'agg'", span(*it)); }
         const std::string kw = std::get<Atom>(*it).val;
-        if (kw != "agg") { badKw("aggregate type", "'agg'", kw); }
+        if (kw != "agg") { badKw("aggregate type", "'agg'", kw, span(*it)); }
 
 
         ++it;
         if (it == end) {
-            return listCutShort("aggregate type", "number of slots");
+            return listCutShort("aggregate type", "number of slots", sp);
         }
-        if (!isAtom(*it)) { return notAnAtom("number of slots"); }
+        if (!isAtom(*it)) { return notAnAtom("number of slots", span(*it)); }
         const std::string slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
             // TODO: what if it starts with 0
-            return ErrMsg(
+            return Err(
                 "aggregate type's number of slots is not positive number "
-                "(" + slotsStr + ")."
+                "(" + slotsStr + ").",
+                span(*it)
             );
         }
         errno = 0;
         const long long slots = std::strtoull(slotsStr.c_str(), nullptr, 10);
         if (errno != 0 || slots > UINT64_MAX) {
-            return ErrMsg(
-                "Too many slots (" + slotsStr + ") for aggregate type."
+            return Err(
+                "Too many slots (" + slotsStr + ") for aggregate type.",
+                span(*it)
             );
         }
 
-        if (it + 1 != end) { return listTooLong("aggregate type"); }
+        if (it + 1 != end) { return listTooLong("aggregate type", sp); }
 
         return DecType(AggDecType(slots, sp));
     }
 }
 
 /// <lid>
-Result<LocalId, ErrMsg> parseLocalId(const SExpr s) {
-    if (!isAtom(s)) { return notAnAtom("local ID"); }
+Result<LocalId, Err> parseLocalId(const SExpr s) {
+    if (!isAtom(s)) { return notAnAtom("local ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Local"); }
-    if (text[0] != '%') { return noSpecialCharId("Local", "%"); }
+    if (text.size() < 2) { return shortId("Local", span(s)); }
+    if (text[0] != '%') { return noSpecialCharId("Local", "%", span(s)); }
     return LocalId(text, span(s));
 }
 
 /// <gid>
-Result<GlobalId, ErrMsg> parseGlobalId(const SExpr s) {
-    if (!isAtom(s)) { return notAnAtom("global ID"); }
+Result<GlobalId, Err> parseGlobalId(const SExpr s) {
+    if (!isAtom(s)) { return notAnAtom("global ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Global"); }
-    if (text[0] != '@') { return noSpecialCharId("Global", "@"); }
+    if (text.size() < 2) { return shortId("Global", span(s)); }
+    if (text[0] != '@') { return noSpecialCharId("Global", "@", span(s)); }
     return GlobalId(text, span(s));
 }
 
 /// <bid>
-Result<BlockId, ErrMsg> parseBlockId(const SExpr s) {
-    if (!isAtom(s)) { return notAnAtom("basic block ID"); }
+Result<BlockId, Err> parseBlockId(const SExpr s) {
+    if (!isAtom(s)) { return notAnAtom("basic block ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Basic block"); }
-    if (text[0] != '!') { return noSpecialCharId("Basic block", "!"); }
+    if (text.size() < 2) { return shortId("Basic block", span(s)); }
+    if (text[0] != '!') { return noSpecialCharId("Basic block", "!", span(s)); }
     return BlockId(text, span(s));
 }
 
 /// <var-id>
-Result<VarId, ErrMsg> parseVarId(const SExpr s) {
+Result<VarId, Err> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
-    if (!isAtom(s)) { return notAnAtom("local/global (var) ID"); }
+    if (!isAtom(s)) { return notAnAtom("local/global (var) ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Local/global (var)"); }
+    if (text.size() < 2) { return shortId("Local/global (var)", span(s)); }
     if (text[0] == '%') { return getVal(parseLocalId(s)); }
     else if (text[0] == '@') { return getVal(parseGlobalId(s)); }
-    else { return noSpecialCharId("Local/global (var)", "%/@"); }
+    else { return noSpecialCharId("Local/global (var)", "%/@", span(s)); }
 }
 
 /// <typed-id>
-Result<TypedId, ErrMsg> parseTypedId(const SExpr s) {
-    if (!isList(s)) { return notAList("typed (local) ID"); }
+Result<TypedId, Err> parseTypedId(const SExpr s) {
+    if (!isList(s)) { return notAList("typed (local) ID", span(s)); }
+    const Span sp = span(s);
 
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { return listCutShort("typed (local) ID", "ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort("typed (local) ID", "ID", sp); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("typed (local) ID", "type"); }
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    if (it == end) { return listCutShort("typed (local) ID", "type", sp); }
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     return TypedId(getVal(lid), getVal(type), span(s));
 }
 
 /// <param>
-Result<Param, ErrMsg> parseParam(const SExpr s) {
-    if (!isList(s)) { return notAList("Param"); }
+Result<Param, Err> parseParam(const SExpr s) {
+    if (!isList(s)) { return notAList("Param", span(s)); }
+    const Span sp = span(s);
 
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { return listCutShort("parameter", "ID"); }
-    const Result<LocalId, ErrMsg> id = parseLocalId(*it);
+    if (it == end) { return listCutShort("parameter", "ID", sp); }
+    const Result<LocalId, Err> id = parseLocalId(*it);
     if (isErr(id)) { return getErr(id); }
 
     ++it;
-    if (it == end) { return listCutShort("parameter", "type"); }
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    if (it == end) { return listCutShort("parameter", "type", sp); }
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
-        if (it + 1 != end) { return listTooLong("aggregate type"); }
+        if (it + 1 != end) { return listTooLong("aggregate type", sp); }
     }
 
     return Param(getVal(id), getVal(type), md, span(s));
 }
 
-Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s);
+Result<TypedConstant, Err> parseTypedConst(SExpr s);
 /// <const>
-Result<Constant, ErrMsg> parseConst(const SExpr s) {
+Result<Constant, Err> parseConst(const SExpr s) {
     const Span sp = span(s);
     if (isAtom(s)) {
         const std::string val = std::get<Atom>(s).val;
-        if (val.empty()) { return ErrMsg("Expected constant, got empty atom"); }
+        if (val.empty()) {
+            return Err("Expected constant, got empty atom", sp);
+        }
         else if (val == "null") { return Constant(NullConstant(sp)); }
         else if (val == "-inf" || val == "+inf" || val == "nan") {
             return Constant(FloatConstant(val, sp));
@@ -286,7 +305,7 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
             // But first, a small-effort check if the user *may* have intended
             // a numeric constant.
             if (val[0] != '-' && !isDigit(val[0])) {
-                return ErrMsg("Invalid constant, got '" + val + "'.");
+                return Err("Invalid constant, got '" + val + "'.", sp);
             }
 
             const auto numStart =
@@ -297,16 +316,18 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
 
             const auto dotPos = std::find(numStart, val.cend(), '.');
             if (dotPos == val.cend()) {
-                return ErrMsg(
+                return Err(
                     "Invalid constant, got '" + val + "'. "
-                    "If you intended a float constant, a '.' is required."
+                    "If you intended a float constant, a '.' is required.",
+                    sp
                 );
             }
             if (dotPos + 1 == val.cend()) {
-                return ErrMsg(
+                return Err(
                     "Invalid constant, got '" + val + "'. "
                     "If you intended a float constant, "
-                    "at least one digit is required after the '.'."
+                    "at least one digit is required after the '.'.",
+                    sp
                 );
             }
 
@@ -314,19 +335,21 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
             for (; it != val.cend(); ++it) { }
             if (it != val.cend()) {
                 if (*it != 'e') {
-                    return ErrMsg(
+                    return Err(
                         "Invalid constant, got '" + val + "'. "
                         "If you intended a float constant, "
-                        "you may have intended the exponent signifier 'e'."
+                        "you may have intended the exponent signifier 'e'.",
+                        sp
                     );
                 }
                 ++it;
                 if (*it == '-') { ++it; }
                 if (!std::all_of(it, val.cend(), isDigit)) {
-                    return ErrMsg(
+                    return Err(
                         "Invalid constant, got '" + val + "'. "
                         "If you intended a float constant, "
-                        "the exponent must be a positive or negative integer."
+                        "the exponent must be a positive or negative integer.",
+                        sp
                     );
                 }
             }
@@ -337,22 +360,26 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
         assert(isList(s));
         SExprSeq elems = std::get<List>(s).children;
         auto it = elems.cbegin(), end = elems.cend();
-        if (it == end) { return listCutShort("sequence", "'seq'"); }
+        if (it == end) { return listCutShort("sequence", "'seq'", span(s)); }
 
-        if (!isAtom(*it)) { return notAnAtom("'seq'"); }
+        if (!isAtom(*it)) { return notAnAtom("'seq'", span(*it)); }
         const std::string kw = std::get<Atom>(*it).val;
-        if (kw != "seq") { return badKw("sequence (constant)", "'seq'", kw); }
+        if (kw != "seq") {
+            return badKw("sequence (constant)", "'seq'", kw, span(*it));
+        }
 
         ++it;
         std::vector<Val> vals;
         for (; it != end; ++it) {
-            const Result<TypedConstant, ErrMsg> tc = parseTypedConst(*it);
+            const Result<TypedConstant, Err> tc = parseTypedConst(*it);
             if (isErr(tc)) {
-                const Result<VarId, ErrMsg> vi = parseVarId(*it);
+                const Result<VarId, Err> vi = parseVarId(*it);
                 if (isErr(vi)) {
-                    return ErrMsg(
+                    return Err(
                         "Elements of a sequence must be a typed constant "
-                        "or a local/global (var) ID."
+                        "or a local/global (var) ID, if you intended the "
+                        "latter, note:\n  " + getErr(vi).toString(),
+                        span(*it)
                     );
                 } else { vals.push_back(getVal(vi)); }
             } else { vals.push_back(getVal(tc)); }
@@ -364,143 +391,161 @@ Result<Constant, ErrMsg> parseConst(const SExpr s) {
 }
 
 /// <typed-const>
-Result<TypedConstant, ErrMsg> parseTypedConst(SExpr s) {
-    if (!isList(s)) { return notAList("typed constant"); }
+Result<TypedConstant, Err> parseTypedConst(SExpr s) {
+    if (!isList(s)) { return notAList("typed constant", span(s)); }
 
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
-    if (it == end) { return listCutShort("typed constant", "constant"); }
+    if (it == end) {
+        return listCutShort("typed constant", "constant", span(s));
+    }
 
-    const Result<Constant, ErrMsg> constant = parseConst(*it);
+    const Result<Constant, Err> constant = parseConst(*it);
     if (isErr(constant)) { return getErr(constant); }
 
     ++it;
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
-    if (it + 1 != end) { return listTooLong("typed constant"); }
+    if (it + 1 != end) { return listTooLong("typed constant", span(s)); }
 
     return TypedConstant(getVal(constant), getVal(type), span(s));
 }
 
 /// Version in preamble.
-Result<Version, ErrMsg> parseVersion(SExpr s) {
-    if (!isList(s)) { return notAList("version"); }
+Result<Version, Err> parseVersion(SExpr s) {
+    if (!isList(s)) { return notAList("version", span(s)); }
     const List list = std::get<List>(s);
+    const Span sp = span(s);
 
     auto it = list.children.cbegin(), end = list.children.cend();
-    if (it == end) { return listCutShort("version", "'version'"); }
-    if (!isAtom(*it)) { return notAnAtom("'version'"); }
+    if (it == end) { return listCutShort("version", "'version'", sp); }
+    if (!isAtom(*it)) { return notAnAtom("'version'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "version") { return badKw("version", "'version'", kw); }
+    if (kw != "version") {
+        return badKw("version", "'version'", kw, span(*it));
+    }
 
     ++it;
-    if (it == end) { return listCutShort("version", "version number"); }
-    if (!isAtom(*it)) { return notAnAtom("version number"); }
+    if (it == end) { return listCutShort("version", "version number", sp); }
+    if (!isAtom(*it)) { return notAnAtom("version number", span(*it)); }
     const std::string versionStr = std::get<Atom>(*it).val;
+    const Span vsp = span(*it);
 
     const size_t dot = versionStr.find(".", 0);
     if (dot == std::string::npos) {
-        return ErrMsg("Version number missing '.'.");
+        return Err("Version number missing '.'.", vsp);
     } else if (dot == 0) {
-        return ErrMsg("Version number missing major version (before '.').");
+        return Err("Version number missing major version (before '.').", vsp);
     } else if (dot == versionStr.size() - 1) {
-        return ErrMsg("Version number missing minor version (after '.').");
+        return Err("Version number missing minor version (after '.').", vsp);
     }
 
     const std::string majorStr = versionStr.substr(0, dot);
     if (!std::all_of(majorStr.cbegin(), majorStr.cend(), isDigit)) {
-        return ErrMsg("Major version contains non-digit.");
+        return Err("Major version contains non-digit.", vsp);
     }
     const long majorVersion = std::strtoul(majorStr.c_str(), nullptr, 10);
     if (majorVersion > UINT16_MAX) {
-        return ErrMsg(
+        return Err(
             "Major version too large. "
-            "(Max: " + std::to_string(UINT16_MAX) + ".)"
+            "(Max: " + std::to_string(UINT16_MAX) + ".)",
+            vsp
         );
     }
 
     const std::string minorStr = versionStr.substr(0, dot);
     if (!std::all_of(minorStr.cbegin(), minorStr.cend(), isDigit)) {
-        return ErrMsg("Minor version contains non-digit.");
+        return Err("Minor version contains non-digit.", vsp);
     }
     const long minorVersion = std::strtoul(minorStr.c_str(), nullptr, 10);
     if (minorVersion > UINT16_MAX) {
-        return ErrMsg(
+        return Err(
             "Minor version too large. "
-            "(Max: " + std::to_string(UINT16_MAX) + ".)"
+            "(Max: " + std::to_string(UINT16_MAX) + ".)",
+            vsp
         );
     }
 
-    if (it + 1 != end) { return listTooLong("version"); }
+    if (it + 1 != end) { return listTooLong("version", span(s)); }
 
     return Version(majorVersion, minorVersion);
 }
 
 /// <preamble>
-Result<Preamble, ErrMsg> parsePreamble(SExpr s) {
-    if (!isList(s)) { return notAList("preamble"); }
+Result<Preamble, Err> parsePreamble(SExpr s) {
+    if (!isList(s)) { return notAList("preamble", span(s)); }
+    const Span sp = span(s);
 
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     // Preamble keyword.
-    if (it == end) { return listCutShort("preamble", "'preamble'"); }
-    if (!isAtom(*it)) { return notAnAtom("'preamble'"); }
+    if (it == end) { return listCutShort("preamble", "'preamble'", sp); }
+    if (!isAtom(*it)) { return notAnAtom("'preamble'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "preamble") { return badKw("preamble", "'preamble'", kw); }
+    if (kw != "preamble") {
+        return badKw("preamble", "'preamble'", kw, span(*it));
+    }
 
     // Version.
     ++it;
-    if (it == end) { return listCutShort("preamble", "version"); }
-    const Result<Version, ErrMsg> version = parseVersion(*it);
+    if (it == end) { return listCutShort("preamble", "version", sp); }
+    const Result<Version, Err> version = parseVersion(*it);
     if (isErr(version)) { return getErr(version); }
 
     // Source.
     ++it;
-    if (it == end) { return listCutShort("preamble", "source"); }
-    if (!isList(*it)) { return notAList("source"); }
+    if (it == end) { return listCutShort("preamble", "source", sp); }
+    if (!isList(*it)) { return notAList("source", span(s)); }
 
     const List sourceList = std::get<List>(*it);
+    const Span ssp = span(sourceList);
     auto sit = sourceList.children.cbegin(), send = sourceList.children.cend();
-    if (sit == send) { return listCutShort("source", "'source'"); }
-    if (!isAtom(*sit)) { return notAnAtom("'source'"); }
+    if (sit == send) { return listCutShort("source", "'source'", ssp); }
+    if (!isAtom(*sit)) { return notAnAtom("'source'", span(*sit)); }
     const std::string skw = std::get<Atom>(*sit).val;
-    if (skw != "source") { return badKw("source", "'source'", kw); }
+    if (skw != "source") { return badKw("source", "'source'", kw, span(*sit)); }
 
     ++sit;
-    if (sit == send) { return listCutShort("source", "source descriptor"); }
-    if (!isAtom(*sit)) { return notAnAtom("source descriptor"); }
+    if (sit == send) {
+        return listCutShort("source", "source descriptor", ssp);
+    }
+    if (!isAtom(*sit)) { return notAnAtom("source descriptor", span(*sit)); }
     const std::string source = std::get<Atom>(*sit).val;
 
-    if (it + 1 != end) { return listTooLong("preamble"); }
+    if (it + 1 != end) { return listTooLong("preamble", sp); }
 
     return Preamble(getVal(version), source, span(s));
 }
 
 /// <gval>
-Result<GVal, ErrMsg> parseGVal(SExpr s) {
+Result<GVal, Err> parseGVal(SExpr s) {
     static const std::string expectation =
         "Expected a typed constant or a global ID.";
     if (isAtom(s)) {
         // Try for <gid>.
-        const Result<GlobalId, ErrMsg> gid = parseGlobalId(s);
+        const Result<GlobalId, Err> gid = parseGlobalId(s);
         if (!isErr(gid)) { return GVal(getVal(gid)); }
         else {
-            return ErrMsg(
+            return Err(
                 expectation + " "
-                "If you intended a global ID here, note: " + getErr(gid)
+                "If you intended a global ID here, note:\n  " +
+                getErr(gid).toString(),
+                span(s)
             );
         }
     } else {
         // Try for <typed-const>
         assert(isList(s));
-        const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
+        const Result<TypedConstant, Err> tc = parseTypedConst(s);
         if (!isErr(tc)) { return GVal(getVal(tc)); }
         else {
-            return ErrMsg(
+            return Err(
                 expectation + " "
-                "If you intended a typed constant here, note: " + getErr(tc)
+                "If you intended a typed constant here, note:\n  " +
+                getErr(tc).toString(),
+                span(s)
             );
         }
     }
@@ -508,27 +553,30 @@ Result<GVal, ErrMsg> parseGVal(SExpr s) {
 }
 
 /// <val>
-Result<Val, ErrMsg> parseVal(SExpr s) {
+Result<Val, Err> parseVal(SExpr s) {
     static const std::string expectation =
         "Expected a typed constant or a local/global (var) ID.";
     if (isAtom(s)) {
-        const Result<VarId, ErrMsg> vid = parseVarId(s);
+        const Result<VarId, Err> vid = parseVarId(s);
         if (!isErr(vid)) { return Val(getVal(vid)); }
         else {
-            return ErrMsg(
+            return Err(
                 expectation + " "
-                "If you intended a local/global (var) ID here, note: " +
-                getErr(vid)
+                "If you intended a local/global (var) ID here, note:\n  " +
+                getErr(vid).toString(),
+                span(s)
             );
         }
     } else {
         assert(isList(s));
-        const Result<TypedConstant, ErrMsg> tc = parseTypedConst(s);
+        const Result<TypedConstant, Err> tc = parseTypedConst(s);
         if (!isErr(tc)) { return Val(getVal(tc)); }
         else {
-            return ErrMsg(
+            return Err(
                 expectation + " "
-                "If you intended a typed constant here, note: " + getErr(tc)
+                "If you intended a typed constant here, note:\n  " +
+                getErr(tc).toString(),
+                span(s)
             );
         }
     }
@@ -536,73 +584,77 @@ Result<Val, ErrMsg> parseVal(SExpr s) {
 }
 
 /// <pval>
-Result<PVal, ErrMsg> parsePVal(SExpr s) {
+Result<PVal, Err> parsePVal(SExpr s) {
     if (!isAtom(s)) {
-        return notAnAtom("Global/local (var) ID or null constant.");
+        return notAnAtom("Global/local (var) ID or null constant.", span(s));
     }
 
-    const Result<Constant, ErrMsg> c = parseConst(s);
+    const Result<Constant, Err> c = parseConst(s);
     if (!isErr(c) && std::holds_alternative<NullConstant>(getVal(c))) {
         return PVal(std::get<NullConstant>(getVal(c)));
     }
 
-    const Result<VarId, ErrMsg> vid = parseVarId(s);
+    const Result<VarId, Err> vid = parseVarId(s);
     if (!isErr(vid)) { return PVal(getVal(vid)); }
     else {
-        return ErrMsg(
+        return Err(
             "Expected a null constant or a local/global (var) ID. "
-            "If you intended a local/global (var) ID here, note: " +
-            getErr(vid)
+            "If you intended a local/global (var) ID here, note:\n  " +
+            getErr(vid).toString(),
+            span(s)
         );
     }
     assert(false);
 }
 
 /// <ival>
-Result<IVal, ErrMsg> parseIVal(SExpr s) {
+Result<IVal, Err> parseIVal(SExpr s) {
     if (!isAtom(s)) {
-        return notAnAtom("Global/local (var) ID or integer constant.");
+        return notAnAtom("Global/local (var) ID or integer constant.", span(s));
     }
 
-    const Result<Constant, ErrMsg> c = parseConst(s);
+    const Result<Constant, Err> c = parseConst(s);
     if (!isErr(c) && std::holds_alternative<IntConstant>(getVal(c))) {
         return IVal(std::get<IntConstant>(getVal(c)));
     }
 
-    const Result<VarId, ErrMsg> vid = parseVarId(s);
+    const Result<VarId, Err> vid = parseVarId(s);
     if (!isErr(vid)) { return IVal(getVal(vid)); }
     else {
-        return ErrMsg(
+        return Err(
             "Expected an integer constant or a local/global (var) ID. "
-            "If you intended a local/global (var) ID here, note: " +
-            getErr(vid)
+            "If you intended a local/global (var) ID here, note:\n  " +
+            getErr(vid).toString(),
+            span(s)
         );
     }
     assert(false);
 }
 
 /// <variable>
-Result<Variable, ErrMsg> parseVariable(SExpr s) {
-    if (!isList(s)) { return notAList("variable"); }
+Result<Variable, Err> parseVariable(SExpr s) {
+    if (!isList(s)) { return notAList("variable", span(s)); }
+    const Span sp = span(s);
 
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { return listCutShort("variable", "variable name"); }
-    const Result<GlobalId, ErrMsg> gid = parseGlobalId(*it);
+    if (it == end) { return listCutShort("variable", "variable name", sp); }
+    const Result<GlobalId, Err> gid = parseGlobalId(*it);
     if (isErr(gid)) { return getErr(gid); }
 
     ++it;
-    if (it == end) { return listCutShort("variable", "value/opaqueness"); }
+    if (it == end) { return listCutShort("variable", "value/'opaque'", sp); }
     std::optional<GVal> gval;
     if (atomEq(*it, "opaque")) { gval = std::nullopt; }
     else {
-        const Result<GVal, ErrMsg> gvalr = parseGVal(*it);
+        const Result<GVal, Err> gvalr = parseGVal(*it);
         if (isErr(gvalr)) {
-            return ErrMsg(
+            return Err(
                 "Expected global ID, typed constant, or 'opaque' as "
-                "variable value. If you intended a value here, note: " +
-                getErr(gvalr)
+                "variable value. If you intended a value here, note:\n  " +
+                getErr(gvalr).toString(),
+                span(*it)
             );
         } else { gval.emplace(getVal(gvalr)); }
     }
@@ -610,32 +662,34 @@ Result<Variable, ErrMsg> parseVariable(SExpr s) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("variable"); }
+        if (it + 1 != end) { return listTooLong("variable", sp); }
     }
 
     return Variable(getVal(gid), gval, md, span(s));
 }
 
 /// <variables>
-Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
-    if (!isList(s)) { return notAList("variables"); }
+Result<std::vector<Variable>, Err> parseVariables(SExpr s) {
+    if (!isList(s)) { return notAList("variables", span(s)); }
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { return listCutShort("variables", "'variables'"); }
-    if (!isAtom(*it)) { return notAnAtom("'variables'"); }
+    if (it == end) { return listCutShort("variables", "'variables'", span(s)); }
+    if (!isAtom(*it)) { return notAnAtom("'variables'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "variables") { return badKw("variables", "'variables'", kw); }
+    if (kw != "variables") {
+        return badKw("variables", "'variables'", kw, span(*it));
+    }
 
     ++it;
     std::vector<Variable> variables;
     for (; it != end; ++it) {
-        const Result<Variable, ErrMsg> variable = parseVariable(*it);
-        if (isErr(variable)) { return ErrMsg(getErr(variable)); }
+        const Result<Variable, Err> variable = parseVariable(*it);
+        if (isErr(variable)) { return getErr(variable); }
         variables.push_back(getVal(variable));
     }
 
@@ -643,88 +697,94 @@ Result<std::vector<Variable>, ErrMsg> parseVariables(SExpr s) {
 }
 
 /// To be called on (phi ...) only.
-Result<Statement, ErrMsg> parsePhiStmt(List l) {
+Result<Statement, Err> parsePhiStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "phi"));
 
     ++it;
-    if (it == end) { return listCutShort("phi statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) {
+        return listCutShort("phi statement", "local ID", span(l));
+    }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (!isList(*it)) { return notAList("phi operands"); }
+    if (!isList(*it)) { return notAList("phi operands", span(*it)); }
     std::vector<PhiStmt::Operand> operands;
     for (auto s : std::get<List>(*it).children) {
-        if (!isList(s)) { return notAList("phi operand"); }
+        if (!isList(s)) { return notAList("phi operand", span(l)); }
         const List pair = std::get<List>(s);
 
         if (pair.children.size() != 2) {
-            return ErrMsg(
+            return Err(
                 "Phi operands must be value/block ID pairs. This operand has " +
-                std::to_string(pair.children.size()) + " elements."
+                std::to_string(pair.children.size()) + " elements.",
+                span(pair)
             );
         }
 
-        const Result<Val, ErrMsg> val = parseVal(pair.children[0]);
+        const Result<Val, Err> val = parseVal(pair.children[0]);
         if (isErr(val)) { return getErr(val); }
 
-        const Result<BlockId, ErrMsg> bid = parseBlockId(pair.children[1]);
+        const Result<BlockId, Err> bid = parseBlockId(pair.children[1]);
         if (isErr(bid)) { return getErr(bid); }
 
         operands.push_back(PhiStmt::Operand(getVal(val), getVal(bid)));
     }
     if (operands.empty()) {
-        return ErrMsg("Phi statements must have at least one operand.");
+        return Err("Phi statements must have at least one operand.", span(l));
     }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("phi statement"); }
+        if (it + 1 != end) { return listTooLong("phi statement", span(l)); }
     }
 
     return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
 }
 
 /// To be called on (call ...) only.
-Result<Statement, ErrMsg> parseCallStmt(List l) {
+Result<Statement, Err> parseCallStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "call"));
+    const Span sp = span(l);
 
     ++it;
     if (it == end) {
-        return listCutShort("call statement", "local ID or 'void'");
+        return listCutShort("call statement", "local ID or 'void'", sp);
     }
-    if (!isAtom(*it)) { return notAnAtom("local ID or 'void'"); }
+    if (!isAtom(*it)) { return notAnAtom("local ID or 'void'", span(*it)); }
     std::optional<LocalId> lid = std::nullopt;
     if (!atomEq(*it, "void")) {
         // Try a local ID.
-        const Result<LocalId, ErrMsg> lidr = parseLocalId(*it);
+        const Result<LocalId, Err> lidr = parseLocalId(*it);
         if (isErr(lidr)) {
-            return ErrMsg(
+            return Err(
                 "Expected a local ID or 'void'. "
-                "If you intended a local ID here, note: " + getErr(lidr)
+                "If you intended a local ID here, note:\n  " +
+                getErr(lidr).toString(),
+                span(*it)
             );
         }
         lid.emplace(getVal(lidr));
     }
 
     ++it;
-    if (it == end) { return listCutShort("call statement", "callee"); }
-    const Result<PVal, ErrMsg> callee = parsePVal(*it);
+    if (it == end) { return listCutShort("call statement", "callee", sp); }
+    const Result<PVal, Err> callee = parsePVal(*it);
     if (isErr(callee)) { return getErr(callee); }
 
     ++it;
-    if (it == end) { return listCutShort("call statement", "arguments"); }
-    if (!isList(*it)) { return notAList("call arguments"); }
+    if (it == end) { return listCutShort("call statement", "arguments", sp); }
+    if (!isList(*it)) { return notAList("call arguments", span(*it)); }
     std::vector<Val> args;
     for (const auto a : std::get<List>(*it).children) {
-        const Result<Val, ErrMsg> val = parseVal(a);
+        const Result<Val, Err> val = parseVal(a);
         if (isErr(val)) { return getErr(val); }
         args.push_back(getVal(val));
     }
@@ -732,70 +792,73 @@ Result<Statement, ErrMsg> parseCallStmt(List l) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("call statement"); }
+        if (it + 1 != end) { return listTooLong("call statement", sp); }
     }
 
     return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
 }
 
 /// To be called on (br ...) only.
-Result<Statement, ErrMsg> parseBrStmt(List l) {
+Result<Statement, Err> parseBrStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "br"));
 
     ++it;
-    if (it == end) { return listCutShort("branch statement", "target ID"); }
-    const Result<BlockId, ErrMsg> target = parseBlockId(*it);
+    if (it == end) {
+        return listCutShort("branch statement", "target ID", span(l));
+    }
+    const Result<BlockId, Err> target = parseBlockId(*it);
     if (isErr(target)) { return getErr(target); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("br statement"); }
+        if (it + 1 != end) { return listTooLong("br statement", span(l)); }
     }
 
     return Statement(BrStmt(getVal(target), md, span(l)));
 }
 
 /// To be called on (brif ...) only.
-Result<Statement, ErrMsg> parseBrifStmt(List l) {
+Result<Statement, Err> parseBrifStmt(List l) {
     static const std::string brifDesc = "conditional branch statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "brif"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort(brifDesc, "condition value"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) { return listCutShort(brifDesc, "condition value", sp); }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
-    if (it == end) { return listCutShort(brifDesc, "if target ID"); }
-    const Result<BlockId, ErrMsg> ifTarget = parseBlockId(*it);
+    if (it == end) { return listCutShort(brifDesc, "if target ID", sp); }
+    const Result<BlockId, Err> ifTarget = parseBlockId(*it);
     if (isErr(ifTarget)) { return getErr(ifTarget); }
 
     ++it;
-    if (it == end) { return listCutShort(brifDesc, "else target ID"); }
-    const Result<BlockId, ErrMsg> elseTarget = parseBlockId(*it);
+    if (it == end) { return listCutShort(brifDesc, "else target ID", sp); }
+    const Result<BlockId, Err> elseTarget = parseBlockId(*it);
     if (isErr(elseTarget)) { return getErr(elseTarget); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
         if (it + 1 != end) {
-            return listTooLong("conditional branch statement");
+            return listTooLong("conditional branch statement", sp);
         }
     }
 
@@ -805,22 +868,24 @@ Result<Statement, ErrMsg> parseBrifStmt(List l) {
 }
 
 /// To be called on (ret ...) only.
-Result<Statement, ErrMsg> parseRet(List l) {
+Result<Statement, Err> parseRet(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "ret"));
 
     ++it;
     if (it == end) {
-        return listCutShort("return statement", "value or 'void'");
+        return listCutShort("return statement", "value or 'void'", span(l));
     }
     std::optional<Val> val;
     if (atomEq(*it, "void")) { val = std::nullopt; }
     else {
-        const Result<Val, ErrMsg> valr = parseVal(*it);
+        const Result<Val, Err> valr = parseVal(*it);
         if (isErr(valr)) {
-            return ErrMsg(
+            return Err(
                 "Expected a value or 'void'. "
-                "If you intended a value here, note: " + getErr(valr)
+                "If you intended a value here, note:\n  " +
+                getErr(valr).toString(),
+                span(*it)
             );
         } else { val.emplace(getVal(valr)); }
     }
@@ -828,18 +893,18 @@ Result<Statement, ErrMsg> parseRet(List l) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("return statement"); }
+        if (it + 1 != end) { return listTooLong("return statement", span(l)); }
     }
 
     return RetStmt(val, md, span(l));
 }
 
 /// To be called on (cmp ...) only.
-Result<Statement, ErrMsg> parseCmpStmt(List l) {
+Result<Statement, Err> parseCmpStmt(List l) {
     static const std::string cmpDesc = "comparison statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
@@ -847,7 +912,7 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
 
     ++it;
     CmpStmt::Operator op;
-    if (!isAtom(*it)) { return notAnAtom("comparison operator"); }
+    if (!isAtom(*it)) { return notAnAtom("comparison operator", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     if (kw == "<") { op = CmpStmt::Operator::LT; }
     else if (kw == "<=") { op = CmpStmt::Operator::LE; }
@@ -859,33 +924,36 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
         return badKw(
             "comparison statement (operator)",
             "'<', '<=', '>', '>=', '=', or '!='",
-            kw
+            kw,
+            span(*it)
         );
     }
 
     ++it;
-    if (it == end) { return listCutShort(cmpDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort(cmpDesc, "local ID", span(l)); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort(cmpDesc, "left operand"); }
-    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (it == end) { return listCutShort(cmpDesc, "left operand", span(l)); }
+    const Result<Val, Err> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
     ++it;
-    if (it == end) { return listCutShort(cmpDesc, "right operand"); }
-    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (it == end) { return listCutShort(cmpDesc, "right operand", span(l)); }
+    const Result<Val, Err> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("comparison statement"); }
+        if (it + 1 != end) {
+            return listTooLong("comparison statement", span(l));
+        }
     }
 
     return Statement(
@@ -894,127 +962,142 @@ Result<Statement, ErrMsg> parseCmpStmt(List l) {
 }
 
 /// To be called on (alloc ...) only.
-Result<Statement, ErrMsg> parseAllocStmt(List l) {
+Result<Statement, Err> parseAllocStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "alloc"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("allocation statement", "kind"); }
-    if (!isAtom(*it)) { return notAnAtom("'heap' or 'stack'"); }
+    if (it == end) { return listCutShort("allocation statement", "kind", sp); }
+    if (!isAtom(*it)) { return notAnAtom("'heap' or 'stack'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     AllocStmt::Kind kind;
     if (kw == "heap") { kind = AllocStmt::Kind::HEAP; }
     else if (kw == "stack") { kind = AllocStmt::Kind::STACK; }
     else {
-        return badKw("allocation statement (kind)", "'heap' or 'stack'", kw);
+        return badKw(
+            "allocation statement (kind)",
+            "'heap' or 'stack'",
+            kw,
+            span(*it)
+        );
     }
 
     ++it;
-    if (it == end) { return listCutShort("allocation statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) {
+        return listCutShort("allocation statement", "local ID", sp);
+    }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("allocation statement"); }
+        if (it + 1 != end) { return listTooLong("allocation statement", sp); }
     }
 
     return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
 }
 
 /// To be called on (store ...) only.
-Result<Statement, ErrMsg> parseStoreStmt(List l) {
+Result<Statement, Err> parseStoreStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "store"));
 
     ++it;
-    if (it == end) { return listCutShort("store statement", "value"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) { return listCutShort("store statement", "value", span(l)); }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
     if (it == end) {
-        return listCutShort("store statement", "destination pointer");
+        return listCutShort("store statement", "destination pointer", span(l));
     }
-    const Result<PVal, ErrMsg> dst = parsePVal(*it);
+    const Result<PVal, Err> dst = parsePVal(*it);
     if (isErr(dst)) { return getErr(dst); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("store statement"); }
+        if (it + 1 != end) { return listTooLong("store statement", span(l)); }
     }
 
     return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
 }
 
 /// To be called on (load ...) only.
-Result<Statement, ErrMsg> parseLoadStmt(List l) {
+Result<Statement, Err> parseLoadStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "load"));
 
     ++it;
     if (it == end) {
-        return listCutShort("load statement", "(typed) local ID");
+        return listCutShort("load statement", "(typed) local ID", span(l));
     }
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
+    const Result<TypedId, Err> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
     ++it;
-    if (it == end) { return listCutShort("load statement", "source pointer"); }
-    const Result<PVal, ErrMsg> src = parsePVal(*it);
+    if (it == end) {
+        return listCutShort("load statement", "source pointer", span(l));
+    }
+    const Result<PVal, Err> src = parsePVal(*it);
     if (isErr(src)) { return getErr(src); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("load statement"); }
+        if (it + 1 != end) { return listTooLong("load statement", span(l)); }
     }
 
     return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
 }
 
 /// To be called on (field ...) only.
-Result<Statement, ErrMsg> parseFieldStmt(List l) {
+Result<Statement, Err> parseFieldStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "field"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("field statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort("field statement", "local ID", sp); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("field statement", "source pointer"); }
-    const Result<PVal, ErrMsg> src = parsePVal(*it);
+    if (it == end) {
+        return listCutShort("field statement", "source pointer", sp);
+    }
+    const Result<PVal, Err> src = parsePVal(*it);
     if (isErr(src)) { return getErr(src); }
 
     ++it;
-    if (it == end) { return listCutShort("field statement", "field index"); }
-    const Result<IVal, ErrMsg> index = parseIVal(*it);
+    if (it == end) {
+        return listCutShort("field statement", "field index", sp);
+    }
+    const Result<IVal, Err> index = parseIVal(*it);
     if (isErr(index)) { return getErr(index); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("field statement"); }
+        if (it + 1 != end) { return listTooLong("field statement", sp); }
     }
 
     return Statement(
@@ -1023,7 +1106,7 @@ Result<Statement, ErrMsg> parseFieldStmt(List l) {
 }
 
 /// To be called on (reinterpret/convert ...) only.
-Result<Statement, ErrMsg> parseReinterpretConvertStmt(List l) {
+Result<Statement, Err> parseReinterpretConvertStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && (atomEq(*it, "reinterpret") || atomEq(*it, "convert")));
 
@@ -1031,28 +1114,28 @@ Result<Statement, ErrMsg> parseReinterpretConvertStmt(List l) {
     const std::string stmtDesc = kind + " statement";
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "value"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) { return listCutShort(stmtDesc, "value", span(l)); }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "type"); }
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    if (it == end) { return listCutShort(stmtDesc, "type", span(l)); }
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong(stmtDesc); }
+        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
     if (kind == "reinterpret") {
@@ -1068,33 +1151,36 @@ Result<Statement, ErrMsg> parseReinterpretConvertStmt(List l) {
 }
 
 /// To be called on (inttrunc ...) only.
-Result<Statement, ErrMsg> parseIntTruncStmt(List l) {
+Result<Statement, Err> parseIntTruncStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "inttrunc"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("inttrunc statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) {
+        return listCutShort("inttrunc statement", "local ID", sp);
+    }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("inttrunc statement", "value"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) { return listCutShort("inttrunc statement", "value", sp); }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
-    if (it == end) { return listCutShort("inttrunc statement", "type"); }
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    if (it == end) { return listCutShort("inttrunc statement", "type", sp); }
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("inttrunc statement"); }
+        if (it + 1 != end) { return listTooLong("inttrunc statement", sp); }
     }
 
     return Statement(
@@ -1103,42 +1189,49 @@ Result<Statement, ErrMsg> parseIntTruncStmt(List l) {
 }
 
 /// To be called on (intext ...) only.
-Result<Statement, ErrMsg> parseIntExtStmt(List l) {
+Result<Statement, Err> parseIntExtStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "intext"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("intext statement", "'zero'/'sign'"); }
-    if (!isAtom(*it)) { return notAnAtom("'zero'/'sign'"); }
+    if (it == end) {
+        return listCutShort("intext statement", "'zero'/'sign'", sp);
+    }
+    if (!isAtom(*it)) { return notAnAtom("'zero'/'sign'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     IntExtStmt::Kind kind;
     if (kw == "zero") { kind = IntExtStmt::Kind::ZERO; }
     else if (kw == "sign") { kind = IntExtStmt::Kind::SIGN; }
-    else { return badKw("intext statement (kind)", "'zero'/'sign'", kw); }
+    else {
+        return badKw("intext statement (kind)", "'zero'/'sign'", kw, span(*it));
+    }
 
     ++it;
-    if (it == end) { return listCutShort("intext statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort("intext statement", "local ID", sp); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("intext statement", "left operand"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) {
+        return listCutShort("intext statement", "left operand", sp);
+    }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
-    if (it == end) { return listCutShort("intext statement", "type"); }
-    const Result<DecType, ErrMsg> type = parseType(*it);
+    if (it == end) { return listCutShort("intext statement", "type", sp); }
+    const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("intextstatement"); }
+        if (it + 1 != end) { return listTooLong("intextstatement", sp); }
     }
 
     return Statement(
@@ -1147,7 +1240,7 @@ Result<Statement, ErrMsg> parseIntExtStmt(List l) {
 }
 
 /// To be called on (add/mul/sub ...) only.
-Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
+Result<Statement, Err> parseAddMulSubStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(
         it != end &&
@@ -1158,28 +1251,28 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
     const std::string stmtDesc = kind + " statement";
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "left operand"); }
-    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (it == end) { return listCutShort(stmtDesc, "left operand", span(l)); }
+    const Result<Val, Err> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "right operand"); }
-    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (it == end) { return listCutShort(stmtDesc, "right operand", span(l)); }
+    const Result<Val, Err> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong(stmtDesc); }
+        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
     if (kind == "add") {
@@ -1201,48 +1294,56 @@ Result<Statement, ErrMsg> parseAddMulSubStmt(List l) {
 
 
 /// To be called on (div/rem ...) only.
-Result<Statement, ErrMsg> parseDivRemStmt(List l) {
+Result<Statement, Err> parseDivRemStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && (atomEq(*it, "div") || atomEq(*it, "rem")));
+    const Span sp = span(l);
 
     const std::string kind = std::get<Atom>(*it).val;
     const std::string stmtDesc = kind + " statement";
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'"); }
-    if (!isAtom(*it)) { return notAnAtom("'signed'/'unsigned'"); }
+    if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'", sp); }
+    if (!isAtom(*it)) { return notAnAtom("'signed'/'unsigned'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     bool sign;
     if (kw == "unsigned") { sign = false; }
     else if (kw == "signed") { sign = true; }
-    else { return badKw(stmtDesc + " (sign)", "'signed'/'unsigned'", kw); }
+    else {
+        return badKw(
+            stmtDesc + " (sign)",
+            "'signed'/'unsigned'",
+            kw,
+            span(*it)
+        );
+    }
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lidr = parseLocalId(*it);
+    if (it == end) { return listCutShort(stmtDesc, "local ID", sp); }
+    const Result<LocalId, Err> lidr = parseLocalId(*it);
     if (isErr(lidr)) { return getErr(lidr); }
     const LocalId lid = getVal(lidr);
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "left operand"); }
-    const Result<Val, ErrMsg> leftr = parseVal(*it);
+    if (it == end) { return listCutShort(stmtDesc, "left operand", sp); }
+    const Result<Val, Err> leftr = parseVal(*it);
     if (isErr(leftr)) { return getErr(leftr); }
     const Val left = getVal(leftr);
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "right operand"); }
-    const Result<Val, ErrMsg> rightr = parseVal(*it);
+    if (it == end) { return listCutShort(stmtDesc, "right operand", sp); }
+    const Result<Val, Err> rightr = parseVal(*it);
     if (isErr(rightr)) { return getErr(rightr); }
     const Val right = getVal(rightr);
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong(stmtDesc); }
+        if (it + 1 != end) { return listTooLong(stmtDesc, sp); }
     }
 
     if (kind == "div") {
@@ -1259,35 +1360,36 @@ Result<Statement, ErrMsg> parseDivRemStmt(List l) {
 }
 
 /// To be called on (not ...) only.
-Result<Statement, ErrMsg> parseNotStmt(List l) {
+Result<Statement, Err> parseNotStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "not"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("not statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort("not statement", "local ID", sp); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("not statement", "operand"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) { return listCutShort("not statement", "operand", sp); }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("not statement"); }
+        if (it + 1 != end) { return listTooLong("not statement", sp); }
     }
 
     return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
 /// To be called on (and/or/xor/shiftl ...) only.
-Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
+Result<Statement, Err> parseAndOrXorShiftlStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(
         it != end &&
@@ -1303,28 +1405,28 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
     const std::string stmtDesc = kind + " statement";
 
     ++it;
-    if (it == end) { listCutShort(stmtDesc, "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { listCutShort(stmtDesc, "local ID", span(l)); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { listCutShort(stmtDesc, "left operand"); }
-    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (it == end) { listCutShort(stmtDesc, "left operand", span(l)); }
+    const Result<Val, Err> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
     ++it;
-    if (it == end) { listCutShort(stmtDesc, "right operand"); }
-    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (it == end) { listCutShort(stmtDesc, "right operand", span(l)); }
+    const Result<Val, Err> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong(stmtDesc); }
+        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
     if (kind == "and") {
@@ -1347,46 +1449,56 @@ Result<Statement, ErrMsg> parseAndOrXorShiftlStmt(List l) {
 }
 
 /// To be called on (shiftr ...) only.
-Result<Statement, ErrMsg> parseShiftrStmt(List l) {
+Result<Statement, Err> parseShiftrStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "shiftr"));
+    const Span sp = span(l);
 
     ++it;
     if (it == end) {
-        return listCutShort("shiftr statement", "'logical'/'arithmetic'");
+        return listCutShort("shiftr statement", "'logical'/'arithmetic'", sp);
     }
-    if (!isAtom(*it)) { return notAnAtom("'logical'/'arithmetic'"); }
+    if (!isAtom(*it)) { return notAnAtom("'logical'/'arithmetic'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     ShiftrStmt::Kind kind;
     if (kw == "logical") { kind = ShiftrStmt::Kind::LOGICAL; }
     else if (kw == "arithmetic") { kind = ShiftrStmt::Kind::ARITHMETIC; }
     else {
-        return badKw("shiftr statement (kind)", "'logical'/'arithmetic'", kw);
+        return badKw(
+            "shiftr statement (kind)",
+            "'logical'/'arithmetic'",
+            kw,
+            span(*it)
+        );
     }
 
     ++it;
-    if (it == end) { return listCutShort("shiftr statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) { return listCutShort("shiftr statement", "local ID", sp); }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("shiftr statement", "left operand"); }
-    const Result<Val, ErrMsg> left = parseVal(*it);
+    if (it == end) {
+        return listCutShort("shiftr statement", "left operand", sp);
+    }
+    const Result<Val, Err> left = parseVal(*it);
     if (isErr(left)) { return getErr(left); }
 
     ++it;
-    if (it == end) { return listCutShort("shiftr statement", "right operand"); }
-    const Result<Val, ErrMsg> right = parseVal(*it);
+    if (it == end) {
+        return listCutShort("shiftr statement", "right operand", sp);
+    }
+    const Result<Val, Err> right = parseVal(*it);
     if (isErr(right)) { return getErr(right); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("shiftr statement"); }
+        if (it + 1 != end) { return listTooLong("shiftr statement", sp); }
     }
 
     return Statement(
@@ -1395,71 +1507,85 @@ Result<Statement, ErrMsg> parseShiftrStmt(List l) {
 }
 
 /// To be called on (assign ...) only.
-Result<Statement, ErrMsg> parseAssignStmt(List l) {
+Result<Statement, Err> parseAssignStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "assign"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("assignment statement", "local ID"); }
-    const Result<LocalId, ErrMsg> lid = parseLocalId(*it);
+    if (it == end) {
+        return listCutShort("assignment statement", "local ID", sp);
+    }
+    const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (it == end) { return listCutShort("assignment statement", "value"); }
-    const Result<Val, ErrMsg> val = parseVal(*it);
+    if (it == end) {
+        return listCutShort("assignment statement", "value", sp);
+    }
+    const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("assignment statement"); }
+        if (it + 1 != end) { return listTooLong("assignment statement", sp); }
     }
 
     return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
 }
 
 /// To be called on (vararg ...) only.
-Result<Statement, ErrMsg> parseVarargStmt(List l) {
+Result<Statement, Err> parseVarargStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "vararg"));
+    const Span sp = span(l);
 
     ++it;
-    if (it == end) { return listCutShort("vararg statement", "(typed) ID"); }
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
+    if (it == end) {
+        return listCutShort("vararg statement", "(typed) ID", sp);
+    }
+    const Result<TypedId, Err> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
     ++it;
-    if (it == end) { return listCutShort("vararg statement", "index"); }
-    const Result<IVal, ErrMsg> val = parseIVal(*it);
+    if (it == end) { return listCutShort("vararg statement", "index", sp); }
+    const Result<IVal, Err> val = parseIVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("vararg statement"); }
+        if (it + 1 != end) { return listTooLong("vararg statement", sp); }
     }
 
     return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
 }
 
 /// To be called on (blackhole ...) only.
-Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
+Result<Statement, Err> parseBlackholeStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "blackhole"));
 
     ++it;
     if (it == end) {
-        return listCutShort("blackhole statement", "'uncontained'/'contained'");
+        return listCutShort(
+            "blackhole statement",
+            "'uncontained'/'contained'",
+            span(l)
+        );
     }
-    if (!isAtom(*it)) { return notAnAtom("'uncontained'/'contained'"); }
+    if (!isAtom(*it)) {
+        return notAnAtom("'uncontained'/'contained'", span(*it));
+    }
     const std::string kw = std::get<Atom>(*it).val;
     BlackholeStmt::Kind kind;
     if (kw == "uncontained") { kind = BlackholeStmt::Kind::UNCONTAINED; }
@@ -1468,36 +1594,43 @@ Result<Statement, ErrMsg> parseBlackholeStmt(List l) {
         return badKw(
             "blackhole statement (kind)",
             "'uncontained'/'contained'",
-            kw
+            kw,
+            span(*it)
         );
     }
 
     ++it;
-    if (it == end) { return listCutShort("blackhole statement", "(typed) ID"); }
-    const Result<TypedId, ErrMsg> tlid = parseTypedId(*it);
+    if (it == end) {
+        return listCutShort("blackhole statement", "(typed) ID", span(l));
+    }
+    const Result<TypedId, Err> tlid = parseTypedId(*it);
     if (isErr(tlid)) { return getErr(tlid); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("blackhole statement"); }
+        if (it + 1 != end) {
+            return listTooLong("blackhole statement", span(l));
+        }
     }
 
     return Statement(BlackholeStmt(kind, getVal(tlid), md, span(l)));
 }
 
 /// <stmt>
-Result<Statement, ErrMsg> parseStmt(SExpr s) {
-    if (!isList(s)) { return notAList("statement"); }
+Result<Statement, Err> parseStmt(SExpr s) {
+    if (!isList(s)) { return notAList("statement", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (it == end) { return listCutShort("statement", "statement kind"); }
-    if (!isAtom(*it)) { return notAnAtom("statement kind"); }
+    if (it == end) {
+        return listCutShort("statement", "statement kind", span(l));
+    }
+    if (!isAtom(*it)) { return notAnAtom("statement kind", span(*it)); }
     const std::string kind = std::get<Atom>(*it).val;
 
     if (kind == "phi") { return parsePhiStmt(l); }
@@ -1530,27 +1663,28 @@ Result<Statement, ErrMsg> parseStmt(SExpr s) {
     else if (kind == "assign") { return parseAssignStmt(l); }
     else if (kind == "vararg") { return parseVarargStmt(l); }
     else if (kind == "blackhole") { return parseBlackholeStmt(l); }
-    else { return ErrMsg("Unknown statement kind: '" + kind + "'"); }
+    else { return Err("Unknown statement kind: '" + kind + "'", span(*it)); }
     assert(false);
-    // TODO: conversions.
 }
 
 /// <basic-block>
-Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
-    if (!isList(s)) { return ErrMsg("basic block"); }
+Result<BasicBlock, Err> parseBasicBlock(SExpr s) {
+    if (!isList(s)) { return notAList("basic block", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (it == end) { return listCutShort("basic block", "block ID"); }
-    const Result<BlockId, ErrMsg> bid = parseBlockId(*it);
+    if (it == end) { return listCutShort("basic block", "block ID", span(s)); }
+    const Result<BlockId, Err> bid = parseBlockId(*it);
     if (isErr(bid)) { return getErr(bid); }
 
     ++it;
-    if (it == end) { return listCutShort("basic block", "statement list"); }
-    if (!isList(*it)) { return notAList("basic block"); }
+    if (it == end) {
+        return listCutShort("basic block", "statement list", span(s));
+    }
+    if (!isList(*it)) { return notAList("basic block", span(*it)); }
     std::vector<Statement> stmts;
     for (auto s : std::get<List>(*it).children) {
-        const Result<Statement, ErrMsg> stmt = parseStmt(s);
+        const Result<Statement, Err> stmt = parseStmt(s);
         if (isErr(stmt)) { return getErr(stmt); }
         stmts.push_back(getVal(stmt));
     }
@@ -1558,21 +1692,21 @@ Result<BasicBlock, ErrMsg> parseBasicBlock(SExpr s) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("basic block"); }
+        if (it + 1 != end) { return listTooLong("basic block", span(s)); }
     }
 
     return BasicBlock(getVal(bid), stmts, md, span(s));
 }
 
-Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
-    if (!isList(s)) { return notAList("function's basic blocks"); }
+Result<std::vector<BasicBlock>, Err> parseFunctionBlocks(SExpr s) {
+    if (!isList(s)) { return notAList("function's basic blocks", span(s)); }
     std::vector<BasicBlock> blocks;
     for (auto rawBlock : std::get<List>(s).children) {
-        const Result<BasicBlock, ErrMsg> block = parseBasicBlock(rawBlock);
+        const Result<BasicBlock, Err> block = parseBasicBlock(rawBlock);
         if (isErr(block)) { return getErr(block); }
         blocks.push_back(getVal(block));
     }
@@ -1580,18 +1714,18 @@ Result<std::vector<BasicBlock>, ErrMsg> parseFunctionBlocks(SExpr s) {
     return blocks;
 }
 
-Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
+Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, Err>
 parseFunctionParams(List l) {
     std::vector<Param> params;
     std::optional<LocalId> varargParam = std::nullopt;
     for (size_t i = 0; i < l.children.size(); ++i) {
-        const Result<Param, ErrMsg> param = parseParam(l.children[i]);
+        const Result<Param, Err> param = parseParam(l.children[i]);
         if (!isErr(param)) { params.push_back(getVal(param)); }
         else {
             assert(isErr(param));
             if (i == l.children.size() - 1) {
                 // We might have a vararg parameter.
-                const Result<LocalId, ErrMsg> idr = parseLocalId(l.children[i]);
+                const Result<LocalId, Err> idr = parseLocalId(l.children[i]);
                 if (!isErr(idr)) {
                     const LocalId id = getVal(idr);
                     // Why 5? 1 for %, 1+ for the name, 3 for '...'.
@@ -1601,22 +1735,24 @@ parseFunctionParams(List l) {
                         id.id.substr(id.id.size() - 3, id.id.size()) == "..."
                     ) { varargParam.emplace(id); }
                     else {
-                        return ErrMsg(
+                        return Err(
                             "Expected a parameter or a vararg parameter. "
-                            "A vararg parameter must end in '...'"
+                            "A vararg parameter must end in '...'",
+                            span(l.children[i])
                         );
                     }
                 } else {
-                    return ErrMsg(
+                    return Err(
                         "Expected a parameter or a vararg parameter. "
                         "A vararg parameter must end in '...'. "
-                        "If you intended a vararg parameter here, also note: " +
-                        getErr(idr)
+                        "If you intended a vararg parameter here, "
+                        "also note:\n  " + getErr(idr).toString(),
+                        span(l.children[i])
                     );
                 }
             } else {
                 // No, we definitely expected a parameter and got an error.
-                return ErrMsg(getErr(param));
+                return getErr(param);
             }
         }
     }
@@ -1625,47 +1761,56 @@ parseFunctionParams(List l) {
 }
 
 /// <function>
-Result<Function, ErrMsg> parseFunction(SExpr s) {
-    if (!isList(s)) { return notAList("function"); }
+Result<Function, Err> parseFunction(SExpr s) {
+    if (!isList(s)) { return notAList("function", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (it == end) { return listCutShort("function", "name"); }
-    const Result<GlobalId, ErrMsg> gidr = parseGlobalId(*it);
+    if (it == end) { return listCutShort("function", "name", span(s)); }
+    const Result<GlobalId, Err> gidr = parseGlobalId(*it);
     if (isErr(gidr)) { return getErr(gidr); }
     const GlobalId gid = getVal(gidr);
 
     ++it;
-    if (it == end) { return listCutShort("function", "parameters"); }
-    if (!isList(*it)) { return notAList("function parameters"); }
-    Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, ErrMsg>
+    if (it == end) { return listCutShort("function", "parameters", span(s)); }
+    if (!isList(*it)) { return notAList("function parameters", span(*it)); }
+    Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, Err>
     paramsr = parseFunctionParams(std::get<List>(*it));
     if (isErr(paramsr)) { return getErr(paramsr); }
     const std::vector<Param> params = std::get<0>(getVal(paramsr));
     const std::optional<LocalId> vaParam = std::get<1>(getVal(paramsr));
 
     ++it;
-    if (it == end) { return listCutShort("function", "return type"); }
-    const Result<DecType, ErrMsg> typer = parseType(*it);
+    if (it == end) { return listCutShort("function", "return type", span(s)); }
+    const Result<DecType, Err> typer = parseType(*it);
     if (isErr(typer)) { return getErr(typer); }
     const DecType type = getVal(typer);
 
     ++it;
-    if (it == end) { return listCutShort("function", "basic block list/opaque"); }
+    if (it == end) {
+        return listCutShort("function", "basic block list/opaque", span(s));
+    }
     std::optional<std::vector<BasicBlock>> bbs;
     if (isAtom(*it)) {
         const std::string kw = std::get<Atom>(*it).val;
         if (kw != "opaque") {
-            badKw("function (body)", "opaque (or basic block list)", kw);
+            badKw(
+                "function (body)",
+                "opaque (or basic block list)",
+                kw,
+                span(*it)
+            );
         }
     } else {
         assert(isList(*it));
-        const Result<std::vector<BasicBlock>, ErrMsg>
+        const Result<std::vector<BasicBlock>, Err>
         bbsr = parseFunctionBlocks(std::get<List>(*it));
         if (isErr(bbsr)) {
-            return ErrMsg(
+            return Err(
                 "Expected a basic block list or 'opaque' as the function body. "
-                "If you intended a basic block list here, note: " + getErr(bbsr)
+                "If you intended a basic block list here, note:\n  " +
+                getErr(bbsr).toString(),
+                span(*it)
             );
         }
         bbs.emplace(getVal(bbsr));
@@ -1674,33 +1819,33 @@ Result<Function, ErrMsg> parseFunction(SExpr s) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("function"); }
+        if (it + 1 != end) { return listTooLong("function", span(s)); }
     }
 
     return Function(gid, params, vaParam, type, bbs, md, span(s));
 }
 
 /// <functions>
-Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
-    if (!isList(s)) { return notAList("top-level functions"); }
+Result<std::vector<Function>, Err> parseFunctions(SExpr s) {
+    if (!isList(s)) { return notAList("top-level functions", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (it == end) { return listCutShort("functions", "'functions'"); }
-    if (!isAtom(*it)) { return notAnAtom("'functions'"); }
+    if (it == end) { return listCutShort("functions", "'functions'", span(s)); }
+    if (!isAtom(*it)) { return notAnAtom("'functions'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
     if (kw != "functions") {
-        return badKw("functions list", "'functions'", kw);
+        return badKw("functions list", "'functions'", kw, span(*it));
     }
 
     ++it;
     std::vector<Function> functions;
     for (; it != end; ++it) {
-        const Result<Function, ErrMsg> function = parseFunction(*it);
+        const Result<Function, Err> function = parseFunction(*it);
         if (isErr(function)) { return getErr(function); }
         functions.push_back(getVal(function));
     }
@@ -1709,25 +1854,28 @@ Result<std::vector<Function>, ErrMsg> parseFunctions(SExpr s) {
 }
 
 /// <type-alias>
-Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
-    if (!isList(s)) { return notAList("type alias"); }
+Result<TypeAlias, Err> parseTypeAlias(SExpr s) {
+    if (!isList(s)) { return notAList("type alias", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
+    const Span sp = span(s);
 
-    if (it == end) { return listCutShort("type alias", "name (type ID)"); }
-    const Result<DecTypeId, ErrMsg> tid = parseTypeId(*it);
+    if (it == end) { return listCutShort("type alias", "name (type ID)", sp); }
+    const Result<DecTypeId, Err> tid = parseTypeId(*it);
     if (isErr(tid)) { return getErr(tid); }
 
     ++it;
-    if (it == end) { return listCutShort("type alias", "type/'opaque'"); }
+    if (it == end) { return listCutShort("type alias", "type/'opaque'", sp); }
     std::optional<DecType> type;
     if (atomEq(*it, "opaque")) { type = std::nullopt; }
     else {
-        const Result<DecType, ErrMsg> typer = parseType(*it);
+        const Result<DecType, Err> typer = parseType(*it);
         if (isErr(typer)) {
-            return ErrMsg(
+            return Err(
                 "Expected a type to alias or 'opaque'. "
-                "If you intended a type here, note: " + getErr(typer)
+                "If you intended a type here, note:\n  " +
+                getErr(typer).toString(),
+                span(*it)
             );
         }
         type.emplace(getVal(typer));
@@ -1736,31 +1884,33 @@ Result<TypeAlias, ErrMsg> parseTypeAlias(SExpr s) {
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("type alias"); }
+        if (it + 1 != end) { return listTooLong("type alias", sp); }
     }
 
     return TypeAlias(getVal(tid), type, md, span(s));
 }
 
 /// <types>
-Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
-    if (!isList(s)) { return notAList("top-level type aliases"); }
+Result<std::vector<TypeAlias>, Err> parseTypes(SExpr s) {
+    if (!isList(s)) { return notAList("top-level type aliases", span(s)); }
     const List l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
-    if (it == end) { return listCutShort("type aliases", "'types'"); }
-    if (!isAtom(*it)) { return notAnAtom("'types'"); }
+    if (it == end) { return listCutShort("type aliases", "'types'", span(s)); }
+    if (!isAtom(*it)) { return notAnAtom("'types'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    if (kw != "types") { return badKw("type aliases", "'types'", kw); }
+    if (kw != "types") {
+        return badKw("type aliases", "'types'", kw, span(*it));
+    }
 
     ++it;
     std::vector<TypeAlias> tas;
     for (; it != end; ++it) {
-        const Result<TypeAlias, ErrMsg> ta = parseTypeAlias(*it);
+        const Result<TypeAlias, Err> ta = parseTypeAlias(*it);
         if (isErr(ta)) { return getErr(ta); }
         tas.push_back(getVal(ta));
     }
@@ -1769,37 +1919,38 @@ Result<std::vector<TypeAlias>, ErrMsg> parseTypes(SExpr s) {
 }
 
 /// <program>
-Result<Program, ErrMsg> parseProgram(SExprSeq ss) {
+Result<Program, Err> parseProgram(SExprSeq ss) {
     auto it = ss.cbegin(), end = ss.cend();
 
-    // TODO: the listCutShort language may be inappropriate for an SExprSeq.
-    if (it == end) { return listCutShort("program", "preamble"); }
-    const Result<Preamble, ErrMsg> preamble = parsePreamble(*it);
+    if (it == end) { return Err("Program missing preamble block."); }
+    const Result<Preamble, Err> preamble = parsePreamble(*it);
     if (isErr(preamble)) { return getErr(preamble); }
 
     ++it;
-    if (it == end) { return listCutShort("program", "types"); }
-    const Result<std::vector<TypeAlias>, ErrMsg> types = parseTypes(*it);
+    if (it == end) { return Err("Program missing type aliases block."); }
+    const Result<std::vector<TypeAlias>, Err> types = parseTypes(*it);
     if (isErr(types)) { return getErr(types); }
 
     ++it;
-    if (it == end) { return listCutShort("program", "variables"); }
-    const Result<std::vector<Variable>, ErrMsg> variables = parseVariables(*it);
+    if (it == end) { return Err("Program missing variables block."); }
+    const Result<std::vector<Variable>, Err> variables = parseVariables(*it);
     if (isErr(variables)) { return getErr(variables); }
 
     ++it;
-    if (it == end) { return listCutShort("program", "functions"); }
-    const Result<std::vector<Function>, ErrMsg> functions = parseFunctions(*it);
+    if (it == end) { return Err("Program missing functions block."); }
+    const Result<std::vector<Function>, Err> functions = parseFunctions(*it);
     if (isErr(functions)) { return getErr(functions); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
     if (it != end) {
-        const Result<Metadata, ErrMsg> mdr = parseMetadata(*it);
+        const Result<Metadata, Err> mdr = parseMetadata(*it);
         if (isErr(mdr)) { return getErr(mdr); }
         md.emplace(getVal(mdr));
 
-        if (it + 1 != end) { return listTooLong("program"); }
+        if (it + 1 != end) {
+            return Err("Unexpected element after program metadata.");
+        }
     }
 
     return Program(
@@ -1816,29 +1967,29 @@ Result<Program, ErrMsg> parseProgram(SExprSeq ss) {
 
 namespace SVFIR {
 
-Result<Program, ErrMsg> parse(InputStream &stream) {
+Result<Program, Err> parse(InputStream &stream) {
     SExprs::ParseResult<SExprs::SExprSeq> ssr = SExprs::parseSeq(stream);
-    if (std::holds_alternative<SExprs::Err>(ssr)) {
-        return Result<Program, ErrMsg>(std::get<SExprs::Err>(ssr));
+    if (std::holds_alternative<SExprs::ErrMsg>(ssr)) {
+        return Result<Program, Err>(std::get<SExprs::ErrMsg>(ssr));
     }
 
     SExprs::SExprSeq ss = std::get<SExprs::SExprSeq>(ssr);
     return parseProgram(ss);
 }
 
-Result<Program, ErrMsg> parseFile(const std::string filename) {
+Result<Program, Err> parseFile(const std::string filename) {
     std::ifstream fs;
     fs.open(filename);
 
     if (!fs.is_open()) {
-        return ErrMsg(strerror(errno));
+        return Err(strerror(errno));
     }
 
     InputStream is = InputStream(fs);
     return parse(is);
 }
 
-Result<Program, ErrMsg> parseString(const std::string str) {
+Result<Program, Err> parseString(const std::string str) {
     std::istringstream ss = std::istringstream(str);
     InputStream is = InputStream(ss);
     return parse(is);

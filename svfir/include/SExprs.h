@@ -45,10 +45,10 @@ struct List {
     : children(children), span(span) { }
 };
 
-using Err = std::string;
+using ErrMsg = std::string;
 /// Parsing will return either some nice data structure or an error message.
 template <typename T>
-using ParseResult = std::variant<T, Err>;
+using ParseResult = std::variant<T, ErrMsg>;
 
 /// Parse an S-expression, including allowance for whitespace or comments at
 /// the start.

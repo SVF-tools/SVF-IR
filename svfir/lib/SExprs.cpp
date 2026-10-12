@@ -93,7 +93,7 @@ ParseResult<SExpr> _parseAtom(InputStream &stream) {
 
         // We haven't consumed the closing quote so EOF indicates an error.
         if (stream.atEof()) {
-            return ParseResult<SExpr>(Err("unclosed quote"));
+            return ParseResult<SExpr>(ErrMsg("unclosed quote"));
         }
 
         // Consume closing quote.
@@ -126,7 +126,7 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
             if (std::holds_alternative<SExpr>(res)) {
                 children.push_back(std::get<SExpr>(res));
             } else {
-                assert(std::holds_alternative<Err>(res));
+                assert(std::holds_alternative<ErrMsg>(res));
                 return res;
             }
         }
@@ -134,7 +134,7 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
     }
 
     if (stream.peek() != _RPAREN) {
-        return ParseResult<SExpr>(Err("unclosed list"));
+        return ParseResult<SExpr>(ErrMsg("unclosed list"));
     }
 
     stream.advance(1);
@@ -152,12 +152,12 @@ ParseResult<SExpr> parse(InputStream &stream) {
         if (_skipNonSignificant(stream)) { }
         else if (c == _LPAREN) { return _parseList(stream); }
         else if (c == _RPAREN) {
-            return ParseResult<SExpr>(Err("unexpected ')'"));
+            return ParseResult<SExpr>(ErrMsg("unexpected ')'"));
         } else { return _parseAtom(stream); }
         // The above calls will appropriately advance.
     }
 
-    return ParseResult<SExpr>(Err("no sexpr given"));
+    return ParseResult<SExpr>(ErrMsg("no sexpr given"));
 }
 
 /// Parse a stream purported to be a sequence of consecutive s-expressions.
@@ -170,8 +170,8 @@ ParseResult<SExprSeq> parseSeq(InputStream &stream) {
             if (std::holds_alternative<SExpr>(res)) {
                 seq.push_back(std::get<SExpr>(res));
             } else {
-                assert(std::holds_alternative<Err>(res));
-                return ParseResult<SExprSeq>(std::get<Err>(res));
+                assert(std::holds_alternative<ErrMsg>(res));
+                return ParseResult<SExprSeq>(std::get<ErrMsg>(res));
             }
         }
     }
