@@ -527,190 +527,44 @@ struct IntExtStmt final : public Node {
     { }
 };
 
-/// <arith-inst> (1)
-struct AddStmt final : public Node {
+/// <arith-inst>/<bit-stmt>
+struct BinaryOpStmt final : public Node {
+    enum class Op {
+        ADD, SUB, MUL, UDIV, SDIV, UREM, SREM,
+        AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR
+    };
+
+    const Op op;
     const LocalId id;
     const Val left;
     const Val right;
     const MaybeMetadata md;
 
-    AddStmt(
+    BinaryOpStmt(
+        const Op op,
         const LocalId id,
         const Val left,
         const Val right,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
+    ) : Node(span), op(op), id(id), left(left), right(right), md(md) { }
 };
 
-/// <arith-inst> (2)
-struct SubStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
+struct UnaryOpStmt final : public Node {
+    enum class Op { NOT };
 
-    SubStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <arith-inst> (3)
-struct MulStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    MulStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <arith-inst> (4)
-struct DivStmt final : public Node {
-    enum class Kind { UNSIGNED, SIGNED };
-
-    const Kind kind;
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    DivStmt(
-        const Kind kind,
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), kind(kind), id(id), left(left), right(right), md(md) { }
-};
-
-/// <arith-inst> (5)
-struct RemStmt final : public Node {
-    enum class Kind { UNSIGNED, SIGNED };
-
-    const Kind kind;
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    RemStmt(
-        const Kind kind,
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), kind(kind), id(id), left(left), right(right), md(md) { }
-};
-
-/// <bit-inst> (1)
-struct NotStmt final : public Node {
+    const Op op;
     const LocalId id;
     const Val val;
     const MaybeMetadata md;
 
-    NotStmt(
+    UnaryOpStmt(
+        const Op op,
         const LocalId id,
         const Val val,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), md(md) { }
-};
-
-/// <bit-inst> (2)
-struct AndStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    AndStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <bit-inst> (3)
-struct OrStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    OrStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <bit-inst> (4)
-struct XorStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    XorStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <bit-inst> (5)
-struct ShiftlStmt final : public Node {
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    ShiftlStmt(
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), id(id), left(left), right(right), md(md) { }
-};
-
-/// <bit-inst> (6)
-struct ShiftrStmt final : public Node {
-    enum class Kind { LOGICAL, ARITHMETIC };
-
-    const Kind kind;
-    const LocalId id;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-
-    ShiftrStmt(
-        const Kind kind,
-        const LocalId id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
-    ) : Node(span), kind(kind), id(id), left(left), right(right), md(md) { }
+    ) : Node(span), op(op), id(id), val(val), md(md) { }
 };
 
 /// <misc-inst> (1)
@@ -764,8 +618,7 @@ using Statement = std::variant<
     CmpStmt,
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
     ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
-    AddStmt, SubStmt, MulStmt, DivStmt, RemStmt,
-    NotStmt, AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt,
+    BinaryOpStmt, UnaryOpStmt,
     AssignStmt, VarargStmt, BlackholeStmt
 >;
 
@@ -796,8 +649,7 @@ using AnyNode = std::variant<
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
-    AddStmt, SubStmt, MulStmt, DivStmt, RemStmt, NotStmt,
-    AndStmt, OrStmt, XorStmt, ShiftlStmt, ShiftrStmt, AssignStmt, VarargStmt,
+    BinaryOpStmt, UnaryOpStmt,
     BlackholeStmt, BasicBlock,
     DecType, VarId, Constant, Val, PVal, IVal, GVal, Statement
 >;

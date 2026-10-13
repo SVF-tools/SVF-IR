@@ -1275,23 +1275,16 @@ Result<Statement, Err> parseAddMulSubStmt(List l) {
         if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
-    if (kind == "add") {
-        return Statement(
-            AddStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else if (kind == "sub") {
-        return Statement(
-            SubStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else if (kind == "mul") {
-        return Statement(
-            MulStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else {
-        assert(false);
-    }
-}
+    BinaryOpStmt::Op op;
+    if (kind == "add") { op = BinaryOpStmt::Op::ADD; }
+    else if (kind == "sub") { op = BinaryOpStmt::Op::SUB; }
+    else if (kind == "mul") { op = BinaryOpStmt::Op::MUL; }
+    else { assert(false); }
 
+    return Statement(
+        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
+    );
+}
 
 /// To be called on (div/rem ...) only.
 Result<Statement, Err> parseDivRemStmt(List l) {
@@ -1306,9 +1299,9 @@ Result<Statement, Err> parseDivRemStmt(List l) {
     if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'", sp); }
     if (!isAtom(*it)) { return notAnAtom("'signed'/'unsigned'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    bool sign;
-    if (kw == "unsigned") { sign = false; }
-    else if (kw == "signed") { sign = true; }
+    bool isSigned;
+    if (kw == "unsigned") { isSigned = false; }
+    else if (kw == "signed") { isSigned = true; }
     else {
         return badKw(
             stmtDesc + " (sign)",
@@ -1346,17 +1339,14 @@ Result<Statement, Err> parseDivRemStmt(List l) {
         if (it + 1 != end) { return listTooLong(stmtDesc, sp); }
     }
 
+    BinaryOpStmt::Op op;
     if (kind == "div") {
-        const DivStmt::Kind kind =
-            sign ? DivStmt::Kind::SIGNED : DivStmt::Kind::UNSIGNED;
-        return Statement(DivStmt(kind, lid, left, right, md, span(l)));
+        op = isSigned ? BinaryOpStmt::Op::SDIV : BinaryOpStmt::Op::UDIV;
     } else if (kind == "rem") {
-        const RemStmt::Kind kind =
-            sign ? RemStmt::Kind::SIGNED : RemStmt::Kind::UNSIGNED;
-        return Statement(RemStmt(kind, lid, left, right, md, span(l)));
-    } else {
-        assert(false);
-    }
+        op = isSigned ? BinaryOpStmt::Op::SREM : BinaryOpStmt::Op::UREM;
+    } else { assert(false); }
+
+    return Statement(BinaryOpStmt(op, lid, left, right, md, span(l)));
 }
 
 /// To be called on (not ...) only.
@@ -1385,7 +1375,9 @@ Result<Statement, Err> parseNotStmt(List l) {
         if (it + 1 != end) { return listTooLong("not statement", sp); }
     }
 
-    return Statement(NotStmt(getVal(lid), getVal(val), md, span(l)));
+    return Statement(UnaryOpStmt(
+        UnaryOpStmt::Op::NOT, getVal(lid), getVal(val), md, span(l)
+    ));
 }
 
 /// To be called on (and/or/xor/shiftl ...) only.
@@ -1429,23 +1421,16 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(List l) {
         if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
-    if (kind == "and") {
-        return Statement(
-            AndStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else if (kind == "or") {
-        return Statement(
-            OrStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else if (kind == "xor") {
-        return Statement(
-            XorStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else if (kind == "shiftl") {
-        return Statement(
-            ShiftlStmt(getVal(lid), getVal(left), getVal(right), md, span(l))
-        );
-    } else { assert(false); }
+    BinaryOpStmt::Op op;
+    if (kind == "and") { op = BinaryOpStmt::Op::AND; }
+    else if (kind == "or") { op = BinaryOpStmt::Op::OR; }
+    else if (kind == "xor") { op = BinaryOpStmt::Op::XOR; }
+    else if (kind == "shiftl") { op = BinaryOpStmt::Op::SHIFTL; }
+    else { assert(false); }
+
+    return Statement(
+        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
+    );
 }
 
 /// To be called on (shiftr ...) only.
@@ -1460,9 +1445,9 @@ Result<Statement, Err> parseShiftrStmt(List l) {
     }
     if (!isAtom(*it)) { return notAnAtom("'logical'/'arithmetic'", span(*it)); }
     const std::string kw = std::get<Atom>(*it).val;
-    ShiftrStmt::Kind kind;
-    if (kw == "logical") { kind = ShiftrStmt::Kind::LOGICAL; }
-    else if (kw == "arithmetic") { kind = ShiftrStmt::Kind::ARITHMETIC; }
+    BinaryOpStmt::Op op;
+    if (kw == "logical") { op = BinaryOpStmt::Op::LSHIFTR; }
+    else if (kw == "arithmetic") { op = BinaryOpStmt::Op::ASHIFTR; }
     else {
         return badKw(
             "shiftr statement (kind)",
@@ -1502,7 +1487,7 @@ Result<Statement, Err> parseShiftrStmt(List l) {
     }
 
     return Statement(
-        ShiftrStmt(kind, getVal(lid), getVal(left), getVal(right), md, span(l))
+        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
     );
 }
 

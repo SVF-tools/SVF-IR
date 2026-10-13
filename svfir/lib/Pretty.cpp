@@ -329,126 +329,46 @@ struct Pretty {
         );
     }
 
-    std::string operator()(const AddStmt &a) {
-        return par(
-            "add " +
-            pretty(a.id) + " " +
-            pretty(a.left) + " " +
-            pretty(a.right) + " " +
-            maybePrettyMd(a.md)
-        );
-    }
-
-    std::string operator()(const SubStmt &s) {
-        return par(
-            "sub " +
-            pretty(s.id) + " " +
-            pretty(s.left) + " " +
-            pretty(s.right) + " " +
-            maybePrettyMd(s.md)
-        );
-    }
-
-    std::string operator()(const MulStmt &m) {
-        return par(
-            "mul " +
-            pretty(m.id) + " " +
-            pretty(m.left) + " " +
-            pretty(m.right) + " " +
-            maybePrettyMd(m.md)
-        );
-    }
-
-    std::string operator()(const DivStmt &d) {
+    std::string operator()(const BinaryOpStmt &b) {
         std::string kind;
-        if (d.kind == DivStmt::Kind::UNSIGNED) { kind = "unsigned"; }
-        else if (d.kind == DivStmt::Kind::SIGNED) { kind = "signed"; }
-        else { assert(false); }
+        switch (b.op) {
+        case BinaryOpStmt::Op::ADD: kind = "add"; break;
+        case BinaryOpStmt::Op::SUB: kind = "sub"; break;
+        case BinaryOpStmt::Op::MUL: kind = "mul"; break;
+        case BinaryOpStmt::Op::UDIV: kind = "div unsigned"; break;
+        case BinaryOpStmt::Op::SDIV: kind = "div signed"; break;
+        case BinaryOpStmt::Op::UREM: kind = "rem unsigned"; break;
+        case BinaryOpStmt::Op::SREM: kind = "rem signed"; break;
+        case BinaryOpStmt::Op::AND: kind = "and"; break;
+        case BinaryOpStmt::Op::OR: kind = "or"; break;
+        case BinaryOpStmt::Op::XOR: kind = "xor"; break;
+        case BinaryOpStmt::Op::SHIFTL: kind = "shiftl"; break;
+        case BinaryOpStmt::Op::ASHIFTR: kind = "shiftr arithmetic"; break;
+        case BinaryOpStmt::Op::LSHIFTR: kind = "shiftr logical"; break;
+        default: assert(false);
+        }
 
         return par(
-            "div " +
-            pretty(d.id) + " " +
-            pretty(d.left) + " " +
-            pretty(d.right) + " " +
-            maybePrettyMd(d.md)
-        );
-    }
-
-    std::string operator()(const RemStmt &r) {
-        std::string kind;
-        if (r.kind == RemStmt::Kind::UNSIGNED) { kind = "unsigned"; }
-        else if (r.kind == RemStmt::Kind::SIGNED) { kind = "signed"; }
-        else { assert(false); }
-
-        return par(
-            "rem " +
-            pretty(r.id) + " " +
-            pretty(r.left) + " " +
-            pretty(r.right) + " " +
-            maybePrettyMd(r.md)
-        );
-    }
-
-    std::string operator()(const NotStmt &n) {
-        return par(
-            "not " + pretty(n.id) + " " + pretty(n.val) + maybePrettyMd(n.md)
-        );
-    }
-
-    std::string operator()(const AndStmt &a) {
-        return par(
-            "and " +
-            pretty(a.id) + " " +
-            pretty(a.left) + " " +
-            pretty(a.right) + " " +
-            maybePrettyMd(a.md)
-        );
-    }
-
-    std::string operator()(const OrStmt &o) {
-        return par(
-            "or " +
-            pretty(o.id) + " " +
-            pretty(o.left) + " " +
-            pretty(o.right) + " " +
-            maybePrettyMd(o.md)
-        );
-    }
-
-    std::string operator()(const XorStmt &x) {
-        return par(
-            "xor " +
-            pretty(x.id) + " " +
-            pretty(x.left) + " " +
-            pretty(x.right) + " " +
-            maybePrettyMd(x.md)
-        );
-    }
-
-    std::string operator()(const ShiftlStmt &s) {
-        return par(
-            "shiftl " +
-            pretty(s.id) + " " +
-            pretty(s.left) + " " +
-            pretty(s.right) + " " +
-            maybePrettyMd(s.md)
-        );
-    }
-
-    std::string operator()(const ShiftrStmt &s) {
-        std::string kind;
-        if (s.kind == ShiftrStmt::Kind::LOGICAL) { kind = "logical"; }
-        else if (s.kind == ShiftrStmt::Kind::ARITHMETIC) {
-            kind = "arithmetic";
-        } else { assert(false); }
-
-        return par(
-            "shiftl " +
             kind + " " +
-            pretty(s.id) + " " +
-            pretty(s.left) + " " +
-            pretty(s.right) + " " +
-            maybePrettyMd(s.md)
+            pretty(b.id) + " " +
+            pretty(b.left) + " " +
+            pretty(b.right) + " " +
+            maybePrettyMd(b.md)
+        );
+    }
+
+    std::string operator()(const UnaryOpStmt &u) {
+        std::string kind;
+        switch (u.op) {
+        case UnaryOpStmt::Op::NOT: kind = "not"; break;
+        default: assert(false);
+        }
+
+        return par(
+            kind + " " +
+            pretty(u.id) + " " +
+            pretty(u.val) +
+            maybePrettyMd(u.md)
         );
     }
 
