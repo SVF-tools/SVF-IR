@@ -299,13 +299,13 @@ struct PhiStmt final : public Node {
         : val(val), definingBlock(definingBlock) { }
     };
 
-    const VarId id;
+    const LocalId id;
     // ! Guaranteed non-zero length.
     const std::vector<Operand> args;
     const MaybeMetadata md;
 
     PhiStmt(
-        const VarId id,
+        const LocalId id,
         const std::vector<Operand> args,
         const MaybeMetadata md,
         const Span span
