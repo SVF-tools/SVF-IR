@@ -2,7 +2,10 @@
 #define OPS_H
 
 #include "Ast.h"
+#include "Err.h"
+#include "Result.h"
 #include "Span.h"
+#include "TypedProgram.h"
 
 namespace SVFIR {
 
@@ -11,6 +14,9 @@ namespace SVFIR {
 
     /// Return the Span associated with the given AST node.
     Span span(const AnyNode &);
+
+    /// Check program for errors and maintain queriable type information.
+    Result<TypedProgram, Err> typeProgram(const Program &);
 
 }  // namespace SVFIR
 
