@@ -16,6 +16,7 @@ using namespace SVFIR;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkDuplicateDecs
+/// DEPS: --
 /// Raise an error if duplicate IDs are declared. This comes down to:
 ///  * Duplicately named aliases in the (types ...) block.
 ///  * Duplicately named functions and variables (same namespace).
