@@ -128,6 +128,60 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     return std::nullopt;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkTerminatingStmts
+/// DEPS: --
+/// Raise an error if either:
+///  * A basic block ends with a non-terminating statement.
+///  * A terminating statement appears anywhere but as the last statement of a
+///    basic block.
+///
+/// Terminating statements are br, brif, and ret.
+////////////////////////////////////////////////////////////////////////////////
+
+bool _isTerminatingStmt(const Statement &stmt) {
+    return (
+        std::holds_alternative<BrStmt>(stmt) ||
+        std::holds_alternative<BrifStmt>(stmt) ||
+        std::holds_alternative<RetStmt>(stmt)
+    );
+}
+
+std::optional<Err> checkTerminatingStmts(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (fn.body.has_value()) {
+            for (const auto &bb : fn.body.value()) {
+                for (auto it = bb.stmts.cbegin(); it != bb.stmts.cend(); ++it) {
+                    if (it + 1 != bb.stmts.cend()) {
+                        // Not at the end? Must not terminate.
+                        if (_isTerminatingStmt(*it)) {
+                            return Err(
+                                "Terminating statement '" +
+                                pretty(*it) +
+                                "' not final statement of basic block",
+                                span(*it)
+                            );
+                        }
+                    } else {
+                        // At the end? Must terminate.
+                        if (!_isTerminatingStmt(*it)) {
+                            return Err(
+                                "Non-terminating statement '" +
+                                pretty(*it) +
+                                "' as final statement of basic block",
+                                span(*it)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+
 }  // Anonymous namespace
 
 namespace SVFIR {
@@ -173,6 +227,9 @@ std::optional<Err> checkDuplicateDecs(const Program &p) {
 Result<TypedProgram, Err> typeProgram(const Program &p) {
     std::optional<Err> de = checkDuplicateDecs(p);
     if (de.has_value()) { return de.value(); }
+
+    std::optional<Err> te = checkTerminatingStmts(p);
+    if (te.has_value()) { return te.value(); }
 
     return Err("not implemented");
 }
