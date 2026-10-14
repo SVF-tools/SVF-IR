@@ -182,6 +182,34 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
     return std::nullopt;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkVarargStmts
+/// DEPS: --
+/// Raise an error if a vararg statement is used in a non-vararg function.
+////////////////////////////////////////////////////////////////////////////////
+
+std::optional<Err> checkVarargStmts(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (!fn.varargParam.has_value() && fn.body.has_value()) {
+            for (const auto &bb : fn.body.value()) {
+                for (const auto &s : bb.stmts) {
+                    if (std::holds_alternative<VarargStmt>(s)) {
+                        return Err(
+                            "vararg statement '" +
+                            pretty(s) +
+                            "' in non-vararg function '" +
+                            pretty(fn.id) +
+                            "'.",
+                            span(s)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
 
 }  // Anonymous namespace
 
@@ -231,6 +259,9 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
 
     std::optional<Err> te = checkTerminatingStmts(p);
     if (te.has_value()) { return te.value(); }
+
+    std::optional<Err> ve = checkVarargStmts(p);
+    if (ve.has_value()) { return ve.value(); }
 
     return Err("not implemented");
 }
