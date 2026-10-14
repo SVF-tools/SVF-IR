@@ -104,7 +104,7 @@ struct Pretty {
     std::string operator()(const BlockId &bid) { return bid.id; }
 
     std::string operator()(const TypedId &tid) {
-        return "(" + pretty(tid.id) + " " + pretty(tid.type) + ")";
+        return "(" + pretty(tid.type) + " " + pretty(tid.id) + ")";
     }
 
     std::string operator()(const IntConstant &ic) { return ic.val; }
@@ -120,7 +120,7 @@ struct Pretty {
     }
 
     std::string operator()(const TypedConstant &tc) {
-        return "(" + pretty(tc.constant) + " " + pretty(tc.type) + ")";
+        return "(" + pretty(tc.type) + " " + pretty(tc.constant) + ")";
     }
 
     std::string operator()(const Preamble &p) {
@@ -139,7 +139,7 @@ struct Pretty {
     }
 
     std::string operator()(const Param &p) {
-        return par(pretty(p.id) + " " + pretty(p.type) + maybePrettyMd(p.md));
+        return par(pretty(p.type) + " " + pretty(p.id) + maybePrettyMd(p.md));
     }
 
     std::string operator()(const Function &f) {
@@ -155,8 +155,8 @@ struct Pretty {
 
         return par(
             pretty(f.id) + " " +
-            par(params) + " " +
             pretty(f.type) + " " +
+            par(params) + " " +
             (f.body.has_value() ? "(\n" + indent(body) + "\n)": "opaque") +
             maybePrettyMd(f.md)
         );

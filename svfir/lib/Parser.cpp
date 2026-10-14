@@ -248,14 +248,16 @@ Result<TypedId, Err> parseTypedId(const SExpr s) {
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
+    if (it == end) { return listCutShort("typed (local) ID", "type", sp); }
+    const Result<DecType, Err> type = parseType(*it);
+    if (isErr(type)) { return getErr(type); }
+
+    ++it;
     if (it == end) { return listCutShort("typed (local) ID", "ID", sp); }
     const Result<LocalId, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
-    ++it;
-    if (it == end) { return listCutShort("typed (local) ID", "type", sp); }
-    const Result<DecType, Err> type = parseType(*it);
-    if (isErr(type)) { return getErr(type); }
+    if (it + 1 != end) { return listTooLong("typed (local) ID", sp); }
 
     return TypedId(getVal(lid), getVal(type), span(s));
 }
@@ -268,14 +270,14 @@ Result<Param, Err> parseParam(const SExpr s) {
     const List list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
-    if (it == end) { return listCutShort("parameter", "ID", sp); }
-    const Result<LocalId, Err> id = parseLocalId(*it);
-    if (isErr(id)) { return getErr(id); }
-
-    ++it;
     if (it == end) { return listCutShort("parameter", "type", sp); }
     const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
+
+    ++it;
+    if (it == end) { return listCutShort("parameter", "ID", sp); }
+    const Result<LocalId, Err> id = parseLocalId(*it);
+    if (isErr(id)) { return getErr(id); }
 
     ++it;
     MaybeMetadata md = std::nullopt;
@@ -400,12 +402,12 @@ Result<TypedConstant, Err> parseTypedConst(SExpr s) {
         return listCutShort("typed constant", "constant", span(s));
     }
 
-    const Result<Constant, Err> constant = parseConst(*it);
-    if (isErr(constant)) { return getErr(constant); }
-
-    ++it;
     const Result<DecType, Err> type = parseType(*it);
     if (isErr(type)) { return getErr(type); }
+
+    ++it;
+    const Result<Constant, Err> constant = parseConst(*it);
+    if (isErr(constant)) { return getErr(constant); }
 
     if (it + 1 != end) { return listTooLong("typed constant", span(s)); }
 
@@ -1757,6 +1759,12 @@ Result<Function, Err> parseFunction(SExpr s) {
     const GlobalId gid = getVal(gidr);
 
     ++it;
+    if (it == end) { return listCutShort("function", "return type", span(s)); }
+    const Result<DecType, Err> typer = parseType(*it);
+    if (isErr(typer)) { return getErr(typer); }
+    const DecType type = getVal(typer);
+
+    ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }
     if (!isList(*it)) { return notAList("function parameters", span(*it)); }
     Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, Err>
@@ -1764,12 +1772,6 @@ Result<Function, Err> parseFunction(SExpr s) {
     if (isErr(paramsr)) { return getErr(paramsr); }
     const std::vector<Param> params = std::get<0>(getVal(paramsr));
     const std::optional<LocalId> vaParam = std::get<1>(getVal(paramsr));
-
-    ++it;
-    if (it == end) { return listCutShort("function", "return type", span(s)); }
-    const Result<DecType, Err> typer = parseType(*it);
-    if (isErr(typer)) { return getErr(typer); }
-    const DecType type = getVal(typer);
 
     ++it;
     if (it == end) {
