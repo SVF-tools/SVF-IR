@@ -30,7 +30,7 @@
 
 <typed-const> : '(' <type> <const> ')'
 
-<md> : '(' 'metadata' <s-expr> ')'
+<md> : '(' 'md' <s-expr> ')'
 
 <val> : <var-id> | <typed-const>
 <gval> : <gid> | <typed-const>
