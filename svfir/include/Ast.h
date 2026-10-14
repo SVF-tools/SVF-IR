@@ -598,18 +598,17 @@ struct VarargStmt final : public Node {
 
 /// <misc-inst> (3)
 struct BlackholeStmt final : public Node {
-    enum class Kind { UNCONTAINED, CONTAINED };
-
-    const Kind kind;
+    // To be impure is to be effectful.
+    const bool pure;
     const TypedId tid;
     const MaybeMetadata md;
 
     BlackholeStmt(
-        const Kind kind,
+        const bool pure,
         const TypedId tid,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), kind(kind), tid(tid), md(md) { }
+    ) : Node(span), pure(pure), tid(tid), md(md) { }
 };
 
 /// <instruction>
