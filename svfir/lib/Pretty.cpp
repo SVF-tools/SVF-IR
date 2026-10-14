@@ -390,7 +390,7 @@ struct Pretty {
     std::string operator()(const BlackholeStmt &b) {
         return par(
             "blackhole " +
-            (b.pure ? "pure" : "effectful") + " " +
+            std::string(b.pure ? "pure" : "effectful") + " " +
             pretty(b.tid) + " " +
             maybePrettyMd(b.md)
         );
