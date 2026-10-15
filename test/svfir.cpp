@@ -117,7 +117,7 @@ bool roundtrip(void) {
         "(variables\n"
         "  (@bar opaque))\n"
         "(functions\n"
-        "  (@baz void ((ptr %0) %1...) opaque))";
+        "  (@baz void ((ptr %0) ...) opaque))";
     const Result<Program, Err> res3 = parseString(program3);
     TEST(!isErr(res3));
     TEST(pretty(getVal(res3)) == program3);

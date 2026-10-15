@@ -62,12 +62,6 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
             return Err("Parameter '" + id + "' declared twice", fn.span);
         }
     }
-    if (fn.varargParam.has_value()) {
-        const LocalId vp = fn.varargParam.value();
-        if (ids.insert(vp.id).second) {
-            return Err("Parameter '" + vp.id + "' declared twice", vp.span);
-        }
-    }
 
     if (fn.body.has_value()) {
         for (const auto &bb : fn.body.value()) {
@@ -190,7 +184,7 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
 
 std::optional<Err> checkVarargStmts(const Program &p) {
     for (const auto &fn : p.functions) {
-        if (!fn.varargParam.has_value() && fn.body.has_value()) {
+        if (fn.vararg && fn.body.has_value()) {
             for (const auto &bb : fn.body.value()) {
                 for (const auto &s : bb.stmts) {
                     if (std::holds_alternative<VarargStmt>(s)) {

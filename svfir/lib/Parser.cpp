@@ -1701,10 +1701,9 @@ Result<std::vector<BasicBlock>, Err> parseFunctionBlocks(SExpr s) {
     return blocks;
 }
 
-Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, Err>
-parseFunctionParams(List l) {
+Result<std::tuple<std::vector<Param>, bool>, Err> parseFunctionParams(List l) {
     std::vector<Param> params;
-    std::optional<LocalId> varargParam = std::nullopt;
+    bool vararg = false;
     for (size_t i = 0; i < l.children.size(); ++i) {
         const Result<Param, Err> param = parseParam(l.children[i]);
         if (!isErr(param)) { params.push_back(getVal(param)); }
@@ -1712,28 +1711,14 @@ parseFunctionParams(List l) {
             assert(isErr(param));
             if (i == l.children.size() - 1) {
                 // We might have a vararg parameter.
-                const Result<LocalId, Err> idr = parseLocalId(l.children[i]);
-                if (!isErr(idr)) {
-                    const LocalId id = getVal(idr);
-                    // Why 5? 1 for %, 1+ for the name, 3 for '...'.
-                    if (
-                        id.id.size() >= 5 &&
-                        // Last three characters are ...
-                        id.id.substr(id.id.size() - 3, id.id.size()) == "..."
-                    ) { varargParam.emplace(id); }
-                    else {
-                        return Err(
-                            "Expected a parameter or a vararg parameter. "
-                            "A vararg parameter must end in '...'",
-                            span(l.children[i])
-                        );
-                    }
+                if (atomEq(l.children[i], "...")) {
+                    vararg = true;
                 } else {
                     return Err(
-                        "Expected a parameter or a vararg parameter. "
-                        "A vararg parameter must end in '...'. "
-                        "If you intended a vararg parameter here, "
-                        "also note:\n  " + getErr(idr).toString(),
+                        "Expected a parameter or a vararg parameter as "
+                        "final parameter. A vararg parameter is '...'. "
+                        "If you intended a regular parameter here, "
+                        "also note:\n  " + getErr(param).toString(),
                         span(l.children[i])
                     );
                 }
@@ -1744,7 +1729,7 @@ parseFunctionParams(List l) {
         }
     }
 
-    return std::make_tuple(params, varargParam);
+    return std::make_tuple(params, vararg);
 }
 
 /// <function>
@@ -1767,11 +1752,11 @@ Result<Function, Err> parseFunction(SExpr s) {
     ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }
     if (!isList(*it)) { return notAList("function parameters", span(*it)); }
-    Result<std::tuple<std::vector<Param>, std::optional<LocalId>>, Err>
-    paramsr = parseFunctionParams(std::get<List>(*it));
+    Result<std::tuple<std::vector<Param>, bool>, Err> paramsr =
+        parseFunctionParams(std::get<List>(*it));
     if (isErr(paramsr)) { return getErr(paramsr); }
     const std::vector<Param> params = std::get<0>(getVal(paramsr));
-    const std::optional<LocalId> vaParam = std::get<1>(getVal(paramsr));
+    const bool vararg = std::get<1>(getVal(paramsr));
 
     ++it;
     if (it == end) {
@@ -1813,7 +1798,7 @@ Result<Function, Err> parseFunction(SExpr s) {
         if (it + 1 != end) { return listTooLong("function", span(s)); }
     }
 
-    return Function(gid, params, vaParam, type, bbs, md, span(s));
+    return Function(gid, params, vararg, type, bbs, md, span(s));
 }
 
 /// <functions>

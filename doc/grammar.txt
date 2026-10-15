@@ -45,7 +45,7 @@
   '(' 'source' <atom> ')'
   ')'
 
-<function> : '(' <gid> <type> '(' <param>* (<lid>'...')? ')' ('(' <basic-block>+ ')'|'opaque') <md>? ')'
+<function> : '(' <gid> <type> '(' <param>* '...'? ')' ('(' <basic-block>+ ')'|'opaque') <md>? ')'
 <functions> : '(' 'functions' <function>* ')'
 
 <variable> : '(' <gid> (<gval>|'opaque') <md>? ')'  ; TODO: limit gval id to fns?

@@ -144,10 +144,9 @@ struct Pretty {
 
     std::string operator()(const Function &f) {
         std::string params = prettyVec(f.params, " ");
-        if (f.varargParam.has_value()) {
+        if (f.vararg) {
             if (!f.params.empty()) { params += " "; }
-            // The '...' is already part of f.varargParam.
-            params += pretty(f.varargParam.value());
+            params += "...";
         }
 
         std::string body;

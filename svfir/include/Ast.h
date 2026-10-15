@@ -218,11 +218,8 @@ struct Param final : public Node {
 /// <function>
 struct Function final : public Node {
     const GlobalId id;
-    // The parameters are stored across two fields:
-    // 1. all ordinary parameters, and
     const std::vector<Param> params;
-    // 2. the optional final vararg parameter.
-    const std::optional<LocalId> varargParam;
+    const bool vararg;
     const DecType type;
     const std::optional<std::vector<struct BasicBlock>> body;
     const MaybeMetadata md;
@@ -230,7 +227,7 @@ struct Function final : public Node {
     Function(
         const GlobalId id,
         const std::vector<Param> params,
-        const std::optional<LocalId> varargParam,
+        const bool vararg,
         const DecType type,
         const std::optional<std::vector<struct BasicBlock>> body,
         const MaybeMetadata md,
@@ -239,7 +236,7 @@ struct Function final : public Node {
         Node(span),
         id(id),
         params(params),
-        varargParam(varargParam),
+        vararg(vararg),
         type(type),
         body(body),
         md(md)
