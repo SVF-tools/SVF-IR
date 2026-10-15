@@ -1107,10 +1107,10 @@ Result<Statement, Err> parseFieldStmt(List l) {
     );
 }
 
-/// To be called on (reinterpret/convert ...) only.
-Result<Statement, Err> parseReinterpretConvertStmt(List l) {
+/// To be called on (bitcast/convert ...) only.
+Result<Statement, Err> parseBitCastConvertStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && (atomEq(*it, "reinterpret") || atomEq(*it, "convert")));
+    assert(it != end && (atomEq(*it, "BitCast") || atomEq(*it, "convert")));
 
     const std::string kind = std::get<Atom>(*it).val;
     const std::string stmtDesc = kind + " statement";
@@ -1140,8 +1140,8 @@ Result<Statement, Err> parseReinterpretConvertStmt(List l) {
         if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
-    if (kind == "reinterpret") {
-        return Statement(ReinterpretStmt(
+    if (kind == "bitcast") {
+        return Statement(BitCastStmt(
             getVal(lid), getVal(val), getVal(type), md, span(l)
         ));
     } else if (kind == "convert") {
@@ -1630,8 +1630,8 @@ Result<Statement, Err> parseStmt(SExpr s) {
     else if (kind == "store") { return parseStoreStmt(l); }
     else if (kind == "load") { return parseLoadStmt(l); }
     else if (kind == "field") { return parseFieldStmt(l); }
-    else if (kind == "reinterpret" || kind == "convert") {
-        return parseReinterpretConvertStmt(l);
+    else if (kind == "bitcast" || kind == "convert") {
+        return parseBitCastConvertStmt(l);
     }
     else if (kind == "inttrunc") { return parseIntTruncStmt(l); }
     else if (kind == "intext") { return parseIntExtStmt(l); }

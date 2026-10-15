@@ -81,7 +81,7 @@
            | '(' 'load' <typed-lid> <pval> <md>? ')'
            | '(' 'field' <lid> <pval> <ival> <md>? ')'
 
-<conversion-stmt> : '(' 'reinterpret' <lid> <val> <type> <md>? ')'
+<conversion-stmt> : '(' 'bitcast' <lid> <val> <type> <md>? ')'
                   | '(' 'convert' <lid> <val> <type> <md>? ')'
                   | '(' 'inttrunc' <lid> <val> <type> <md>? ')'
                   | '(' 'intext' ('zero'|'sign') <lid> <val> <type> <md>? ')'

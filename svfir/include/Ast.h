@@ -450,13 +450,13 @@ struct FieldStmt final : public Node {
 };
 
 /// <conversion-stmt> (1)
-struct ReinterpretStmt final : public Node {
+struct BitCastStmt final : public Node {
     const LocalId id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
 
-    ReinterpretStmt(
+    BitCastStmt(
         const LocalId id,
         const Val val,
         const DecType type,
@@ -613,7 +613,7 @@ using Statement = std::variant<
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt,
     CmpStmt,
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
-    ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
+    BitCastStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
     BinaryOpStmt, UnaryOpStmt,
     AssignStmt, VarargStmt, BlackholeStmt
 >;
@@ -644,7 +644,7 @@ using AnyNode = std::variant<
     TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
-    LoadStmt, FieldStmt, ReinterpretStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
+    LoadStmt, FieldStmt, BitCastStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
     BinaryOpStmt, UnaryOpStmt,
     BlackholeStmt, BasicBlock,
     DecType, VarId, Constant, Val, PVal, IVal, GVal, Statement

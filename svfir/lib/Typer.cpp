@@ -82,8 +82,8 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                     id.emplace(std::get<LoadStmt>(s).tid.id.id);
                 } else if (std::holds_alternative<FieldStmt>(s)) {
                     id.emplace(std::get<FieldStmt>(s).id.id);
-                } else if (std::holds_alternative<ReinterpretStmt>(s)) {
-                    id.emplace(std::get<ReinterpretStmt>(s).id.id);
+                } else if (std::holds_alternative<BitCastStmt>(s)) {
+                    id.emplace(std::get<BitCastStmt>(s).id.id);
                 } else if (std::holds_alternative<ConvertStmt>(s)) {
                     id.emplace(std::get<ConvertStmt>(s).id.id);
                 } else if (std::holds_alternative<IntTruncStmt>(s)) {

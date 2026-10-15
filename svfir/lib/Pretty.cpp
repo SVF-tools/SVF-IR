@@ -282,9 +282,9 @@ struct Pretty {
         );
     }
 
-    std::string operator()(const ReinterpretStmt &r) {
+    std::string operator()(const BitCastStmt &r) {
         return par(
-            "reinterpret " +
+            "bitcast " +
             pretty(r.id) + " " +
             pretty(r.val) + " " +
             pretty(r.type) + " " +
