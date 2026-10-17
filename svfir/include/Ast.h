@@ -215,13 +215,14 @@ struct Param final : public Node {
     ) : Node(span), id(id), type(type), md(md) { }
 };
 
+using FunctionBody = std::vector<struct BasicBlock>;
 /// <function>
 struct Function final : public Node {
     const GlobalId id;
     const std::vector<Param> params;
     const bool vararg;
     const DecType type;
-    const std::optional<std::vector<struct BasicBlock>> body;
+    const std::optional<FunctionBody> body;
     const MaybeMetadata md;
 
     Function(
@@ -229,7 +230,7 @@ struct Function final : public Node {
         const std::vector<Param> params,
         const bool vararg,
         const DecType type,
-        const std::optional<std::vector<struct BasicBlock>> body,
+        const std::optional<FunctionBody> body,
         const MaybeMetadata md,
         const Span span
     ) :
