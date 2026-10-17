@@ -25,8 +25,8 @@ struct AggType {
     AggType(const uint64_t slots) : slots(slots) { }
 };
 struct TypeId {
-    Id id;
-    TypeId(const Id id) : id(id) { }
+    Name name;
+    TypeId(const Name name) : name(name) { }
 };
 struct OpaqueType { };
 struct VarargType { };

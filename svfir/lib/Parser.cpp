@@ -101,12 +101,12 @@ Result<Metadata, Err> parseMetadata(const SExpr s) {
 }
 
 /// <tid>
-Result<DecTypeId, Err> parseTypeId(const SExpr s) {
+Result<Id, Err> parseTypeId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("type ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Type", span(s)); }
     if (text[0] != '~') { return noSpecialCharId("Type", "~", span(s)); }
-    return DecTypeId(text, span(s));
+    return Id(text, span(s));
 }
 
 /// <type>
@@ -150,7 +150,7 @@ Result<DecType, Err> parseType(const SExpr s) {
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == '~') {
-            const Result<DecTypeId, Err> id = parseTypeId(s);
+            const Result<Id, Err> id = parseTypeId(s);
             if (isErr(id)) {
                 return Err(
                     "Invalid scalar type.\n"
@@ -203,34 +203,34 @@ Result<DecType, Err> parseType(const SExpr s) {
 }
 
 /// <lid>
-Result<LocalId, Err> parseLocalId(const SExpr s) {
+Result<Id, Err> parseLocalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("local ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Local", span(s)); }
     if (text[0] != '%') { return noSpecialCharId("Local", "%", span(s)); }
-    return LocalId(text, span(s));
+    return Id(text, span(s));
 }
 
 /// <gid>
-Result<GlobalId, Err> parseGlobalId(const SExpr s) {
+Result<Id, Err> parseGlobalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("global ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Global", span(s)); }
     if (text[0] != '@') { return noSpecialCharId("Global", "@", span(s)); }
-    return GlobalId(text, span(s));
+    return Id(text, span(s));
 }
 
 /// <bid>
-Result<BlockId, Err> parseBlockId(const SExpr s) {
+Result<Id, Err> parseBlockId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("basic block ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Basic block", span(s)); }
     if (text[0] != '!') { return noSpecialCharId("Basic block", "!", span(s)); }
-    return BlockId(text, span(s));
+    return Id(text, span(s));
 }
 
 /// <var-id>
-Result<VarId, Err> parseVarId(const SExpr s) {
+Result<Id, Err> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
     if (!isAtom(s)) { return notAnAtom("local/global (var) ID", span(s)); }
     const std::string text = std::get<Atom>(s).val;
@@ -254,7 +254,7 @@ Result<TypedId, Err> parseTypedId(const SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("typed (local) ID", "ID", sp); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     if (it + 1 != end) { return listTooLong("typed (local) ID", sp); }
@@ -276,7 +276,7 @@ Result<Param, Err> parseParam(const SExpr s) {
 
     ++it;
     if (it == end) { return listCutShort("parameter", "ID", sp); }
-    const Result<LocalId, Err> id = parseLocalId(*it);
+    const Result<Id, Err> id = parseLocalId(*it);
     if (isErr(id)) { return getErr(id); }
 
     ++it;
@@ -375,7 +375,7 @@ Result<Constant, Err> parseConst(const SExpr s) {
         for (; it != end; ++it) {
             const Result<TypedConstant, Err> tc = parseTypedConst(*it);
             if (isErr(tc)) {
-                const Result<VarId, Err> vi = parseVarId(*it);
+                const Result<Id, Err> vi = parseVarId(*it);
                 if (isErr(vi)) {
                     return Err(
                         "Elements of a sequence must be a typed constant "
@@ -522,13 +522,13 @@ Result<Preamble, Err> parsePreamble(SExpr s) {
 }
 
 /// <gval>
-Result<GVal, Err> parseGVal(SExpr s) {
+Result<Val, Err> parseGVal(SExpr s) {
     static const std::string expectation =
         "Expected a typed constant or a global ID.";
     if (isAtom(s)) {
         // Try for <gid>.
-        const Result<GlobalId, Err> gid = parseGlobalId(s);
-        if (!isErr(gid)) { return GVal(getVal(gid)); }
+        const Result<Id, Err> gid = parseGlobalId(s);
+        if (!isErr(gid)) { return Val(getVal(gid)); }
         else {
             return Err(
                 expectation + " "
@@ -541,7 +541,7 @@ Result<GVal, Err> parseGVal(SExpr s) {
         // Try for <typed-const>
         assert(isList(s));
         const Result<TypedConstant, Err> tc = parseTypedConst(s);
-        if (!isErr(tc)) { return GVal(getVal(tc)); }
+        if (!isErr(tc)) { return Val(getVal(tc)); }
         else {
             return Err(
                 expectation + " "
@@ -559,7 +559,7 @@ Result<Val, Err> parseVal(SExpr s) {
     static const std::string expectation =
         "Expected a typed constant or a local/global (var) ID.";
     if (isAtom(s)) {
-        const Result<VarId, Err> vid = parseVarId(s);
+        const Result<Id, Err> vid = parseVarId(s);
         if (!isErr(vid)) { return Val(getVal(vid)); }
         else {
             return Err(
@@ -596,7 +596,7 @@ Result<PVal, Err> parsePVal(SExpr s) {
         return PVal(std::get<NullConstant>(getVal(c)));
     }
 
-    const Result<VarId, Err> vid = parseVarId(s);
+    const Result<Id, Err> vid = parseVarId(s);
     if (!isErr(vid)) { return PVal(getVal(vid)); }
     else {
         return Err(
@@ -620,7 +620,7 @@ Result<IVal, Err> parseIVal(SExpr s) {
         return IVal(std::get<IntConstant>(getVal(c)));
     }
 
-    const Result<VarId, Err> vid = parseVarId(s);
+    const Result<Id, Err> vid = parseVarId(s);
     if (!isErr(vid)) { return IVal(getVal(vid)); }
     else {
         return Err(
@@ -642,15 +642,15 @@ Result<Variable, Err> parseVariable(SExpr s) {
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("variable", "variable name", sp); }
-    const Result<GlobalId, Err> gid = parseGlobalId(*it);
+    const Result<Id, Err> gid = parseGlobalId(*it);
     if (isErr(gid)) { return getErr(gid); }
 
     ++it;
     if (it == end) { return listCutShort("variable", "value/'opaque'", sp); }
-    std::optional<GVal> gval;
+    std::optional<Val> gval;
     if (atomEq(*it, "opaque")) { gval = std::nullopt; }
     else {
-        const Result<GVal, Err> gvalr = parseGVal(*it);
+        const Result<Val, Err> gvalr = parseGVal(*it);
         if (isErr(gvalr)) {
             return Err(
                 "Expected global ID, typed constant, or 'opaque' as "
@@ -707,7 +707,7 @@ Result<Statement, Err> parsePhiStmt(List l) {
     if (it == end) {
         return listCutShort("phi statement", "local ID", span(l));
     }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -728,7 +728,7 @@ Result<Statement, Err> parsePhiStmt(List l) {
         const Result<Val, Err> val = parseVal(pair.children[0]);
         if (isErr(val)) { return getErr(val); }
 
-        const Result<BlockId, Err> bid = parseBlockId(pair.children[1]);
+        const Result<Id, Err> bid = parseBlockId(pair.children[1]);
         if (isErr(bid)) { return getErr(bid); }
 
         operands.push_back(PhiStmt::Operand(getVal(val), getVal(bid)));
@@ -761,10 +761,10 @@ Result<Statement, Err> parseCallStmt(List l) {
         return listCutShort("call statement", "local ID or 'void'", sp);
     }
     if (!isAtom(*it)) { return notAnAtom("local ID or 'void'", span(*it)); }
-    std::optional<LocalId> lid = std::nullopt;
+    std::optional<Id> lid = std::nullopt;
     if (!atomEq(*it, "void")) {
         // Try a local ID.
-        const Result<LocalId, Err> lidr = parseLocalId(*it);
+        const Result<Id, Err> lidr = parseLocalId(*it);
         if (isErr(lidr)) {
             return Err(
                 "Expected a local ID or 'void'. "
@@ -813,7 +813,7 @@ Result<Statement, Err> parseBrStmt(List l) {
     if (it == end) {
         return listCutShort("branch statement", "target ID", span(l));
     }
-    const Result<BlockId, Err> target = parseBlockId(*it);
+    const Result<Id, Err> target = parseBlockId(*it);
     if (isErr(target)) { return getErr(target); }
 
     ++it;
@@ -844,12 +844,12 @@ Result<Statement, Err> parseBrifStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(brifDesc, "if target ID", sp); }
-    const Result<BlockId, Err> ifTarget = parseBlockId(*it);
+    const Result<Id, Err> ifTarget = parseBlockId(*it);
     if (isErr(ifTarget)) { return getErr(ifTarget); }
 
     ++it;
     if (it == end) { return listCutShort(brifDesc, "else target ID", sp); }
-    const Result<BlockId, Err> elseTarget = parseBlockId(*it);
+    const Result<Id, Err> elseTarget = parseBlockId(*it);
     if (isErr(elseTarget)) { return getErr(elseTarget); }
 
     ++it;
@@ -933,7 +933,7 @@ Result<Statement, Err> parseCmpStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(cmpDesc, "local ID", span(l)); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -989,7 +989,7 @@ Result<Statement, Err> parseAllocStmt(List l) {
     if (it == end) {
         return listCutShort("allocation statement", "local ID", sp);
     }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1075,7 +1075,7 @@ Result<Statement, Err> parseFieldStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("field statement", "local ID", sp); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1117,7 +1117,7 @@ Result<Statement, Err> parseBitCastConvertStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1162,7 +1162,7 @@ Result<Statement, Err> parseIntTruncStmt(List l) {
     if (it == end) {
         return listCutShort("inttrunc statement", "local ID", sp);
     }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1211,7 +1211,7 @@ Result<Statement, Err> parseIntExtStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("intext statement", "local ID", sp); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1254,7 +1254,7 @@ Result<Statement, Err> parseAddMulSubStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1315,9 +1315,9 @@ Result<Statement, Err> parseDivRemStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", sp); }
-    const Result<LocalId, Err> lidr = parseLocalId(*it);
+    const Result<Id, Err> lidr = parseLocalId(*it);
     if (isErr(lidr)) { return getErr(lidr); }
-    const LocalId lid = getVal(lidr);
+    const Id lid = getVal(lidr);
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "left operand", sp); }
@@ -1359,7 +1359,7 @@ Result<Statement, Err> parseNotStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("not statement", "local ID", sp); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1400,7 +1400,7 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(List l) {
 
     ++it;
     if (it == end) { listCutShort(stmtDesc, "local ID", span(l)); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1461,7 +1461,7 @@ Result<Statement, Err> parseShiftrStmt(List l) {
 
     ++it;
     if (it == end) { return listCutShort("shiftr statement", "local ID", sp); }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1503,7 +1503,7 @@ Result<Statement, Err> parseAssignStmt(List l) {
     if (it == end) {
         return listCutShort("assignment statement", "local ID", sp);
     }
-    const Result<LocalId, Err> lid = parseLocalId(*it);
+    const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
@@ -1661,7 +1661,7 @@ Result<BasicBlock, Err> parseBasicBlock(SExpr s) {
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("basic block", "block ID", span(s)); }
-    const Result<BlockId, Err> bid = parseBlockId(*it);
+    const Result<Id, Err> bid = parseBlockId(*it);
     if (isErr(bid)) { return getErr(bid); }
 
     ++it;
@@ -1739,9 +1739,9 @@ Result<Function, Err> parseFunction(SExpr s) {
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("function", "name", span(s)); }
-    const Result<GlobalId, Err> gidr = parseGlobalId(*it);
+    const Result<Id, Err> gidr = parseGlobalId(*it);
     if (isErr(gidr)) { return getErr(gidr); }
-    const GlobalId gid = getVal(gidr);
+    const Id gid = getVal(gidr);
 
     ++it;
     if (it == end) { return listCutShort("function", "return type", span(s)); }
@@ -1833,7 +1833,7 @@ Result<TypeAlias, Err> parseTypeAlias(SExpr s) {
     const Span sp = span(s);
 
     if (it == end) { return listCutShort("type alias", "name (type ID)", sp); }
-    const Result<DecTypeId, Err> tid = parseTypeId(*it);
+    const Result<Id, Err> tid = parseTypeId(*it);
     if (isErr(tid)) { return getErr(tid); }
 
     ++it;

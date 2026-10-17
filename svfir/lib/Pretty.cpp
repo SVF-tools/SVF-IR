@@ -63,7 +63,7 @@ struct Pretty {
     // Need to recurse further.
     template <typename... T>
     std::string operator()(const std::variant<T...> &v) {
-        return std::visit(Pretty(), v);
+        return std::visit(*this, v);
     }
 
     std::string operator()(const Metadata &md) {
@@ -95,13 +95,7 @@ struct Pretty {
         return "(agg " + std::to_string(st.slots) + ")";
     }
 
-    std::string operator()(const DecTypeId &tid) { return tid.id; }
-
-    std::string operator()(const LocalId &lid) { return lid.id; }
-
-    std::string operator()(const GlobalId &gid) { return gid.id; }
-
-    std::string operator()(const BlockId &bid) { return bid.id; }
+    std::string operator()(const Id &id) { return id.name; }
 
     std::string operator()(const TypedId &tid) {
         return "(" + pretty(tid.type) + " " + pretty(tid.id) + ")";
@@ -115,7 +109,7 @@ struct Pretty {
 
     std::string operator()(const SeqConstant &sc) {
         std::string vals;
-        for (const Val v : sc.vals) { vals += " " + pretty(v); }
+        for (const Val &v : sc.vals) { vals += " " + pretty(v); }
         return par("seq" + vals);
     }
 

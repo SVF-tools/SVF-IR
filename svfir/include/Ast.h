@@ -20,7 +20,7 @@ struct Node {
     Node(const Span span) : span(span) { }
 };
 
-using Id = std::string;
+using Name = std::string;
 
 using MaybeMetadata = std::optional<struct Metadata>;
 
@@ -29,6 +29,29 @@ struct Metadata final : public Node {
 
     Metadata(const SExprs::SExpr data, const Span span)
     : Node(span), data(data) { }
+};
+
+/// <lid>/<gid>/<bid>/<tid>/<var-id>
+struct Id final : public Node {
+    const Name name;
+
+    Id(const Name name, const Span span) : Node(span), name(name) {
+        assert(name.size() >= 2);
+        assert(
+            name[0] == '%' ||
+            name[0] == '@' ||
+            name[0] == '!' ||
+            name[0] == '~'
+        );
+    }
+
+    /// One of the following predicate functions is guaranteed to be true
+    /// and the remainder false.
+    //
+    bool isLocal(void) const;
+    bool isGlobal(void) const;
+    bool isBlock(void) const;
+    bool isType(void) const;
 };
 
 /// <scalar-type> (1)
@@ -69,48 +92,17 @@ struct AggDecType final : public Node {
     : Node(span), slots(slots) { }
 };
 
-/// <tid>
-struct DecTypeId final : public Node {
-    const Id id;
-
-    DecTypeId(const Id id, const Span span) : Node(span), id(id) { }
-};
-
 /// <type>
 using DecType = std::variant<
-    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, DecTypeId
+    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, Id
 >;
-
-/// <lid>
-struct LocalId final : public Node {
-    const Id id;
-
-    LocalId(const Id id, const Span span) : Node(span), id(id) { }
-};
-
-/// <gid>
-struct GlobalId final : public Node {
-    const Id id;
-
-    GlobalId(const Id id, const Span span) : Node(span), id(id) { }
-};
-
-/// <var-id>
-using VarId = std::variant<LocalId, GlobalId>;
-
-/// <bid>
-struct BlockId final : public Node {
-    const Id id;
-
-    BlockId(const Id id, const Span span) : Node(span), id(id) { }
-};
 
 /// <typed-lid>
 struct TypedId final : public Node {
-    const LocalId id;
+    const Id id;
     const DecType type;
 
-    TypedId(const LocalId id, const DecType type, const Span span)
+    TypedId(const Id id, const DecType type, const Span span)
     : Node(span), id(id), type(type) { }
 };
 
@@ -138,8 +130,8 @@ struct NullConstant final : public Node {
     NullConstant(const Span span) : Node(span) { }
 };
 
-/// <val>
-using Val = std::variant<VarId, struct TypedConstant>;
+/// <val>/<gval>
+using Val = std::variant<Id, struct TypedConstant>;
 
 /// <seq-const>
 struct SeqConstant final : public Node {
@@ -164,13 +156,10 @@ struct TypedConstant final : public Node {
 };
 
 /// <pval>
-using PVal = std::variant<VarId, NullConstant>;
+using PVal = std::variant<Id, NullConstant>;
 
 /// <ival>
-using IVal = std::variant<VarId, IntConstant>;
-
-/// <gval>
-using GVal = std::variant<GlobalId, TypedConstant>;
+using IVal = std::variant<Id, IntConstant>;
 
 /// <preamble>
 struct Preamble final : public Node {
@@ -186,14 +175,14 @@ struct Preamble final : public Node {
 
 /// <variable>
 struct Variable final : public Node {
-    const GlobalId id;
+    const Id id;
     // A missing value indicates a declaration, otherwise it's a definition.
-    const std::optional<GVal> val;
+    const std::optional<Val> val;
     const MaybeMetadata md;
 
     Variable(
-        const GlobalId id,
-        const std::optional<GVal> val,
+        const Id id,
+        const std::optional<Val> val,
         const MaybeMetadata md,
         const Span span
     ) : Node(span), id(id), val(val), md(md) { }
@@ -203,12 +192,12 @@ struct Variable final : public Node {
 
 /// <param>
 struct Param final : public Node {
-    const LocalId id;
+    const Id id;
     const DecType type;
     const MaybeMetadata md;
 
     Param(
-        const LocalId id,
+        const Id id,
         const DecType type,
         const MaybeMetadata md,
         const Span span
@@ -218,7 +207,7 @@ struct Param final : public Node {
 using FunctionBody = std::vector<struct BasicBlock>;
 /// <function>
 struct Function final : public Node {
-    const GlobalId id;
+    const Id id;
     const std::vector<Param> params;
     const bool vararg;
     const DecType type;
@@ -226,7 +215,7 @@ struct Function final : public Node {
     const MaybeMetadata md;
 
     Function(
-        const GlobalId id,
+        const Id id,
         const std::vector<Param> params,
         const bool vararg,
         const DecType type,
@@ -248,13 +237,13 @@ struct Function final : public Node {
 
 /// <type-alias>
 struct TypeAlias final : public Node {
-    const DecTypeId id;
+    const Id id;
     // A missing value indicates a declaration, otherwise it's a definition.
     const std::optional<DecType> type;
     const MaybeMetadata md;
 
     TypeAlias(
-        const DecTypeId id,
+        const Id id,
         const std::optional<DecType> type,
         const MaybeMetadata md,
         const Span span
@@ -292,18 +281,18 @@ struct Program final : public Node {
 struct PhiStmt final : public Node {
     struct Operand {
         const Val val;
-        const BlockId definingBlock;
-        Operand(const Val val, const BlockId definingBlock)
+        const Id definingBlock;
+        Operand(const Val val, const Id definingBlock)
         : val(val), definingBlock(definingBlock) { }
     };
 
-    const LocalId id;
+    const Id id;
     // ! Guaranteed non-zero length.
     const std::vector<Operand> args;
     const MaybeMetadata md;
 
     PhiStmt(
-        const LocalId id,
+        const Id id,
         const std::vector<Operand> args,
         const MaybeMetadata md,
         const Span span
@@ -312,13 +301,13 @@ struct PhiStmt final : public Node {
 
 /// <control-inst> (2)/call
 struct CallStmt final : public Node {
-    const std::optional<LocalId> id;
+    const std::optional<Id> id;
     const PVal callee;
     const std::vector<Val> args;
     const MaybeMetadata md;
 
     CallStmt(
-        const std::optional<LocalId> id,
+        const std::optional<Id> id,
         const PVal callee,
         const std::vector<Val> args,
         const MaybeMetadata md,
@@ -328,24 +317,24 @@ struct CallStmt final : public Node {
 
 /// <control-inst> (3)/jump
 struct BrStmt final : public Node {
-    const BlockId target;
+    const Id target;
     const MaybeMetadata md;
 
-    BrStmt(const BlockId target, const MaybeMetadata md, const Span span)
+    BrStmt(const Id target, const MaybeMetadata md, const Span span)
     : Node(span), target(target), md(md) { }
 };
 
 /// <control-inst> (4)/jumpif
 struct BrifStmt final : public Node {
     const Val cond;
-    const BlockId ifTarget;
-    const BlockId elseTarget;
+    const Id ifTarget;
+    const Id elseTarget;
     const MaybeMetadata md;
 
     BrifStmt(
         const Val cond,
-        const BlockId ifTarget,
-        const BlockId elseTarget,
+        const Id ifTarget,
+        const Id elseTarget,
         const MaybeMetadata md,
         const Span span
     ) :
@@ -374,14 +363,14 @@ struct RetStmt final : public Node {
 struct CmpStmt final : public Node {
     enum class Operator { LT, LE, GT, GE, EQ, NEQ };
 
-    const LocalId id;
+    const Id id;
     const Operator op;
     const Val left;
     const Val right;
     const MaybeMetadata md;
 
     CmpStmt(
-        const LocalId id,
+        const Id id,
         const Operator op,
         const Val left,
         const Val right,
@@ -395,12 +384,12 @@ struct AllocStmt final : public Node {
     enum class Kind { HEAP, STACK };
 
     const Kind kind;
-    const LocalId id;
+    const Id id;
     const MaybeMetadata md;
 
     AllocStmt(
         const Kind kind,
-        const LocalId id,
+        const Id id,
         const MaybeMetadata md,
         const Span span)
     : Node(span), kind(kind), id(id), md(md) { }
@@ -436,13 +425,13 @@ struct LoadStmt final : public Node {
 
 /// <mem-inst> (4)
 struct FieldStmt final : public Node {
-    const LocalId id;
+    const Id id;
     const PVal src;
     const IVal index;
     const MaybeMetadata md;
 
     FieldStmt(
-        const LocalId id,
+        const Id id,
         const PVal src,
         const IVal index,
         const MaybeMetadata md,
@@ -452,13 +441,13 @@ struct FieldStmt final : public Node {
 
 /// <conversion-stmt> (1)
 struct BitCastStmt final : public Node {
-    const LocalId id;
+    const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
 
     BitCastStmt(
-        const LocalId id,
+        const Id id,
         const Val val,
         const DecType type,
         const MaybeMetadata md,
@@ -468,13 +457,13 @@ struct BitCastStmt final : public Node {
 
 /// <conversion-stmt> (2)
 struct ConvertStmt final : public Node {
-    const LocalId id;
+    const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
 
     ConvertStmt(
-        const LocalId id,
+        const Id id,
         const Val val,
         const DecType type,
         const MaybeMetadata md,
@@ -484,13 +473,13 @@ struct ConvertStmt final : public Node {
 
 /// <conversion-stmt> (3)
 struct IntTruncStmt final : public Node {
-    const LocalId id;
+    const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
 
     IntTruncStmt(
-        const LocalId id,
+        const Id id,
         const Val val,
         const DecType type,
         const MaybeMetadata md,
@@ -503,14 +492,14 @@ struct IntExtStmt final : public Node {
     enum class Kind { ZERO, SIGN };
 
     const Kind kind;
-    const LocalId id;
+    const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
 
     IntExtStmt(
         const Kind kind,
-        const LocalId id,
+        const Id id,
         const Val val,
         const DecType type,
         const MaybeMetadata md,
@@ -533,14 +522,14 @@ struct BinaryOpStmt final : public Node {
     };
 
     const Op op;
-    const LocalId id;
+    const Id id;
     const Val left;
     const Val right;
     const MaybeMetadata md;
 
     BinaryOpStmt(
         const Op op,
-        const LocalId id,
+        const Id id,
         const Val left,
         const Val right,
         const MaybeMetadata md,
@@ -552,13 +541,13 @@ struct UnaryOpStmt final : public Node {
     enum class Op { NOT };
 
     const Op op;
-    const LocalId id;
+    const Id id;
     const Val val;
     const MaybeMetadata md;
 
     UnaryOpStmt(
         const Op op,
-        const LocalId id,
+        const Id id,
         const Val val,
         const MaybeMetadata md,
         const Span span
@@ -567,12 +556,12 @@ struct UnaryOpStmt final : public Node {
 
 /// <misc-inst> (1)
 struct AssignStmt final : public Node {
-    const LocalId id;
+    const Id id;
     const Val val;
     const MaybeMetadata md;
 
     AssignStmt(
-        const LocalId id,
+        const Id id,
         const Val val,
         const MaybeMetadata md,
         const Span span
@@ -621,12 +610,12 @@ using Statement = std::variant<
 
 /// <basic-block>
 struct BasicBlock final : public Node {
-    const BlockId id;
+    const Id id;
     const std::vector<Statement> stmts;
     const MaybeMetadata md;
 
     BasicBlock(
-        const BlockId id,
+        const Id id,
         const std::vector<Statement> stmts,
         const MaybeMetadata md,
         const Span span
@@ -639,16 +628,15 @@ struct BasicBlock final : public Node {
 /// pretty printing.
 using AnyNode = std::variant<
     Metadata,
-    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, DecTypeId,
-    LocalId, GlobalId, BlockId, TypedId,
+    Id,
+    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType,
     IntConstant, FloatConstant, NullConstant, SeqConstant,
-    TypedConstant,
+    TypedId, TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, BitCastStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
-    BinaryOpStmt, UnaryOpStmt,
-    BlackholeStmt, BasicBlock,
-    DecType, VarId, Constant, Val, PVal, IVal, GVal, Statement
+    BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,
+    DecType, Constant, Val, PVal, IVal, Statement
 >;
 
 }  // namespace SVFIR

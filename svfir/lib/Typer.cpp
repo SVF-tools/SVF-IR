@@ -24,11 +24,11 @@ using namespace SVFIR;
 ////////////////////////////////////////////////////////////////////////////////
 
 std::optional<Err> _checkDuplicateTypeDecs(const std::vector<TypeAlias> &tas) {
-    std::unordered_set<Id> ids;
+    std::unordered_set<Name> names;
     for (const auto &ta : tas) {
-        const Id id = ta.id.id;
-        if (ids.insert(id).second) {
-            return Err("Type alias '" + id + "' declared twice", ta.span);
+        const Name name = ta.id.name;
+        if (names.insert(name).second) {
+            return Err("Type alias '" + name + "' declared twice", ta.span);
         }
     }
     return std::nullopt;
@@ -38,68 +38,68 @@ std::optional<Err> _checkDuplicateGlobalDecs(
     const std::vector<Variable> &vs,
     const std::vector<Function> &fns
 ) {
-    std::unordered_set<Id> ids;
+    std::unordered_set<Name> names;
     for (const auto &v : vs) {
-        const Id id = v.id.id;
-        if (ids.insert(id).second) {
-            return Err("Variable name '" + id + "' declared twice", v.span);
+        const Name name = v.id.name;
+        if (names.insert(name).second) {
+            return Err("Variable name '" + name + "' declared twice", v.span);
         }
     }
     for (const auto &fn : fns) {
-        const Id id = fn.id.id;
-        if (ids.insert(id).second) {
-            return Err("Function name '" + id + "' declared twice", fn.span);
+        const Name name = fn.id.name;
+        if (names.insert(name).second) {
+            return Err("Function name '" + name + "' declared twice", fn.span);
         }
     }
     return std::nullopt;
 }
 
 std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
-    std::unordered_set<Id> ids;
+    std::unordered_set<Name> names;
     for (const auto &p : fn.params) {
-        const Id id = p.id.id;
-        if (ids.insert(id).second) {
-            return Err("Parameter '" + id + "' declared twice", fn.span);
+        const Name name = p.id.name;
+        if (names.insert(name).second) {
+            return Err("Parameter '" + name + "' declared twice", fn.span);
         }
     }
 
     if (fn.body.has_value()) {
         for (const auto &bb : fn.body.value()) {
             for (const auto &s : bb.stmts) {
-                std::optional<Id> id;
+                std::optional<Name> name;
                 if (std::holds_alternative<PhiStmt>(s)) {
-                    id.emplace(std::get<PhiStmt>(s).id.id);
+                    name.emplace(std::get<PhiStmt>(s).id.name);
                 } else if (std::holds_alternative<CallStmt>(s)) {
                     const CallStmt c = std::get<CallStmt>(s);
                     if (c.id.has_value()) {
-                        id.emplace(c.id.value().id);
+                        name.emplace(c.id.value().name);
                     }
                 } else if (std::holds_alternative<CmpStmt>(s)) {
-                    id.emplace(std::get<CmpStmt>(s).id.id);
+                    name.emplace(std::get<CmpStmt>(s).id.name);
                 } else if (std::holds_alternative<AllocStmt>(s)) {
-                    id.emplace(std::get<AllocStmt>(s).id.id);
+                    name.emplace(std::get<AllocStmt>(s).id.name);
                 } else if (std::holds_alternative<LoadStmt>(s)) {
-                    id.emplace(std::get<LoadStmt>(s).tid.id.id);
+                    name.emplace(std::get<LoadStmt>(s).tid.id.name);
                 } else if (std::holds_alternative<FieldStmt>(s)) {
-                    id.emplace(std::get<FieldStmt>(s).id.id);
+                    name.emplace(std::get<FieldStmt>(s).id.name);
                 } else if (std::holds_alternative<BitCastStmt>(s)) {
-                    id.emplace(std::get<BitCastStmt>(s).id.id);
+                    name.emplace(std::get<BitCastStmt>(s).id.name);
                 } else if (std::holds_alternative<ConvertStmt>(s)) {
-                    id.emplace(std::get<ConvertStmt>(s).id.id);
+                    name.emplace(std::get<ConvertStmt>(s).id.name);
                 } else if (std::holds_alternative<IntTruncStmt>(s)) {
-                    id.emplace(std::get<IntTruncStmt>(s).id.id);
+                    name.emplace(std::get<IntTruncStmt>(s).id.name);
                 } else if (std::holds_alternative<IntExtStmt>(s)) {
-                    id.emplace(std::get<IntExtStmt>(s).id.id);
+                    name.emplace(std::get<IntExtStmt>(s).id.name);
                 } else if (std::holds_alternative<BinaryOpStmt>(s)) {
-                    id.emplace(std::get<BinaryOpStmt>(s).id.id);
+                    name.emplace(std::get<BinaryOpStmt>(s).id.name);
                 } else if (std::holds_alternative<UnaryOpStmt>(s)) {
-                    id.emplace(std::get<UnaryOpStmt>(s).id.id);
+                    name.emplace(std::get<UnaryOpStmt>(s).id.name);
                 } else if (std::holds_alternative<AssignStmt>(s)) {
-                    id.emplace(std::get<AssignStmt>(s).id.id);
+                    name.emplace(std::get<AssignStmt>(s).id.name);
                 } else if (std::holds_alternative<VarargStmt>(s)) {
-                    id.emplace(std::get<VarargStmt>(s).tid.id.id);
+                    name.emplace(std::get<VarargStmt>(s).tid.id.name);
                 } else if (std::holds_alternative<BlackholeStmt>(s)) {
-                    id.emplace(std::get<BlackholeStmt>(s).tid.id.id);
+                    name.emplace(std::get<BlackholeStmt>(s).tid.id.name);
                 } else {
                     assert(
                         std::holds_alternative<RetStmt>(s) ||
@@ -108,10 +108,10 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                     );
                 }
 
-                if (id.has_value()) {
-                    if (ids.insert(id.value()).second) {
+                if (name.has_value()) {
+                    if (names.insert(name.value()).second) {
                         return Err(
-                            "Variable '" + id.value() + "' declared twice",
+                            "Variable '" + name.value() + "' declared twice",
                             span(s)
                         );
                     }
@@ -229,7 +229,7 @@ bool operator==(const Type &x, const Type &y) {
     } else if (isAggType(x) && isAggType(y)) {
         return std::get<AggType>(x).slots == std::get<AggType>(y).slots;
     } else if (isTypeId(x) && isTypeId(y)) {
-        return std::get<TypeId>(x).id == std::get<TypeId>(y).id;
+        return std::get<TypeId>(x).name == std::get<TypeId>(y).name;
     } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
     else if (isVarargType(x) && isVarargType(y)) { return true; }
     else {
