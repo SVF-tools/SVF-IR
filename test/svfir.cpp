@@ -102,7 +102,7 @@ bool roundtrip(void) {
         "      (load (ptr %33) %32)\n"
         "      (store %33 %5)\n"
         "      (br !13)))\n"
-        "    (!30 (\n"
+        "    (!34 (\n"
         "      (ret void))))))";
     const Result<Program, Err> res2 = parseString(program2);
     TEST(!isErr(res2));
