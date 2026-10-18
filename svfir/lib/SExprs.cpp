@@ -93,7 +93,7 @@ ParseResult<SExpr> _parseAtom(InputStream &stream) {
 
         // We haven't consumed the closing quote so EOF indicates an error.
         if (stream.atEof()) {
-            return ParseResult<SExpr>(ErrMsg("unclosed quote"));
+            return ErrMsg("unclosed quote");
         }
 
         // Consume closing quote.
@@ -107,7 +107,7 @@ ParseResult<SExpr> _parseAtom(InputStream &stream) {
         }
     }
 
-    return ParseResult<SExpr>(Atom(atom, Span(start, stream.cursor())));
+    return Atom(atom, Span(start, stream.cursor()));
 }
 
 /// Parse a List. stream must point to the start of the list.
@@ -134,11 +134,11 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
     }
 
     if (stream.peek() != _RPAREN) {
-        return ParseResult<SExpr>(ErrMsg("unclosed list"));
+        return ErrMsg("unclosed list");
     }
 
     stream.advance(1);
-    return ParseResult<SExpr>(SExpr(List(children, Span(start, stream.cursor()))));
+    return SExpr(List(children, Span(start, stream.cursor())));
 }
 
 }  // Anonymous namespace
@@ -171,7 +171,7 @@ ParseResult<SExprSeq> parseSeq(InputStream &stream) {
                 seq.push_back(std::get<SExpr>(res));
             } else {
                 assert(std::holds_alternative<ErrMsg>(res));
-                return ParseResult<SExprSeq>(std::get<ErrMsg>(res));
+                return std::get<ErrMsg>(res);
             }
         }
     }
