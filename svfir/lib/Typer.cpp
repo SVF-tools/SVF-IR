@@ -123,6 +123,25 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     return std::nullopt;
 }
 
+std::optional<Err> checkDuplicateDecs(const Program &p) {
+    const std::optional<Err> ts = _checkDuplicateTypeDecs(p.types);
+    if (ts.has_value()) { return ts.value(); }
+
+    const std::optional<Err> gs = _checkDuplicateGlobalDecs(
+        p.variables,
+        p.functions
+    );
+    if (gs.has_value()) { return gs.value(); }
+
+    for (const Function &fn : p.functions) {
+        const std::optional<Err> ls = _checkDuplicateLocalDecs(fn);
+        if (ls.has_value()) { return ls.value(); }
+    }
+
+    return std::nullopt;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkTerminatingStmts
 /// DEPS: --
@@ -233,10 +252,6 @@ bool operator==(const Type &x, const Type &y) {
 
 bool operator!=(const Type &x, const Type &y) {
     return !(x == y);
-}
-
-std::optional<Err> checkDuplicateDecs(const Program &p) {
-    return std::nullopt;
 }
 
 bool isTerminatingStmt(const Statement &stmt) {
