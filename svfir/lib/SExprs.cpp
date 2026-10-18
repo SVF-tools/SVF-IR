@@ -15,7 +15,7 @@ const char _NEWLINE = '\n';
 
 /// Does stream point to '""'.
 bool _atDoubleQuote(InputStream &stream) {
-    const std::vector<char> next2 = stream.peekn(2);
+    const std::vector<char> &next2 = stream.peekn(2);
     return next2.size() == 2 && next2[0] == _QUOTE && next2[1] == _QUOTE;
 }
 
@@ -54,7 +54,7 @@ void _skipWhitespace(InputStream &stream) {
 /// Skips whitespace and comments stream may be pointing at.
 /// Returns whether anything was skipped.
 bool _skipNonSignificant(InputStream &stream) {
-    const Loc originalLoc = stream.cursor();
+    const Loc &originalLoc = stream.cursor();
 
     while (
         !stream.atEof() &&
@@ -122,7 +122,7 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
     while (!stream.atEof() && c != _RPAREN) {
         if (_skipNonSignificant(stream)) { }
         else {
-            ParseResult<SExpr> res = SVFIR::SExprs::parse(stream);
+            const ParseResult<SExpr> &res = SVFIR::SExprs::parse(stream);
             if (std::holds_alternative<SExpr>(res)) {
                 children.push_back(std::get<SExpr>(res));
             } else {
@@ -166,7 +166,7 @@ ParseResult<SExprSeq> parseSeq(InputStream &stream) {
     while (!stream.atEof()) {
         if (_skipNonSignificant(stream)) { }
         else {
-            ParseResult<SExpr> res = parse(stream);
+            const ParseResult<SExpr> &res = parse(stream);
             if (std::holds_alternative<SExpr>(res)) {
                 seq.push_back(std::get<SExpr>(res));
             } else {
@@ -204,7 +204,7 @@ std::string toString(const SExpr &sexpr) {
     std::string out;
 
     if (isAtom(sexpr)) {
-        const Atom atom = std::get<Atom>(sexpr);
+        const Atom &atom = std::get<Atom>(sexpr);
         if (atom.val.find(_QUOTE) != std::string::npos) {
             out.reserve(out.size() + atom.val.size() + 2);
             out.push_back(_QUOTE);
@@ -219,7 +219,7 @@ std::string toString(const SExpr &sexpr) {
         }
     } else {
         assert(isList(sexpr));
-        const List list = std::get<List>(sexpr);
+        const List &list = std::get<List>(sexpr);
         out.push_back(_LPAREN);
         for (size_t i = 0; i < list.children.size(); ++i) {
             if (i != 0) { out.append(" "); }
