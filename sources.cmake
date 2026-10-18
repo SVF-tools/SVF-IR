@@ -1,5 +1,6 @@
 set(SVFIR_HEADERS
   svfir/include/Ast.h
+  svfir/include/ControlFlowGraph.h
   svfir/include/Err.h
   svfir/include/InputStream.h
   svfir/include/Parser.h
@@ -14,6 +15,7 @@ set(SVFIR_HEADERS
 
 set(SVFIR_SOURCES
   svfir/lib/Ast.cpp
+  svfir/lib/ControlFlowGraph.cpp
   svfir/lib/Err.cpp
   svfir/lib/GetSpan.cpp
   svfir/lib/InputStream.cpp
