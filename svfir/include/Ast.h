@@ -14,28 +14,24 @@
 
 namespace SVFIR {
 
-struct Node {
-    const Span span;
-
-    Node(const Span span) : span(span) { }
-};
-
 using Name = std::string;
 
 using MaybeMetadata = std::optional<struct Metadata>;
 
-struct Metadata final : public Node {
+struct Metadata final {
     const SExprs::SExpr data;
+    const Span span;
 
     Metadata(const SExprs::SExpr data, const Span span)
-    : Node(span), data(data) { }
+    : span(span), data(data) { }
 };
 
 /// <lid>/<gid>/<bid>/<tid>/<var-id>
-struct Id final : public Node {
+struct Id final {
     const Name name;
+    const Span span;
 
-    Id(const Name name, const Span span) : Node(span), name(name) {
+    Id(const Name name, const Span span) : span(span), name(name) {
         assert(name.size() >= 2);
         assert(
             name[0] == '%' ||
@@ -55,41 +51,48 @@ struct Id final : public Node {
 };
 
 /// <scalar-type> (1)
-struct VoidDecType final : public Node {
-    VoidDecType(const Span span) : Node(span) { }
+struct VoidDecType final {
+    const Span span;
+
+    VoidDecType(const Span span) : span(span) { }
 };
 
 /// <scalar-type> (2)
-struct IntDecType final : public Node {
+struct IntDecType final {
     enum class Kind { I8, I16, I32, I64, I128 };
 
     const Kind kind;
+    const Span span;
 
     IntDecType(const Kind kind, const Span span)
-    : Node(span), kind(kind) { }
+    : span(span), kind(kind) { }
 };
 
 /// <scalar-type> (3)
-struct FloatDecType final : public Node {
+struct FloatDecType final  {
     enum class Kind { F16, F32, F64, F128 };
 
     const Kind kind;
+    const Span span;
 
     FloatDecType(const Kind kind, const Span span)
-    : Node(span), kind(kind) { }
+    : span(span), kind(kind) { }
 };
 
 /// <scalar-type> (4)
-struct PtrDecType final : public Node {
-    PtrDecType(const Span span) : Node(span) { }
+struct PtrDecType final {
+    const Span span;
+
+    PtrDecType(const Span span) : span(span) { }
 };
 
 /// <seq-type>
-struct AggDecType final : public Node {
+struct AggDecType final {
     const uint64_t slots;
+    const Span span;
 
     AggDecType(const uint64_t slots, const Span span)
-    : Node(span), slots(slots) { }
+    : span(span), slots(slots) { }
 };
 
 /// <type>
@@ -98,47 +101,53 @@ using DecType = std::variant<
 >;
 
 /// <typed-lid>
-struct TypedId final : public Node {
+struct TypedId final {
     const Id id;
     const DecType type;
+    const Span span;
 
     TypedId(const Id id, const DecType type, const Span span)
-    : Node(span), id(id), type(type) { }
+    : span(span), id(id), type(type) { }
 };
 
 /// <int-const>
-struct IntConstant final : public Node {
+struct IntConstant final {
     // TODO: this should be an arbitrary precision integer.
     const std::string val;
+    const Span span;
 
     IntConstant(const std::string val, const Span span)
-    : Node(span), val(val) { }
+    : span(span), val(val) { }
 };
 
 /// <flt-const>
-struct FloatConstant final : public Node {
+struct FloatConstant final {
     static_assert(std::numeric_limits<double>::is_iec559);
     // TODO: this needs to be a real value.
     const std::string val;
+    const Span span;
 
     FloatConstant(const std::string val, const Span span)
-    : Node(span), val(val) { }
+    : span(span), val(val) { }
 };
 
 /// <null-const>
-struct NullConstant final : public Node {
-    NullConstant(const Span span) : Node(span) { }
+struct NullConstant final {
+    const Span span;
+
+    NullConstant(const Span span) : span(span) { }
 };
 
 /// <val>/<gval>
 using Val = std::variant<Id, struct TypedConstant>;
 
 /// <seq-const>
-struct SeqConstant final : public Node {
+struct SeqConstant final {
     const std::vector<Val> vals;
+    const Span span;
 
     SeqConstant(const std::vector<Val> vals, const Span span)
-    : Node(span), vals(vals) { }
+    : span(span), vals(vals) { }
 };
 
 /// <const>
@@ -147,12 +156,13 @@ using Constant = std::variant<
 >;
 
 /// <typed-const>
-struct TypedConstant final : public Node {
+struct TypedConstant final {
     const Constant constant;
     const DecType type;
+    const Span span;
 
     TypedConstant(const Constant constant, const DecType type, const Span span)
-    : Node(span), constant(constant), type(type) { }
+    : span(span), constant(constant), type(type) { }
 };
 
 /// <pval>
@@ -162,57 +172,61 @@ using PVal = std::variant<Id, NullConstant>;
 using IVal = std::variant<Id, IntConstant>;
 
 /// <preamble>
-struct Preamble final : public Node {
+struct Preamble final {
     const Version version;
     const std::string source;
+    const Span span;
 
     Preamble(
         const Version version,
         const std::string source,
         const Span span
-    ) : Node(span), version(version), source(source) { }
+    ) : span(span), version(version), source(source) { }
 };
 
 /// <variable>
-struct Variable final : public Node {
+struct Variable final {
     const Id id;
     // A missing value indicates a declaration, otherwise it's a definition.
     const std::optional<Val> val;
     const MaybeMetadata md;
+    const Span span;
 
     Variable(
         const Id id,
         const std::optional<Val> val,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), md(md) { }
+    ) : span(span), id(id), val(val), md(md) { }
 
     bool isOpaque(void) const;
 };
 
 /// <param>
-struct Param final : public Node {
+struct Param final {
     const Id id;
     const DecType type;
     const MaybeMetadata md;
+    const Span span;
 
     Param(
         const Id id,
         const DecType type,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), type(type), md(md) { }
+    ) : span(span), id(id), type(type), md(md) { }
 };
 
 using FunctionBody = std::vector<struct BasicBlock>;
 /// <function>
-struct Function final : public Node {
+struct Function final {
     const Id id;
     const std::vector<Param> params;
     const bool vararg;
     const DecType type;
     const std::optional<FunctionBody> body;
     const MaybeMetadata md;
+    const Span span;
 
     Function(
         const Id id,
@@ -223,7 +237,7 @@ struct Function final : public Node {
         const MaybeMetadata md,
         const Span span
     ) :
-        Node(span),
+        span(span),
         id(id),
         params(params),
         vararg(vararg),
@@ -236,29 +250,31 @@ struct Function final : public Node {
 };
 
 /// <type-alias>
-struct TypeAlias final : public Node {
+struct TypeAlias final {
     const Id id;
     // A missing value indicates a declaration, otherwise it's a definition.
     const std::optional<DecType> type;
     const MaybeMetadata md;
+    const Span span;
 
     TypeAlias(
         const Id id,
         const std::optional<DecType> type,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), type(type), md(md) { }
+    ) : span(span), id(id), type(type), md(md) { }
 
     bool isOpaque(void) const;
 };
 
 /// <program>
-struct Program final : public Node {
+struct Program final {
     const Preamble preamble;
     const std::vector<TypeAlias> types;
     const std::vector<Variable> variables;
     const std::vector<Function> functions;
     const MaybeMetadata md;
+    const Span span;
 
     Program(
         const Preamble preamble,
@@ -268,7 +284,7 @@ struct Program final : public Node {
         const MaybeMetadata md,
         const Span span
     ) :
-        Node(span),
+        span(span),
         preamble(preamble),
         types(types),
         variables(variables),
@@ -278,7 +294,7 @@ struct Program final : public Node {
 };
 
 /// <control-inst> (1)/phi
-struct PhiStmt final : public Node {
+struct PhiStmt final {
     struct Operand {
         const Val val;
         const Id definingBlock;
@@ -290,21 +306,23 @@ struct PhiStmt final : public Node {
     // ! Guaranteed non-zero length.
     const std::vector<Operand> args;
     const MaybeMetadata md;
+    const Span span;
 
     PhiStmt(
         const Id id,
         const std::vector<Operand> args,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), args(args), md(md) { }
+    ) : span(span), id(id), args(args), md(md) { }
 };
 
 /// <control-inst> (2)/call
-struct CallStmt final : public Node {
+struct CallStmt final {
     const std::optional<Id> id;
     const PVal callee;
     const std::vector<Val> args;
     const MaybeMetadata md;
+    const Span span;
 
     CallStmt(
         const std::optional<Id> id,
@@ -312,24 +330,26 @@ struct CallStmt final : public Node {
         const std::vector<Val> args,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), callee(callee), args(args), md(md) { }
+    ) : span(span), id(id), callee(callee), args(args), md(md) { }
 };
 
 /// <control-inst> (3)/jump
-struct BrStmt final : public Node {
+struct BrStmt final {
     const Id target;
     const MaybeMetadata md;
+    const Span span;
 
     BrStmt(const Id target, const MaybeMetadata md, const Span span)
-    : Node(span), target(target), md(md) { }
+    : span(span), target(target), md(md) { }
 };
 
 /// <control-inst> (4)/jumpif
-struct BrifStmt final : public Node {
+struct BrifStmt final {
     const Val cond;
     const Id ifTarget;
     const Id elseTarget;
     const MaybeMetadata md;
+    const Span span;
 
     BrifStmt(
         const Val cond,
@@ -338,7 +358,7 @@ struct BrifStmt final : public Node {
         const MaybeMetadata md,
         const Span span
     ) :
-        Node(span),
+        span(span),
         cond(cond),
         ifTarget(ifTarget),
         elseTarget(elseTarget),
@@ -347,20 +367,21 @@ struct BrifStmt final : public Node {
 };
 
 /// <control-inst> (5)/return
-struct RetStmt final : public Node {
+struct RetStmt final {
     // No val indicates void.
     const std::optional<Val> val;
     const MaybeMetadata md;
+    const Span span;
 
     RetStmt(
         const std::optional<Val> val,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), val(val), md(md) { }
+    ) : span(span), val(val), md(md) { }
 };
 
 /// <cmp-inst> with <cmp-op> through op.
-struct CmpStmt final : public Node {
+struct CmpStmt final {
     enum class Operator { LT, LE, GT, GE, EQ, NEQ };
 
     const Id id;
@@ -368,6 +389,7 @@ struct CmpStmt final : public Node {
     const Val left;
     const Val right;
     const MaybeMetadata md;
+    const Span span;
 
     CmpStmt(
         const Id id,
@@ -376,59 +398,63 @@ struct CmpStmt final : public Node {
         const Val right,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), op(op), left(left), right(right), md(md) { }
+    ) : span(span), id(id), op(op), left(left), right(right), md(md) { }
 };
 
 /// <mem-inst> (1)
-struct AllocStmt final : public Node {
+struct AllocStmt final {
     enum class Kind { HEAP, STACK };
 
     const Kind kind;
     const Id id;
     const MaybeMetadata md;
+    const Span span;
 
     AllocStmt(
         const Kind kind,
         const Id id,
         const MaybeMetadata md,
         const Span span)
-    : Node(span), kind(kind), id(id), md(md) { }
+    : span(span), kind(kind), id(id), md(md) { }
 };
 
 /// <mem-inst> (2)
-struct StoreStmt final : public Node {
+struct StoreStmt final {
     const Val val;
     const PVal dst;
     const MaybeMetadata md;
+    const Span span;
 
     StoreStmt(
         const Val val,
         const PVal dst,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), val(val), dst(dst), md(md) { }
+    ) : span(span), val(val), dst(dst), md(md) { }
 };
 
 /// <mem-inst> (3)
-struct LoadStmt final : public Node {
+struct LoadStmt final {
     const TypedId tid;
     const PVal src;
     const MaybeMetadata md;
+    const Span span;
 
     LoadStmt(
         const TypedId tid,
         const PVal src,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), tid(tid), src(src), md(md) { }
+    ) : span(span), tid(tid), src(src), md(md) { }
 };
 
 /// <mem-inst> (4)
-struct FieldStmt final : public Node {
+struct FieldStmt final {
     const Id id;
     const PVal src;
     const IVal index;
     const MaybeMetadata md;
+    const Span span;
 
     FieldStmt(
         const Id id,
@@ -436,15 +462,16 @@ struct FieldStmt final : public Node {
         const IVal index,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), src(src), index(index), md(md) { }
+    ) : span(span), id(id), src(src), index(index), md(md) { }
 };
 
 /// <conversion-stmt> (1)
-struct BitCastStmt final : public Node {
+struct BitCastStmt final {
     const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
+    const Span span;
 
     BitCastStmt(
         const Id id,
@@ -452,15 +479,16 @@ struct BitCastStmt final : public Node {
         const DecType type,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), type(type), md(md) { }
+    ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
 /// <conversion-stmt> (2)
-struct ConvertStmt final : public Node {
+struct ConvertStmt final {
     const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
+    const Span span;
 
     ConvertStmt(
         const Id id,
@@ -468,15 +496,16 @@ struct ConvertStmt final : public Node {
         const DecType type,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), type(type), md(md) { }
+    ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
 /// <conversion-stmt> (3)
-struct IntTruncStmt final : public Node {
+struct IntTruncStmt final {
     const Id id;
     const Val val;
     const DecType type;
     const MaybeMetadata md;
+    const Span span;
 
     IntTruncStmt(
         const Id id,
@@ -484,11 +513,11 @@ struct IntTruncStmt final : public Node {
         const DecType type,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), type(type), md(md) { }
+    ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
 /// <conversion-stmt> (4)
-struct IntExtStmt final : public Node {
+struct IntExtStmt final {
     enum class Kind { ZERO, SIGN };
 
     const Kind kind;
@@ -496,6 +525,7 @@ struct IntExtStmt final : public Node {
     const Val val;
     const DecType type;
     const MaybeMetadata md;
+    const Span span;
 
     IntExtStmt(
         const Kind kind,
@@ -505,7 +535,7 @@ struct IntExtStmt final : public Node {
         const MaybeMetadata md,
         Span span
     ) :
-        Node(span),
+        span(span),
         kind(kind),
         id(id),
         val(val),
@@ -515,7 +545,7 @@ struct IntExtStmt final : public Node {
 };
 
 /// <arith-inst>/<bit-stmt>
-struct BinaryOpStmt final : public Node {
+struct BinaryOpStmt final {
     enum class Op {
         ADD, SUB, MUL, UDIV, SDIV, UREM, SREM,
         AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR
@@ -526,6 +556,7 @@ struct BinaryOpStmt final : public Node {
     const Val left;
     const Val right;
     const MaybeMetadata md;
+    const Span span;
 
     BinaryOpStmt(
         const Op op,
@@ -534,16 +565,17 @@ struct BinaryOpStmt final : public Node {
         const Val right,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), op(op), id(id), left(left), right(right), md(md) { }
+    ) : span(span), op(op), id(id), left(left), right(right), md(md) { }
 };
 
-struct UnaryOpStmt final : public Node {
+struct UnaryOpStmt final {
     enum class Op { NOT };
 
     const Op op;
     const Id id;
     const Val val;
     const MaybeMetadata md;
+    const Span span;
 
     UnaryOpStmt(
         const Op op,
@@ -551,28 +583,30 @@ struct UnaryOpStmt final : public Node {
         const Val val,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), op(op), id(id), val(val), md(md) { }
+    ) : span(span), op(op), id(id), val(val), md(md) { }
 };
 
 /// <misc-inst> (1)
-struct AssignStmt final : public Node {
+struct AssignStmt final {
     const Id id;
     const Val val;
     const MaybeMetadata md;
+    const Span span;
 
     AssignStmt(
         const Id id,
         const Val val,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), val(val), md(md) { }
+    ) : span(span), id(id), val(val), md(md) { }
 };
 
 /// <misc-inst> (2)
-struct VarargStmt final : public Node {
+struct VarargStmt final {
     const TypedId tid;
     const IVal index;
     const MaybeMetadata md;
+    const Span span;
 
     VarargStmt(
         const TypedId tid,
@@ -580,22 +614,23 @@ struct VarargStmt final : public Node {
         const MaybeMetadata md,
         const Span span
     )
-    : Node(span), tid(tid), index(index), md(md) { }
+    : span(span), tid(tid), index(index), md(md) { }
 };
 
 /// <misc-inst> (3)
-struct BlackholeStmt final : public Node {
+struct BlackholeStmt final {
     // To be impure is to be effectful.
     const bool pure;
     const TypedId tid;
     const MaybeMetadata md;
+    const Span span;
 
     BlackholeStmt(
         const bool pure,
         const TypedId tid,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), pure(pure), tid(tid), md(md) { }
+    ) : span(span), pure(pure), tid(tid), md(md) { }
 };
 
 /// <instruction>
@@ -609,17 +644,18 @@ using Statement = std::variant<
 >;
 
 /// <basic-block>
-struct BasicBlock final : public Node {
+struct BasicBlock final {
     const Id id;
     const std::vector<Statement> stmts;
     const MaybeMetadata md;
+    const Span span;
 
     BasicBlock(
         const Id id,
         const std::vector<Statement> stmts,
         const MaybeMetadata md,
         const Span span
-    ) : Node(span), id(id), stmts(stmts), md(md) { }
+    ) : span(span), id(id), stmts(stmts), md(md) { }
 };
 
 /// Represents all AST nodes, including any possible field of an AST node
