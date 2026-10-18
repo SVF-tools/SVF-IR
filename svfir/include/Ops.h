@@ -15,6 +15,9 @@ namespace SVFIR {
     /// Return the Span associated with the given AST node.
     Span span(const AnyNode &);
 
+    /// Return true if this statement can terminate a basic block.
+    bool isTerminatingStmt(const Statement &);
+
     /// Check program for errors and maintain queriable type information.
     Result<TypedProgram, Err> typeProgram(const Program &);
 

@@ -134,14 +134,6 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
 /// Terminating statements are br, brif, and ret.
 ////////////////////////////////////////////////////////////////////////////////
 
-bool _isTerminatingStmt(const Statement &stmt) {
-    return (
-        std::holds_alternative<BrStmt>(stmt) ||
-        std::holds_alternative<BrifStmt>(stmt) ||
-        std::holds_alternative<RetStmt>(stmt)
-    );
-}
-
 std::optional<Err> checkTerminatingStmts(const Program &p) {
     for (const auto &fn : p.functions) {
         if (fn.body.has_value()) {
@@ -149,7 +141,7 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
                 for (auto it = bb.stmts.cbegin(); it != bb.stmts.cend(); ++it) {
                     if (it + 1 != bb.stmts.cend()) {
                         // Not at the end? Must not terminate.
-                        if (_isTerminatingStmt(*it)) {
+                        if (isTerminatingStmt(*it)) {
                             return Err(
                                 "Terminating statement '" +
                                 pretty(*it) +
@@ -159,7 +151,7 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
                         }
                     } else {
                         // At the end? Must terminate.
-                        if (!_isTerminatingStmt(*it)) {
+                        if (!isTerminatingStmt(*it)) {
                             return Err(
                                 "Non-terminating statement '" +
                                 pretty(*it) +
@@ -245,6 +237,14 @@ bool operator!=(const Type &x, const Type &y) {
 
 std::optional<Err> checkDuplicateDecs(const Program &p) {
     return std::nullopt;
+}
+
+bool isTerminatingStmt(const Statement &stmt) {
+    return (
+        std::holds_alternative<BrStmt>(stmt) ||
+        std::holds_alternative<BrifStmt>(stmt) ||
+        std::holds_alternative<RetStmt>(stmt)
+    );
 }
 
 Result<TypedProgram, Err> typeProgram(const Program &p) {
