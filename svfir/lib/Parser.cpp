@@ -26,12 +26,12 @@ using namespace SVFIR::SExprs;
 bool isDigit(const char c) { return std::isdigit(c); }
 
 /// Error parsing expected because we need, and don't have, a list.
-Err notAList(const std::string &expected, const Span span) {
+Err notAList(const std::string &expected, const Span &span) {
     return Err("Expected a list when trying to parse " + expected + ".", span);
 }
 
 /// Error parsing expected because we need, and don't have, an atom.
-Err notAnAtom(const std::string &expected, const Span span) {
+Err notAnAtom(const std::string &expected, const Span &span) {
     return Err("Expected a atom when trying to parse " + expected + ".", span);
 }
 
@@ -39,7 +39,7 @@ Err notAnAtom(const std::string &expected, const Span span) {
 Err listCutShort(
     const std::string &encompassing,
     const std::string &expected,
-    const Span span
+    const Span &span
 ) {
     return Err(
         "Expected " + expected + " " +
@@ -50,7 +50,7 @@ Err listCutShort(
 }
 
 /// Error parsing l because there are too many elements.
-Err listTooLong(const std::string &l, const Span span) {
+Err listTooLong(const std::string &l, const Span &span) {
     return Err("Too many elements while parsing " + l, span);
 }
 
@@ -59,7 +59,7 @@ Err badKw(
     const std::string &encompassing,
     const std::string &kw,
     const std::string &actual,
-    const Span span
+    const Span &span
 ) {
     return Err(
         "Expected " + kw + " " +
@@ -70,7 +70,7 @@ Err badKw(
 }
 
 /// That IDs need two characters. kind should be capitalised.
-Err shortId(const std::string &kind, const Span span) {
+Err shortId(const std::string &kind, const Span &span) {
     return Err(kind + " IDs must be two or more characters", span);
 }
 
@@ -78,7 +78,7 @@ Err shortId(const std::string &kind, const Span span) {
 Err noSpecialCharId(
     const std::string &kind,
     const std::string &ch,
-    const Span span
+    const Span &span
 ) {
     return Err(kind + " IDs must begin with a " + ch + ".", span);
 }
@@ -86,12 +86,12 @@ Err noSpecialCharId(
 /// <md>
 Result<Metadata, Err> parseMetadata(const SExpr s) {
     if (!isList(s)) { return notAList("metadata", span(s)); }
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
 
     auto it = list.children.cbegin(), end = list.children.cend();
     if (it == end) { return listCutShort("metadata", "'md'", span(s)); }
     if (!isAtom(*it)) { return notAnAtom("'md'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "md") { return badKw("metadata", "'md'", kw, span(*it)); }
 
     ++it;
@@ -103,7 +103,7 @@ Result<Metadata, Err> parseMetadata(const SExpr s) {
 /// <tid>
 Result<Id, Err> parseTypeId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("type ID", span(s)); }
-    const std::string text = std::get<Atom>(s).val;
+    const std::string &text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Type", span(s)); }
     if (text[0] != '~') { return noSpecialCharId("Type", "~", span(s)); }
     return Id(text, span(s));
@@ -111,9 +111,9 @@ Result<Id, Err> parseTypeId(const SExpr s) {
 
 /// <type>
 Result<DecType, Err> parseType(const SExpr s) {
-    const Span sp = span(s);
+    const Span &sp = span(s);
     if (isAtom(s)) {
-        const Atom atom = std::get<Atom>(s);
+        const Atom &atom = std::get<Atom>(s);
         if (atom.val == "void") { return DecType(VoidDecType(sp)); }
         else if (atom.val == "ptr") { return DecType(PtrDecType(sp)); }
         else if (atom.val.size() > 1 && atom.val[0] == 'i') {
@@ -163,13 +163,13 @@ Result<DecType, Err> parseType(const SExpr s) {
         } else { return Err("Invalid scalar type.", sp); }
     } else {
         assert(isList(s));
-        const List list = std::get<List>(s);
-        const Span sp = span(s);
+        const List &list = std::get<List>(s);
+        const Span &sp = span(s);
 
         auto it = list.children.cbegin(), end = list.children.cend();
         if (it == end) { return listCutShort("aggregate type", "'agg'", sp); }
         if (!isAtom(*it)) { return notAnAtom("'agg'", span(*it)); }
-        const std::string kw = std::get<Atom>(*it).val;
+        const std::string &kw = std::get<Atom>(*it).val;
         if (kw != "agg") { badKw("aggregate type", "'agg'", kw, span(*it)); }
 
 
@@ -178,7 +178,7 @@ Result<DecType, Err> parseType(const SExpr s) {
             return listCutShort("aggregate type", "number of slots", sp);
         }
         if (!isAtom(*it)) { return notAnAtom("number of slots", span(*it)); }
-        const std::string slotsStr = std::get<Atom>(*it).val;
+        const std::string &slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
             // TODO: what if it starts with 0
             return Err(
@@ -205,7 +205,7 @@ Result<DecType, Err> parseType(const SExpr s) {
 /// <lid>
 Result<Id, Err> parseLocalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("local ID", span(s)); }
-    const std::string text = std::get<Atom>(s).val;
+    const std::string &text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Local", span(s)); }
     if (text[0] != '%') { return noSpecialCharId("Local", "%", span(s)); }
     return Id(text, span(s));
@@ -214,7 +214,7 @@ Result<Id, Err> parseLocalId(const SExpr s) {
 /// <gid>
 Result<Id, Err> parseGlobalId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("global ID", span(s)); }
-    const std::string text = std::get<Atom>(s).val;
+    const std::string &text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Global", span(s)); }
     if (text[0] != '@') { return noSpecialCharId("Global", "@", span(s)); }
     return Id(text, span(s));
@@ -223,7 +223,7 @@ Result<Id, Err> parseGlobalId(const SExpr s) {
 /// <bid>
 Result<Id, Err> parseBlockId(const SExpr s) {
     if (!isAtom(s)) { return notAnAtom("basic block ID", span(s)); }
-    const std::string text = std::get<Atom>(s).val;
+    const std::string &text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Basic block", span(s)); }
     if (text[0] != '!') { return noSpecialCharId("Basic block", "!", span(s)); }
     return Id(text, span(s));
@@ -233,7 +233,7 @@ Result<Id, Err> parseBlockId(const SExpr s) {
 Result<Id, Err> parseVarId(const SExpr s) {
     // Error check here so we know parseLocalId/parseGlobalId will pass.
     if (!isAtom(s)) { return notAnAtom("local/global (var) ID", span(s)); }
-    const std::string text = std::get<Atom>(s).val;
+    const std::string &text = std::get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Local/global (var)", span(s)); }
     if (text[0] == '%') { return getVal(parseLocalId(s)); }
     else if (text[0] == '@') { return getVal(parseGlobalId(s)); }
@@ -243,9 +243,9 @@ Result<Id, Err> parseVarId(const SExpr s) {
 /// <typed-id>
 Result<TypedId, Err> parseTypedId(const SExpr s) {
     if (!isList(s)) { return notAList("typed (local) ID", span(s)); }
-    const Span sp = span(s);
+    const Span &sp = span(s);
 
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("typed (local) ID", "type", sp); }
@@ -265,9 +265,9 @@ Result<TypedId, Err> parseTypedId(const SExpr s) {
 /// <param>
 Result<Param, Err> parseParam(const SExpr s) {
     if (!isList(s)) { return notAList("Param", span(s)); }
-    const Span sp = span(s);
+    const Span &sp = span(s);
 
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("parameter", "type", sp); }
@@ -294,9 +294,9 @@ Result<Param, Err> parseParam(const SExpr s) {
 Result<TypedConstant, Err> parseTypedConst(SExpr s);
 /// <const>
 Result<Constant, Err> parseConst(const SExpr s) {
-    const Span sp = span(s);
+    const Span &sp = span(s);
     if (isAtom(s)) {
-        const std::string val = std::get<Atom>(s).val;
+        const std::string &val = std::get<Atom>(s).val;
         if (val.empty()) {
             return Err("Expected constant, got empty atom", sp);
         }
@@ -365,7 +365,7 @@ Result<Constant, Err> parseConst(const SExpr s) {
         if (it == end) { return listCutShort("sequence", "'seq'", span(s)); }
 
         if (!isAtom(*it)) { return notAnAtom("'seq'", span(*it)); }
-        const std::string kw = std::get<Atom>(*it).val;
+        const std::string &kw = std::get<Atom>(*it).val;
         if (kw != "seq") {
             return badKw("sequence (constant)", "'seq'", kw, span(*it));
         }
@@ -396,7 +396,7 @@ Result<Constant, Err> parseConst(const SExpr s) {
 Result<TypedConstant, Err> parseTypedConst(SExpr s) {
     if (!isList(s)) { return notAList("typed constant", span(s)); }
 
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
     if (it == end) {
         return listCutShort("typed constant", "constant", span(s));
@@ -417,13 +417,13 @@ Result<TypedConstant, Err> parseTypedConst(SExpr s) {
 /// Version in preamble.
 Result<Version, Err> parseVersion(SExpr s) {
     if (!isList(s)) { return notAList("version", span(s)); }
-    const List list = std::get<List>(s);
-    const Span sp = span(s);
+    const List &list = std::get<List>(s);
+    const Span &sp = span(s);
 
     auto it = list.children.cbegin(), end = list.children.cend();
     if (it == end) { return listCutShort("version", "'version'", sp); }
     if (!isAtom(*it)) { return notAnAtom("'version'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "version") {
         return badKw("version", "'version'", kw, span(*it));
     }
@@ -431,8 +431,8 @@ Result<Version, Err> parseVersion(SExpr s) {
     ++it;
     if (it == end) { return listCutShort("version", "version number", sp); }
     if (!isAtom(*it)) { return notAnAtom("version number", span(*it)); }
-    const std::string versionStr = std::get<Atom>(*it).val;
-    const Span vsp = span(*it);
+    const std::string &versionStr = std::get<Atom>(*it).val;
+    const Span &vsp = span(*it);
 
     const size_t dot = versionStr.find(".", 0);
     if (dot == std::string::npos) {
@@ -443,7 +443,7 @@ Result<Version, Err> parseVersion(SExpr s) {
         return Err("Version number missing minor version (after '.').", vsp);
     }
 
-    const std::string majorStr = versionStr.substr(0, dot);
+    const std::string &majorStr = versionStr.substr(0, dot);
     if (!std::all_of(majorStr.cbegin(), majorStr.cend(), isDigit)) {
         return Err("Major version contains non-digit.", vsp);
     }
@@ -456,7 +456,7 @@ Result<Version, Err> parseVersion(SExpr s) {
         );
     }
 
-    const std::string minorStr = versionStr.substr(0, dot);
+    const std::string &minorStr = versionStr.substr(0, dot);
     if (!std::all_of(minorStr.cbegin(), minorStr.cend(), isDigit)) {
         return Err("Minor version contains non-digit.", vsp);
     }
@@ -477,15 +477,15 @@ Result<Version, Err> parseVersion(SExpr s) {
 /// <preamble>
 Result<Preamble, Err> parsePreamble(SExpr s) {
     if (!isList(s)) { return notAList("preamble", span(s)); }
-    const Span sp = span(s);
+    const Span &sp = span(s);
 
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     // Preamble keyword.
     if (it == end) { return listCutShort("preamble", "'preamble'", sp); }
     if (!isAtom(*it)) { return notAnAtom("'preamble'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "preamble") {
         return badKw("preamble", "'preamble'", kw, span(*it));
     }
@@ -501,12 +501,12 @@ Result<Preamble, Err> parsePreamble(SExpr s) {
     if (it == end) { return listCutShort("preamble", "source", sp); }
     if (!isList(*it)) { return notAList("source", span(s)); }
 
-    const List sourceList = std::get<List>(*it);
-    const Span ssp = span(sourceList);
+    const List &sourceList = std::get<List>(*it);
+    const Span &ssp = span(sourceList);
     auto sit = sourceList.children.cbegin(), send = sourceList.children.cend();
     if (sit == send) { return listCutShort("source", "'source'", ssp); }
     if (!isAtom(*sit)) { return notAnAtom("'source'", span(*sit)); }
-    const std::string skw = std::get<Atom>(*sit).val;
+    const std::string &skw = std::get<Atom>(*sit).val;
     if (skw != "source") { return badKw("source", "'source'", kw, span(*sit)); }
 
     ++sit;
@@ -514,7 +514,7 @@ Result<Preamble, Err> parsePreamble(SExpr s) {
         return listCutShort("source", "source descriptor", ssp);
     }
     if (!isAtom(*sit)) { return notAnAtom("source descriptor", span(*sit)); }
-    const std::string source = std::get<Atom>(*sit).val;
+    const std::string &source = std::get<Atom>(*sit).val;
 
     if (it + 1 != end) { return listTooLong("preamble", sp); }
 
@@ -523,7 +523,7 @@ Result<Preamble, Err> parsePreamble(SExpr s) {
 
 /// <gval>
 Result<Val, Err> parseGVal(SExpr s) {
-    static const std::string expectation =
+    static const std::string &expectation =
         "Expected a typed constant or a global ID.";
     if (isAtom(s)) {
         // Try for <gid>.
@@ -556,7 +556,7 @@ Result<Val, Err> parseGVal(SExpr s) {
 
 /// <val>
 Result<Val, Err> parseVal(SExpr s) {
-    static const std::string expectation =
+    static const std::string &expectation =
         "Expected a typed constant or a local/global (var) ID.";
     if (isAtom(s)) {
         const Result<Id, Err> vid = parseVarId(s);
@@ -636,9 +636,9 @@ Result<IVal, Err> parseIVal(SExpr s) {
 /// <variable>
 Result<Variable, Err> parseVariable(SExpr s) {
     if (!isList(s)) { return notAList("variable", span(s)); }
-    const Span sp = span(s);
+    const Span &sp = span(s);
 
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("variable", "variable name", sp); }
@@ -677,12 +677,12 @@ Result<Variable, Err> parseVariable(SExpr s) {
 /// <variables>
 Result<std::vector<Variable>, Err> parseVariables(SExpr s) {
     if (!isList(s)) { return notAList("variables", span(s)); }
-    const List list = std::get<List>(s);
+    const List &list = std::get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("variables", "'variables'", span(s)); }
     if (!isAtom(*it)) { return notAnAtom("'variables'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "variables") {
         return badKw("variables", "'variables'", kw, span(*it));
     }
@@ -715,7 +715,7 @@ Result<Statement, Err> parsePhiStmt(List l) {
     std::vector<PhiStmt::Operand> operands;
     for (auto s : std::get<List>(*it).children) {
         if (!isList(s)) { return notAList("phi operand", span(l)); }
-        const List pair = std::get<List>(s);
+        const List &pair = std::get<List>(s);
 
         if (pair.children.size() != 2) {
             return Err(
@@ -754,7 +754,7 @@ Result<Statement, Err> parsePhiStmt(List l) {
 Result<Statement, Err> parseCallStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "call"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
@@ -831,11 +831,11 @@ Result<Statement, Err> parseBrStmt(List l) {
 
 /// To be called on (brif ...) only.
 Result<Statement, Err> parseBrifStmt(List l) {
-    static const std::string brifDesc = "conditional branch statement";
+    static const std::string &brifDesc = "conditional branch statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "brif"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) { return listCutShort(brifDesc, "condition value", sp); }
@@ -907,7 +907,7 @@ Result<Statement, Err> parseRet(List l) {
 
 /// To be called on (cmp ...) only.
 Result<Statement, Err> parseCmpStmt(List l) {
-    static const std::string cmpDesc = "comparison statement";
+    static const std::string &cmpDesc = "comparison statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "cmp"));
@@ -915,7 +915,7 @@ Result<Statement, Err> parseCmpStmt(List l) {
     ++it;
     CmpStmt::Operator op;
     if (!isAtom(*it)) { return notAnAtom("comparison operator", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw == "<") { op = CmpStmt::Operator::LT; }
     else if (kw == "<=") { op = CmpStmt::Operator::LE; }
     else if (kw == ">") { op = CmpStmt::Operator::GT; }
@@ -967,12 +967,12 @@ Result<Statement, Err> parseCmpStmt(List l) {
 Result<Statement, Err> parseAllocStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "alloc"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) { return listCutShort("allocation statement", "kind", sp); }
     if (!isAtom(*it)) { return notAnAtom("'heap' or 'stack'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     AllocStmt::Kind kind;
     if (kw == "heap") { kind = AllocStmt::Kind::HEAP; }
     else if (kw == "stack") { kind = AllocStmt::Kind::STACK; }
@@ -1071,7 +1071,7 @@ Result<Statement, Err> parseLoadStmt(List l) {
 Result<Statement, Err> parseFieldStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "field"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) { return listCutShort("field statement", "local ID", sp); }
@@ -1112,8 +1112,8 @@ Result<Statement, Err> parseBitCastConvertStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && (atomEq(*it, "BitCast") || atomEq(*it, "convert")));
 
-    const std::string kind = std::get<Atom>(*it).val;
-    const std::string stmtDesc = kind + " statement";
+    const std::string &kind = std::get<Atom>(*it).val;
+    const std::string &stmtDesc = kind + " statement";
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
@@ -1156,7 +1156,7 @@ Result<Statement, Err> parseBitCastConvertStmt(List l) {
 Result<Statement, Err> parseIntTruncStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "inttrunc"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
@@ -1194,14 +1194,14 @@ Result<Statement, Err> parseIntTruncStmt(List l) {
 Result<Statement, Err> parseIntExtStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "intext"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
         return listCutShort("intext statement", "'zero'/'sign'", sp);
     }
     if (!isAtom(*it)) { return notAnAtom("'zero'/'sign'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     IntExtStmt::Kind kind;
     if (kw == "zero") { kind = IntExtStmt::Kind::ZERO; }
     else if (kw == "sign") { kind = IntExtStmt::Kind::SIGN; }
@@ -1249,8 +1249,8 @@ Result<Statement, Err> parseAddMulSubStmt(List l) {
         (atomEq(*it, "add") || atomEq(*it, "sub") || atomEq(*it, "mul"))
     );
 
-    const std::string kind = std::get<Atom>(*it).val;
-    const std::string stmtDesc = kind + " statement";
+    const std::string &kind = std::get<Atom>(*it).val;
+    const std::string &stmtDesc = kind + " statement";
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
@@ -1292,15 +1292,15 @@ Result<Statement, Err> parseAddMulSubStmt(List l) {
 Result<Statement, Err> parseDivRemStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && (atomEq(*it, "div") || atomEq(*it, "rem")));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
-    const std::string kind = std::get<Atom>(*it).val;
-    const std::string stmtDesc = kind + " statement";
+    const std::string &kind = std::get<Atom>(*it).val;
+    const std::string &stmtDesc = kind + " statement";
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'", sp); }
     if (!isAtom(*it)) { return notAnAtom("'signed'/'unsigned'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     bool isSigned;
     if (kw == "unsigned") { isSigned = false; }
     else if (kw == "signed") { isSigned = true; }
@@ -1355,7 +1355,7 @@ Result<Statement, Err> parseDivRemStmt(List l) {
 Result<Statement, Err> parseNotStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "not"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) { return listCutShort("not statement", "local ID", sp); }
@@ -1395,8 +1395,8 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(List l) {
         )
     );
 
-    const std::string kind = std::get<Atom>(*it).val;
-    const std::string stmtDesc = kind + " statement";
+    const std::string &kind = std::get<Atom>(*it).val;
+    const std::string &stmtDesc = kind + " statement";
 
     ++it;
     if (it == end) { listCutShort(stmtDesc, "local ID", span(l)); }
@@ -1439,14 +1439,14 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(List l) {
 Result<Statement, Err> parseShiftrStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "shiftr"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
         return listCutShort("shiftr statement", "'logical'/'arithmetic'", sp);
     }
     if (!isAtom(*it)) { return notAnAtom("'logical'/'arithmetic'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     BinaryOpStmt::Op op;
     if (kw == "logical") { op = BinaryOpStmt::Op::LSHIFTR; }
     else if (kw == "arithmetic") { op = BinaryOpStmt::Op::ASHIFTR; }
@@ -1497,7 +1497,7 @@ Result<Statement, Err> parseShiftrStmt(List l) {
 Result<Statement, Err> parseAssignStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "assign"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
@@ -1530,7 +1530,7 @@ Result<Statement, Err> parseAssignStmt(List l) {
 Result<Statement, Err> parseVarargStmt(List l) {
     auto it = l.children.cbegin(), end = l.children.cend();
     assert(it != end && atomEq(*it, "vararg"));
-    const Span sp = span(l);
+    const Span &sp = span(l);
 
     ++it;
     if (it == end) {
@@ -1573,7 +1573,7 @@ Result<Statement, Err> parseBlackholeStmt(List l) {
     if (!isAtom(*it)) {
         return notAnAtom("'pure'/'effectful'", span(*it));
     }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     bool pure;
     if (kw == "pure") { pure = true; }
     else if (kw == "effectful") { pure = false; }
@@ -1611,14 +1611,14 @@ Result<Statement, Err> parseBlackholeStmt(List l) {
 /// <stmt>
 Result<Statement, Err> parseStmt(SExpr s) {
     if (!isList(s)) { return notAList("statement", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) {
         return listCutShort("statement", "statement kind", span(l));
     }
     if (!isAtom(*it)) { return notAnAtom("statement kind", span(*it)); }
-    const std::string kind = std::get<Atom>(*it).val;
+    const std::string &kind = std::get<Atom>(*it).val;
 
     if (kind == "phi") { return parsePhiStmt(l); }
     else if (kind == "call") { return parseCallStmt(l); }
@@ -1657,7 +1657,7 @@ Result<Statement, Err> parseStmt(SExpr s) {
 /// <basic-block>
 Result<BasicBlock, Err> parseBasicBlock(SExpr s) {
     if (!isList(s)) { return notAList("basic block", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("basic block", "block ID", span(s)); }
@@ -1735,7 +1735,7 @@ Result<std::tuple<std::vector<Param>, bool>, Err> parseFunctionParams(List l) {
 /// <function>
 Result<Function, Err> parseFunction(SExpr s) {
     if (!isList(s)) { return notAList("function", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("function", "name", span(s)); }
@@ -1764,7 +1764,7 @@ Result<Function, Err> parseFunction(SExpr s) {
     }
     std::optional<std::vector<BasicBlock>> bbs;
     if (isAtom(*it)) {
-        const std::string kw = std::get<Atom>(*it).val;
+        const std::string &kw = std::get<Atom>(*it).val;
         if (kw != "opaque") {
             badKw(
                 "function (body)",
@@ -1804,12 +1804,12 @@ Result<Function, Err> parseFunction(SExpr s) {
 /// <functions>
 Result<std::vector<Function>, Err> parseFunctions(SExpr s) {
     if (!isList(s)) { return notAList("top-level functions", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("functions", "'functions'", span(s)); }
     if (!isAtom(*it)) { return notAnAtom("'functions'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "functions") {
         return badKw("functions list", "'functions'", kw, span(*it));
     }
@@ -1828,9 +1828,9 @@ Result<std::vector<Function>, Err> parseFunctions(SExpr s) {
 /// <type-alias>
 Result<TypeAlias, Err> parseTypeAlias(SExpr s) {
     if (!isList(s)) { return notAList("type alias", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
-    const Span sp = span(s);
+    const Span &sp = span(s);
 
     if (it == end) { return listCutShort("type alias", "name (type ID)", sp); }
     const Result<Id, Err> tid = parseTypeId(*it);
@@ -1869,12 +1869,12 @@ Result<TypeAlias, Err> parseTypeAlias(SExpr s) {
 /// <types>
 Result<std::vector<TypeAlias>, Err> parseTypes(SExpr s) {
     if (!isList(s)) { return notAList("top-level type aliases", span(s)); }
-    const List l = std::get<List>(s);
+    const List &l = std::get<List>(s);
     auto it = l.children.cbegin(), end = l.children.cend();
 
     if (it == end) { return listCutShort("type aliases", "'types'", span(s)); }
     if (!isAtom(*it)) { return notAnAtom("'types'", span(*it)); }
-    const std::string kw = std::get<Atom>(*it).val;
+    const std::string &kw = std::get<Atom>(*it).val;
     if (kw != "types") {
         return badKw("type aliases", "'types'", kw, span(*it));
     }
@@ -1949,7 +1949,7 @@ Result<Program, Err> parse(InputStream &stream) {
     return parseProgram(ss);
 }
 
-Result<Program, Err> parseFile(const std::string filename) {
+Result<Program, Err> parseFile(const std::string &filename) {
     std::ifstream fs;
     fs.open(filename);
 
@@ -1961,7 +1961,7 @@ Result<Program, Err> parseFile(const std::string filename) {
     return parse(is);
 }
 
-Result<Program, Err> parseString(const std::string str) {
+Result<Program, Err> parseString(const std::string &str) {
     std::istringstream ss = std::istringstream(str);
     InputStream is = InputStream(ss);
     return parse(is);
