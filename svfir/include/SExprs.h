@@ -33,7 +33,7 @@ struct Atom {
     const std::string val;
     const Span span;
 
-    Atom(const std::string val, const Span span) : val(val), span(span) { }
+    Atom(const std::string &val, const Span &span) : val(val), span(span) { }
 };
 
 /// List element of an s-exprssion, ( ... ).
@@ -41,7 +41,7 @@ struct List {
     const SExprSeq children;
     const Span span;
 
-    List(const SExprSeq children, const Span span)
+    List(const SExprSeq &children, const Span &span)
     : children(children), span(span) { }
 };
 
