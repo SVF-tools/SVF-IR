@@ -1942,10 +1942,8 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
 namespace SVFIR {
 
 Result<Program, Err> parse(InputStream &stream) {
-    const SExprs::ParseResult<SExprs::SExprSeq> &ssr = SExprs::parseSeq(stream);
-    if (std::holds_alternative<SExprs::ErrMsg>(ssr)) {
-        return Result<Program, Err>(std::get<SExprs::ErrMsg>(ssr));
-    }
+    const Result<SExprs::SExprSeq, Err> &ssr = SExprs::parseSeq(stream);
+    if (isErr(ssr)) { return getErr(ssr); }
 
     const SExprs::SExprSeq &ss = std::get<SExprs::SExprSeq>(ssr);
     return parseProgram(ss);

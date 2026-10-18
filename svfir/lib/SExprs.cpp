@@ -1,5 +1,6 @@
-#include <iostream>
+#include "Err.h"
 #include "InputStream.h"
+#include "Result.h"
 #include "SExprs.h"
 
 namespace {
@@ -69,7 +70,7 @@ bool _skipNonSignificant(InputStream &stream) {
 
 /// Parse an Atom. stream must point to the start of the atom.
 /// Very inefficient.
-ParseResult<SExpr> _parseAtom(InputStream &stream) {
+Result<SExpr, Err> _parseAtom(InputStream &stream) {
     assert(!_isDelimiter(stream.peek()));
 
     Loc start = stream.cursor();
@@ -93,7 +94,7 @@ ParseResult<SExpr> _parseAtom(InputStream &stream) {
 
         // We haven't consumed the closing quote so EOF indicates an error.
         if (stream.atEof()) {
-            return ErrMsg("unclosed quote");
+            return Err("unclosed quote");
         }
 
         // Consume closing quote.
@@ -111,7 +112,7 @@ ParseResult<SExpr> _parseAtom(InputStream &stream) {
 }
 
 /// Parse a List. stream must point to the start of the list.
-ParseResult<SExpr> _parseList(InputStream &stream) {
+Result<SExpr, Err> _parseList(InputStream &stream) {
     assert(stream.peek() == _LPAREN);
 
     SExprSeq children = SExprSeq();
@@ -122,19 +123,15 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
     while (!stream.atEof() && c != _RPAREN) {
         if (_skipNonSignificant(stream)) { }
         else {
-            const ParseResult<SExpr> &res = SVFIR::SExprs::parse(stream);
-            if (std::holds_alternative<SExpr>(res)) {
-                children.push_back(std::get<SExpr>(res));
-            } else {
-                assert(std::holds_alternative<ErrMsg>(res));
-                return res;
-            }
+            const Result<SExpr, Err> &res = SVFIR::SExprs::parse(stream);
+            if (isErr(res)) { return getErr(res); }
+            children.push_back(getVal(res));
         }
         c = stream.peek();
     }
 
     if (stream.peek() != _RPAREN) {
-        return ErrMsg("unclosed list");
+        return Err("unclosed list");
     }
 
     stream.advance(1);
@@ -146,33 +143,29 @@ ParseResult<SExpr> _parseList(InputStream &stream) {
 namespace SVFIR {
 namespace SExprs {
 
-ParseResult<SExpr> parse(InputStream &stream) {
+Result<SExpr, Err> parse(InputStream &stream) {
     while (!stream.atEof()) {
         const char c = stream.peek();
         if (_skipNonSignificant(stream)) { }
         else if (c == _LPAREN) { return _parseList(stream); }
         else if (c == _RPAREN) {
-            return ParseResult<SExpr>(ErrMsg("unexpected ')'"));
+            return Err("unexpected ')'");
         } else { return _parseAtom(stream); }
         // The above calls will appropriately advance.
     }
 
-    return ParseResult<SExpr>(ErrMsg("no sexpr given"));
+    return Err("no sexpr given");
 }
 
 /// Parse a stream purported to be a sequence of consecutive s-expressions.
-ParseResult<SExprSeq> parseSeq(InputStream &stream) {
+Result<SExprSeq, Err> parseSeq(InputStream &stream) {
     SExprSeq seq;
     while (!stream.atEof()) {
         if (_skipNonSignificant(stream)) { }
         else {
-            const ParseResult<SExpr> &res = parse(stream);
-            if (std::holds_alternative<SExpr>(res)) {
-                seq.push_back(std::get<SExpr>(res));
-            } else {
-                assert(std::holds_alternative<ErrMsg>(res));
-                return std::get<ErrMsg>(res);
-            }
+            const Result<SExpr, Err> &res = parse(stream);
+            if (isErr(res)) { return getErr(res); }
+            seq.push_back(getVal(res));
         }
     }
 

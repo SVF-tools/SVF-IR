@@ -8,7 +8,9 @@
 #include <variant>
 #include <vector>
 
+#include "Err.h"
 #include "InputStream.h"
+#include "Result.h"
 #include "Span.h"
 
 namespace SVFIR {
@@ -45,18 +47,13 @@ struct List {
     : children(children), span(span) { }
 };
 
-using ErrMsg = std::string;
-/// Parsing will return either some nice data structure or an error message.
-template <typename T>
-using ParseResult = std::variant<T, ErrMsg>;
-
 /// Parse an S-expression, including allowance for whitespace or comments at
 /// the start.
-ParseResult<SExpr> parse(InputStream &);
+Result<SExpr, Err> parse(InputStream &);
 
 /// Parse a sequence of S-expressions separated by whitespace, comments, or
 /// nothing.
-ParseResult<SExprSeq> parseSeq(InputStream &);
+Result<SExprSeq, Err> parseSeq(InputStream &);
 
 /// Shortcut to std::holds_alternative<Atom>(...).
 bool isAtom(const SExpr &);
