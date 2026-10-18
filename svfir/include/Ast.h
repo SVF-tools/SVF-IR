@@ -22,7 +22,7 @@ struct Metadata final {
     const SExprs::SExpr data;
     const Span span;
 
-    Metadata(const SExprs::SExpr data, const Span span)
+    Metadata(const SExprs::SExpr &data, const Span &span)
     : span(span), data(data) { }
 };
 
@@ -31,7 +31,7 @@ struct Id final {
     const Name name;
     const Span span;
 
-    Id(const Name name, const Span span) : span(span), name(name) {
+    Id(const Name &name, const Span &span) : span(span), name(name) {
         assert(name.size() >= 2);
         assert(
             name[0] == '%' ||
@@ -54,7 +54,7 @@ struct Id final {
 struct VoidDecType final {
     const Span span;
 
-    VoidDecType(const Span span) : span(span) { }
+    VoidDecType(const Span &span) : span(span) { }
 };
 
 /// <scalar-type> (2)
@@ -64,7 +64,7 @@ struct IntDecType final {
     const Kind kind;
     const Span span;
 
-    IntDecType(const Kind kind, const Span span)
+    IntDecType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
 };
 
@@ -75,7 +75,7 @@ struct FloatDecType final  {
     const Kind kind;
     const Span span;
 
-    FloatDecType(const Kind kind, const Span span)
+    FloatDecType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
 };
 
@@ -83,7 +83,7 @@ struct FloatDecType final  {
 struct PtrDecType final {
     const Span span;
 
-    PtrDecType(const Span span) : span(span) { }
+    PtrDecType(const Span &span) : span(span) { }
 };
 
 /// <seq-type>
@@ -91,7 +91,7 @@ struct AggDecType final {
     const uint64_t slots;
     const Span span;
 
-    AggDecType(const uint64_t slots, const Span span)
+    AggDecType(const uint64_t &slots, const Span &span)
     : span(span), slots(slots) { }
 };
 
@@ -106,7 +106,7 @@ struct TypedId final {
     const DecType type;
     const Span span;
 
-    TypedId(const Id id, const DecType type, const Span span)
+    TypedId(const Id &id, const DecType &type, const Span &span)
     : span(span), id(id), type(type) { }
 };
 
@@ -116,7 +116,7 @@ struct IntConstant final {
     const std::string val;
     const Span span;
 
-    IntConstant(const std::string val, const Span span)
+    IntConstant(const std::string &val, const Span &span)
     : span(span), val(val) { }
 };
 
@@ -127,7 +127,7 @@ struct FloatConstant final {
     const std::string val;
     const Span span;
 
-    FloatConstant(const std::string val, const Span span)
+    FloatConstant(const std::string &val, const Span &span)
     : span(span), val(val) { }
 };
 
@@ -135,7 +135,7 @@ struct FloatConstant final {
 struct NullConstant final {
     const Span span;
 
-    NullConstant(const Span span) : span(span) { }
+    NullConstant(const Span &span) : span(span) { }
 };
 
 /// <val>/<gval>
@@ -146,7 +146,7 @@ struct SeqConstant final {
     const std::vector<Val> vals;
     const Span span;
 
-    SeqConstant(const std::vector<Val> vals, const Span span)
+    SeqConstant(const std::vector<Val> &vals, const Span &span)
     : span(span), vals(vals) { }
 };
 
@@ -161,8 +161,11 @@ struct TypedConstant final {
     const DecType type;
     const Span span;
 
-    TypedConstant(const Constant constant, const DecType type, const Span span)
-    : span(span), constant(constant), type(type) { }
+    TypedConstant(
+        const Constant &constant,
+        const DecType &type,
+        const Span &span
+    ) : span(span), constant(constant), type(type) { }
 };
 
 /// <pval>
@@ -178,9 +181,9 @@ struct Preamble final {
     const Span span;
 
     Preamble(
-        const Version version,
-        const std::string source,
-        const Span span
+        const Version &version,
+        const std::string &source,
+        const Span &span
     ) : span(span), version(version), source(source) { }
 };
 
@@ -193,10 +196,10 @@ struct Variable final {
     const Span span;
 
     Variable(
-        const Id id,
-        const std::optional<Val> val,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const std::optional<Val> &val,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), val(val), md(md) { }
 
     bool isOpaque(void) const;
@@ -210,10 +213,10 @@ struct Param final {
     const Span span;
 
     Param(
-        const Id id,
-        const DecType type,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const DecType &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), type(type), md(md) { }
 };
 
@@ -229,13 +232,13 @@ struct Function final {
     const Span span;
 
     Function(
-        const Id id,
-        const std::vector<Param> params,
-        const bool vararg,
-        const DecType type,
-        const std::optional<FunctionBody> body,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const std::vector<Param> &params,
+        const bool &vararg,
+        const DecType &type,
+        const std::optional<FunctionBody> &body,
+        const MaybeMetadata &md,
+        const Span &span
     ) :
         span(span),
         id(id),
@@ -258,10 +261,10 @@ struct TypeAlias final {
     const Span span;
 
     TypeAlias(
-        const Id id,
-        const std::optional<DecType> type,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const std::optional<DecType> &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), type(type), md(md) { }
 
     bool isOpaque(void) const;
@@ -277,12 +280,12 @@ struct Program final {
     const Span span;
 
     Program(
-        const Preamble preamble,
-        const std::vector<TypeAlias> types,
-        const std::vector<Variable> variables,
-        const std::vector<Function> functions,
-        const MaybeMetadata md,
-        const Span span
+        const Preamble &preamble,
+        const std::vector<TypeAlias> &types,
+        const std::vector<Variable> &variables,
+        const std::vector<Function> &functions,
+        const MaybeMetadata &md,
+        const Span &span
     ) :
         span(span),
         preamble(preamble),
@@ -298,7 +301,7 @@ struct PhiStmt final {
     struct Operand {
         const Val val;
         const Id definingBlock;
-        Operand(const Val val, const Id definingBlock)
+        Operand(const Val &val, const Id &definingBlock)
         : val(val), definingBlock(definingBlock) { }
     };
 
@@ -309,10 +312,10 @@ struct PhiStmt final {
     const Span span;
 
     PhiStmt(
-        const Id id,
-        const std::vector<Operand> args,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const std::vector<Operand> &args,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), args(args), md(md) { }
 };
 
@@ -325,11 +328,11 @@ struct CallStmt final {
     const Span span;
 
     CallStmt(
-        const std::optional<Id> id,
-        const PVal callee,
-        const std::vector<Val> args,
-        const MaybeMetadata md,
-        const Span span
+        const std::optional<Id> &id,
+        const PVal &callee,
+        const std::vector<Val> &args,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), callee(callee), args(args), md(md) { }
 };
 
@@ -339,7 +342,7 @@ struct BrStmt final {
     const MaybeMetadata md;
     const Span span;
 
-    BrStmt(const Id target, const MaybeMetadata md, const Span span)
+    BrStmt(const Id &target, const MaybeMetadata &md, const Span &span)
     : span(span), target(target), md(md) { }
 };
 
@@ -352,11 +355,11 @@ struct BrifStmt final {
     const Span span;
 
     BrifStmt(
-        const Val cond,
-        const Id ifTarget,
-        const Id elseTarget,
-        const MaybeMetadata md,
-        const Span span
+        const Val &cond,
+        const Id &ifTarget,
+        const Id &elseTarget,
+        const MaybeMetadata &md,
+        const Span &span
     ) :
         span(span),
         cond(cond),
@@ -374,9 +377,9 @@ struct RetStmt final {
     const Span span;
 
     RetStmt(
-        const std::optional<Val> val,
-        const MaybeMetadata md,
-        const Span span
+        const std::optional<Val> &val,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), val(val), md(md) { }
 };
 
@@ -392,12 +395,12 @@ struct CmpStmt final {
     const Span span;
 
     CmpStmt(
-        const Id id,
-        const Operator op,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const Operator &op,
+        const Val &left,
+        const Val &right,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), op(op), left(left), right(right), md(md) { }
 };
 
@@ -411,10 +414,10 @@ struct AllocStmt final {
     const Span span;
 
     AllocStmt(
-        const Kind kind,
-        const Id id,
-        const MaybeMetadata md,
-        const Span span)
+        const Kind &kind,
+        const Id &id,
+        const MaybeMetadata &md,
+        const Span &span)
     : span(span), kind(kind), id(id), md(md) { }
 };
 
@@ -426,10 +429,10 @@ struct StoreStmt final {
     const Span span;
 
     StoreStmt(
-        const Val val,
-        const PVal dst,
-        const MaybeMetadata md,
-        const Span span
+        const Val &val,
+        const PVal &dst,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), val(val), dst(dst), md(md) { }
 };
 
@@ -441,10 +444,10 @@ struct LoadStmt final {
     const Span span;
 
     LoadStmt(
-        const TypedId tid,
-        const PVal src,
-        const MaybeMetadata md,
-        const Span span
+        const TypedId &tid,
+        const PVal &src,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), tid(tid), src(src), md(md) { }
 };
 
@@ -457,11 +460,11 @@ struct FieldStmt final {
     const Span span;
 
     FieldStmt(
-        const Id id,
-        const PVal src,
-        const IVal index,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const PVal &src,
+        const IVal &index,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), src(src), index(index), md(md) { }
 };
 
@@ -474,11 +477,11 @@ struct BitCastStmt final {
     const Span span;
 
     BitCastStmt(
-        const Id id,
-        const Val val,
-        const DecType type,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const Val &val,
+        const DecType &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
@@ -491,11 +494,11 @@ struct ConvertStmt final {
     const Span span;
 
     ConvertStmt(
-        const Id id,
-        const Val val,
-        const DecType type,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const Val &val,
+        const DecType &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
@@ -508,11 +511,11 @@ struct IntTruncStmt final {
     const Span span;
 
     IntTruncStmt(
-        const Id id,
-        const Val val,
-        const DecType type,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const Val &val,
+        const DecType &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
@@ -528,12 +531,12 @@ struct IntExtStmt final {
     const Span span;
 
     IntExtStmt(
-        const Kind kind,
-        const Id id,
-        const Val val,
-        const DecType type,
-        const MaybeMetadata md,
-        Span span
+        const Kind &kind,
+        const Id &id,
+        const Val &val,
+        const DecType &type,
+        const MaybeMetadata &md,
+        const Span &span
     ) :
         span(span),
         kind(kind),
@@ -559,12 +562,12 @@ struct BinaryOpStmt final {
     const Span span;
 
     BinaryOpStmt(
-        const Op op,
-        const Id id,
-        const Val left,
-        const Val right,
-        const MaybeMetadata md,
-        const Span span
+        const Op &op,
+        const Id &id,
+        const Val &left,
+        const Val &right,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), op(op), id(id), left(left), right(right), md(md) { }
 };
 
@@ -578,11 +581,11 @@ struct UnaryOpStmt final {
     const Span span;
 
     UnaryOpStmt(
-        const Op op,
-        const Id id,
-        const Val val,
-        const MaybeMetadata md,
-        const Span span
+        const Op &op,
+        const Id &id,
+        const Val &val,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), op(op), id(id), val(val), md(md) { }
 };
 
@@ -594,10 +597,10 @@ struct AssignStmt final {
     const Span span;
 
     AssignStmt(
-        const Id id,
-        const Val val,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const Val &val,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), val(val), md(md) { }
 };
 
@@ -609,10 +612,10 @@ struct VarargStmt final {
     const Span span;
 
     VarargStmt(
-        const TypedId tid,
-        const IVal index,
-        const MaybeMetadata md,
-        const Span span
+        const TypedId &tid,
+        const IVal &index,
+        const MaybeMetadata &md,
+        const Span &span
     )
     : span(span), tid(tid), index(index), md(md) { }
 };
@@ -626,10 +629,10 @@ struct BlackholeStmt final {
     const Span span;
 
     BlackholeStmt(
-        const bool pure,
-        const TypedId tid,
-        const MaybeMetadata md,
-        const Span span
+        const bool &pure,
+        const TypedId &tid,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), pure(pure), tid(tid), md(md) { }
 };
 
@@ -651,10 +654,10 @@ struct BasicBlock final {
     const Span span;
 
     BasicBlock(
-        const Id id,
-        const std::vector<Statement> stmts,
-        const MaybeMetadata md,
-        const Span span
+        const Id &id,
+        const std::vector<Statement> &stmts,
+        const MaybeMetadata &md,
+        const Span &span
     ) : span(span), id(id), stmts(stmts), md(md) { }
 };
 
