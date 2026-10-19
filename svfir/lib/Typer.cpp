@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <variant>
 
-#include "Abort.h"
+#include "Contracts.h"
 #include "Ops.h"
 #include "Err.h"
 #include "Result.h"
@@ -97,11 +97,12 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                 } else if (std::holds_alternative<BlackholeStmt>(s)) {
                     name.emplace(std::get<BlackholeStmt>(s).tid.id.name);
                 } else {
-                    abortif(
+                    insist(
                         std::holds_alternative<RetStmt>(s) ||
                         std::holds_alternative<BrStmt>(s) ||
                         std::holds_alternative<BrifStmt>(s)
                     );
+                    // Nothing to do.
                 }
 
                 if (name.has_value()) {
@@ -240,7 +241,7 @@ bool operator==(const Type &x, const Type &y) {
     } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
     else if (isVarargType(x) && isVarargType(y)) { return true; }
     else {
-        abortif(x.index() != y.index());
+        insist(x.index() != y.index());
         return false;
     }
     unreachable();

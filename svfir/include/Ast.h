@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-#include "Abort.h"
+#include "Contracts.h"
 #include "SExprs.h"
 #include "Version.h"
 
@@ -32,8 +32,8 @@ struct Id final {
     const Span span;
 
     Id(const Name &name, const Span &span) : span(span), name(name) {
-        abortif(name.size() >= 2);
-        abortif(
+        insist(name.size() >= 2);
+        insist(
             name[0] == '%' ||
             name[0] == '@' ||
             name[0] == '!' ||
