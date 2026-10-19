@@ -24,12 +24,6 @@ std::string indent(const std::string &s) {
     );
 }
 
-/// Return a copy of s with whitespace between right parentheses removed.
-std::string collapseRParens(const std::string &s) {
-    static std::regex tgt("\\s+\\)");
-    return std::regex_replace(s, tgt, ")");
-}
-
 /// Strings together each element of xs, calling pretty on each (TODO: not
 /// expressed in the type), delimited by delim.
 template <typename T>
@@ -120,7 +114,7 @@ struct Pretty {
     std::string operator()(const Preamble &p) {
         return "(preamble\n" +
             indent("(version " + p.version.toString() + ")") + "\n" +
-            indent("(source " + p.source + ")") + "\n" +
+            indent("(source " + p.source + ")") +
             ")";
     }
 
@@ -143,14 +137,14 @@ struct Pretty {
             params += "...";
         }
 
-        std::string body;
-        if (f.body.has_value()) { body = prettyVec(f.body.value(), "\n"); }
-
         return par(
             pretty(f.id) + " " +
             pretty(f.type) + " " +
             par(params) + " " +
-            (f.body.has_value() ? "(\n" + indent(body) + "\n)": "opaque") +
+            (f.body.has_value() ?
+                "(\n" + indent(prettyVec(f.body.value(), "\n")) + ")" :
+                "opaque"
+            ) +
             maybePrettyMd(f.md)
         );
     }
@@ -168,7 +162,7 @@ struct Pretty {
             if (block.empty()) {
                 return "(" + name + ")";
             } else {
-                return "(" + name + "\n" + indent(block) + "\n)";
+                return "(" + name + "\n" + indent(block) + ")";
             }
         };
 
@@ -241,7 +235,7 @@ struct Pretty {
             op + " " +
             pretty(cmp.id) + " " +
             pretty(cmp.left) + " " +
-            pretty(cmp.right) + " " +
+            pretty(cmp.right) +
             maybePrettyMd(cmp.md)
         );
     }
@@ -271,7 +265,7 @@ struct Pretty {
             "field " +
             pretty(i.id) + " " +
             pretty(i.src) + " " +
-            pretty(i.index) + " " +
+            pretty(i.index) +
             maybePrettyMd(i.md)
         );
     }
@@ -281,7 +275,7 @@ struct Pretty {
             "bitcast " +
             pretty(r.id) + " " +
             pretty(r.val) + " " +
-            pretty(r.type) + " " +
+            pretty(r.type) +
             maybePrettyMd(r.md)
         );
     }
@@ -291,7 +285,7 @@ struct Pretty {
             "convert " +
             pretty(c.id) + " " +
             pretty(c.val) + " " +
-            pretty(c.type) + " " +
+            pretty(c.type) +
             maybePrettyMd(c.md)
         );
     }
@@ -301,7 +295,7 @@ struct Pretty {
             "inttrunc " +
             pretty(i.id) + " " +
             pretty(i.val) + " " +
-            pretty(i.type) + " " +
+            pretty(i.type) +
             maybePrettyMd(i.md)
         );
     }
@@ -317,7 +311,7 @@ struct Pretty {
             kind + " " +
             pretty(i.id) + " " +
             pretty(i.val) + " " +
-            pretty(i.type) + " " +
+            pretty(i.type) +
             maybePrettyMd(i.md)
         );
     }
@@ -345,7 +339,7 @@ struct Pretty {
             kind + " " +
             pretty(b.id) + " " +
             pretty(b.left) + " " +
-            pretty(b.right) + " " +
+            pretty(b.right) +
             maybePrettyMd(b.md)
         );
     }
@@ -375,7 +369,7 @@ struct Pretty {
         return par(
             "vararg " +
             pretty(v.tid) + " " +
-            pretty(v.index) + " " +
+            pretty(v.index) +
             maybePrettyMd(v.md)
         );
     }
@@ -384,7 +378,7 @@ struct Pretty {
         return par(
             "blackhole " +
             std::string(b.pure ? "pure" : "effectful") + " " +
-            pretty(b.tid) + " " +
+            pretty(b.tid) +
             maybePrettyMd(b.md)
         );
     }
@@ -400,7 +394,7 @@ struct Pretty {
 namespace SVFIR {
 
 std::string pretty(const AnyNode &n) {
-    return collapseRParens(std::visit(Pretty(), n));
+    return std::visit(Pretty(), n);
 }
 
 }  // namespace SVFIR
