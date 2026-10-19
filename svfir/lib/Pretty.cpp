@@ -282,38 +282,22 @@ struct Pretty {
     }
 
     std::string operator()(const ConvertStmt &c) {
+        std::string type;
+        if (c.extKind.has_value()) {
+            const ConvertStmt::ExtKind ek = c.extKind.value();
+            std::string eks;
+            if (ek == ConvertStmt::ExtKind::ZERO) { eks = "zero"; }
+            else if (ek == ConvertStmt::ExtKind::SIGN) { eks = "sign"; }
+            else { unreachable(); }
+            type = par(eks + " " + pretty(c.type));
+        } else { type = pretty(c.type); }
+
         return par(
             "convert " +
             pretty(c.id) + " " +
             pretty(c.val) + " " +
-            pretty(c.type) +
+            type +
             maybePrettyMd(c.md)
-        );
-    }
-
-    std::string operator()(const IntTruncStmt &i) {
-        return par(
-            "inttrunc " +
-            pretty(i.id) + " " +
-            pretty(i.val) + " " +
-            pretty(i.type) +
-            maybePrettyMd(i.md)
-        );
-    }
-
-    std::string operator()(const IntExtStmt &i) {
-        std::string kind;
-        if (i.kind == IntExtStmt::Kind::ZERO) { kind = "zero"; }
-        else if (i.kind == IntExtStmt::Kind::SIGN) { kind = "sign"; }
-        else { unreachable(); }
-
-        return par(
-            "intext " +
-            kind + " " +
-            pretty(i.id) + " " +
-            pretty(i.val) + " " +
-            pretty(i.type) +
-            maybePrettyMd(i.md)
         );
     }
 

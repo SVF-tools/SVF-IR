@@ -81,10 +81,9 @@
            | '(' 'load' <typed-lid> <pval> <md>? ')'
            | '(' 'field' <lid> <pval> <ival> <md>? ')'
 
+<ext-type> : '(' ('zero'|'sign') <type> ')'
 <conversion-stmt> : '(' 'bitcast' <lid> <val> <type> <md>? ')'
-                  | '(' 'convert' <lid> <val> <type> <md>? ')'
-                  | '(' 'inttrunc' <lid> <val> <type> <md>? ')'
-                  | '(' 'intext' ('zero'|'sign') <lid> <val> <type> <md>? ')'
+                  | '(' 'convert' <lid> <val> (<type>|<ext-type>) <md>? ')'
 
 <arith-stmt> : '(' 'add' <lid> <val> <val> <md>? ')'
              | '(' 'sub' <lid> <val> <val> <md>? ')'

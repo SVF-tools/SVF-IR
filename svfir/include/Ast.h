@@ -487,9 +487,12 @@ struct BitCastStmt final {
 
 /// <conversion-stmt> (2)
 struct ConvertStmt final {
+    enum class ExtKind { ZERO, SIGN };
+
     const Id id;
     const Val val;
     const DecType type;
+    std::optional<ExtKind> extKind;
     const MaybeMetadata md;
     const Span span;
 
@@ -497,54 +500,10 @@ struct ConvertStmt final {
         const Id &id,
         const Val &val,
         const DecType &type,
+        std::optional<ExtKind> extKind,
         const MaybeMetadata &md,
         const Span &span
     ) : span(span), id(id), val(val), type(type), md(md) { }
-};
-
-/// <conversion-stmt> (3)
-struct IntTruncStmt final {
-    const Id id;
-    const Val val;
-    const DecType type;
-    const MaybeMetadata md;
-    const Span span;
-
-    IntTruncStmt(
-        const Id &id,
-        const Val &val,
-        const DecType &type,
-        const MaybeMetadata &md,
-        const Span &span
-    ) : span(span), id(id), val(val), type(type), md(md) { }
-};
-
-/// <conversion-stmt> (4)
-struct IntExtStmt final {
-    enum class Kind { ZERO, SIGN };
-
-    const Kind kind;
-    const Id id;
-    const Val val;
-    const DecType type;
-    const MaybeMetadata md;
-    const Span span;
-
-    IntExtStmt(
-        const Kind &kind,
-        const Id &id,
-        const Val &val,
-        const DecType &type,
-        const MaybeMetadata &md,
-        const Span &span
-    ) :
-        span(span),
-        kind(kind),
-        id(id),
-        val(val),
-        type(type),
-        md(md)
-    { }
 };
 
 /// <arith-inst>/<bit-stmt>
@@ -641,7 +600,7 @@ using Statement = std::variant<
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt,
     CmpStmt,
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
-    BitCastStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
+    BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt,
     AssignStmt, VarargStmt, BlackholeStmt
 >;
@@ -673,7 +632,7 @@ using AnyNode = std::variant<
     TypedId, TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
-    LoadStmt, FieldStmt, BitCastStmt, ConvertStmt, IntExtStmt, IntTruncStmt,
+    LoadStmt, FieldStmt, BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,
     DecType, Constant, Val, PVal, IVal, Statement
 >;

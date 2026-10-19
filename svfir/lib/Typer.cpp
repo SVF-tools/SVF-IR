@@ -86,10 +86,6 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                     name.emplace(std::get<BitCastStmt>(s).id.name);
                 } else if (std::holds_alternative<ConvertStmt>(s)) {
                     name.emplace(std::get<ConvertStmt>(s).id.name);
-                } else if (std::holds_alternative<IntTruncStmt>(s)) {
-                    name.emplace(std::get<IntTruncStmt>(s).id.name);
-                } else if (std::holds_alternative<IntExtStmt>(s)) {
-                    name.emplace(std::get<IntExtStmt>(s).id.name);
                 } else if (std::holds_alternative<BinaryOpStmt>(s)) {
                     name.emplace(std::get<BinaryOpStmt>(s).id.name);
                 } else if (std::holds_alternative<UnaryOpStmt>(s)) {

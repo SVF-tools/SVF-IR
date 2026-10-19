@@ -1108,13 +1108,12 @@ Result<Statement, Err> parseFieldStmt(const List &l) {
     );
 }
 
-/// To be called on (bitcast/convert ...) only.
-Result<Statement, Err> parseBitCastConvertStmt(const List &l) {
-    auto it = l.children.cbegin(), end = l.children.cend();
-    abortif(it != end && (atomEq(*it, "BitCast") || atomEq(*it, "convert")));
+/// To be called on (bitcast ...) only.
+Result<Statement, Err> parseBitCastStmt(const List &l) {
+    static const std::string stmtDesc = "bitcast statement";
 
-    const std::string &kind = std::get<Atom>(*it).val;
-    const std::string &stmtDesc = kind + " statement";
+    auto it = l.children.cbegin(), end = l.children.cend();
+    insist(it != end && atomEq(*it, "bitcast"));
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "local ID", span(l)); }
@@ -1141,90 +1140,82 @@ Result<Statement, Err> parseBitCastConvertStmt(const List &l) {
         if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
     }
 
-    if (kind == "bitcast") {
-        return Statement(BitCastStmt(
-            getVal(lid), getVal(val), getVal(type), md, span(l)
-        ));
-    } else if (kind == "convert") {
-        return Statement(
-            ConvertStmt(getVal(lid), getVal(val), getVal(type), md, span(l))
-        );
-    }
-    unreachable();
+    return Statement(BitCastStmt(
+        getVal(lid), getVal(val), getVal(type), md, span(l)
+    ));
 }
 
-/// To be called on (inttrunc ...) only.
-Result<Statement, Err> parseIntTruncStmt(const List &l) {
+/// To be called on (convert ...) only.
+Result<Statement, Err> parseConvertStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    abortif(it != end && atomEq(*it, "inttrunc"));
+    insist(it != end && atomEq(*it, "convert"));
     const Span &sp = span(l);
 
     ++it;
-    if (it == end) {
-        return listCutShort("inttrunc statement", "local ID", sp);
-    }
-    const Result<Id, Err> lid = parseLocalId(*it);
-    if (isErr(lid)) { return getErr(lid); }
-
-    ++it;
-    if (it == end) { return listCutShort("inttrunc statement", "value", sp); }
-    const Result<Val, Err> val = parseVal(*it);
-    if (isErr(val)) { return getErr(val); }
-
-    ++it;
-    if (it == end) { return listCutShort("inttrunc statement", "type", sp); }
-    const Result<DecType, Err> type = parseType(*it);
-    if (isErr(type)) { return getErr(type); }
-
-    ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (isErr(mdr)) { return getErr(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("inttrunc statement", sp); }
-    }
-
-    return Statement(
-        IntTruncStmt(getVal(lid), getVal(val), getVal(type), md, span(l))
-    );
-}
-
-/// To be called on (intext ...) only.
-Result<Statement, Err> parseIntExtStmt(const List &l) {
-    auto it = l.children.cbegin(), end = l.children.cend();
-    abortif(it != end && atomEq(*it, "intext"));
-    const Span &sp = span(l);
-
-    ++it;
-    if (it == end) {
-        return listCutShort("intext statement", "'zero'/'sign'", sp);
-    }
-    if (!isAtom(*it)) { return notAnAtom("'zero'/'sign'", span(*it)); }
-    const std::string &kw = std::get<Atom>(*it).val;
-    IntExtStmt::Kind kind;
-    if (kw == "zero") { kind = IntExtStmt::Kind::ZERO; }
-    else if (kw == "sign") { kind = IntExtStmt::Kind::SIGN; }
-    else {
-        return badKw("intext statement (kind)", "'zero'/'sign'", kw, span(*it));
-    }
-
-    ++it;
-    if (it == end) { return listCutShort("intext statement", "local ID", sp); }
+    if (it == end) { return listCutShort("convert statement", "local ID", sp); }
     const Result<Id, Err> lid = parseLocalId(*it);
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
     if (it == end) {
-        return listCutShort("intext statement", "left operand", sp);
+        return listCutShort("convert statement", "operand", sp);
     }
     const Result<Val, Err> val = parseVal(*it);
     if (isErr(val)) { return getErr(val); }
 
     ++it;
-    if (it == end) { return listCutShort("intext statement", "type", sp); }
-    const Result<DecType, Err> type = parseType(*it);
+    if (it == end) { return listCutShort("convert statement", "type", sp); }
+    std::optional<ConvertStmt::ExtKind> extKind;
+    // We need to assign a DecType conditionally (either a type directly or from
+    // (ext-kind type)). Re-assigning std::variants is a pain. Thus we will find
+    // the position of this type and use it. This is unideal. I'm sorry.
+    SExprSeq::const_iterator typePos;
+    if (isList(*it)) {
+        const List &tl = std::get<List>(*it);
+        auto tlit = tl.children.cbegin(), tlend = tl.children.cend();
+        if (tlit == tlend) {
+            return listCutShort(
+                "convert statement (type with ext kind)",
+                "ext kind",
+                span(tl)
+            );
+        }
+        if (!isAtom(*tlit)) { return notAnAtom("'zero'/'sign'", span(*tlit)); }
+        const std::string &kw = std::get<Atom>(*tlit).val;
+        ConvertStmt::ExtKind kind;
+        if (kw == "zero") { extKind.emplace(ConvertStmt::ExtKind::ZERO); }
+        else if (kw == "sign") { extKind.emplace(ConvertStmt::ExtKind::SIGN); }
+        else {
+            return badKw(
+                "convert statement (ext kind)",
+                "'zero'/'sign'",
+                kw,
+                span(*it)
+            );
+        }
+
+        ++tlit;
+        if (tlit == tlend) {
+            return listCutShort(
+                "convert statement (type with ext kind)",
+                "type",
+                span(tl)
+            );
+        }
+        // Also need to check the list isn't too long, we're doing the parsing
+        // of the type after the if-statement.
+        if (tlit + 1 != end) {
+            return listTooLong(
+                "convert statement (type with ext kind)",
+                span(tl)
+            );
+        }
+
+        typePos = tlit;
+    } else {
+        typePos = it;
+    }
+    const Result<DecType, Err> type = parseType(*typePos);
     if (isErr(type)) { return getErr(type); }
 
     ++it;
@@ -1631,11 +1622,8 @@ Result<Statement, Err> parseStmt(const SExpr &s) {
     else if (kind == "store") { return parseStoreStmt(l); }
     else if (kind == "load") { return parseLoadStmt(l); }
     else if (kind == "field") { return parseFieldStmt(l); }
-    else if (kind == "bitcast" || kind == "convert") {
-        return parseBitCastConvertStmt(l);
-    }
-    else if (kind == "inttrunc") { return parseIntTruncStmt(l); }
-    else if (kind == "intext") { return parseIntExtStmt(l); }
+    else if (kind == "bitcast") { return parseBitCastStmt(l); }
+    else if (kind == "convert") { return parseConvertStmt(l); }
     else if (kind == "add" || kind == "sub" || kind == "mul") {
         return parseAddMulSubStmt(l);
     } else if (kind == "div" || kind == "rem") {
