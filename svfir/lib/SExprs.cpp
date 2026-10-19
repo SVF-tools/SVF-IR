@@ -1,3 +1,4 @@
+#include "Abort.h"
 #include "Err.h"
 #include "InputStream.h"
 #include "Result.h"
@@ -34,7 +35,7 @@ bool _isDelimiter(const char c) {
 /// Make stream point to the next line after a comment. stream must point
 /// to the start of a comment.
 void _skipComment(InputStream &stream) {
-    assert(stream.peek() == _COMMENT);
+    abortif(stream.peek() == _COMMENT);
     while (!stream.atEof() && stream.peek() != _NEWLINE) {
         stream.advance(1);
     }
@@ -46,7 +47,7 @@ void _skipComment(InputStream &stream) {
 /// Make stream point to the next non-whitespace. stream must point to
 /// whitespace.
 void _skipWhitespace(InputStream &stream) {
-    assert(std::isspace(stream.peek()));
+    abortif(std::isspace(stream.peek()));
     while (std::isspace(stream.peek())) {
         stream.advance(1);
     }
@@ -71,7 +72,7 @@ bool _skipNonSignificant(InputStream &stream) {
 /// Parse an Atom. stream must point to the start of the atom.
 /// Very inefficient.
 Result<SExpr, Err> _parseAtom(InputStream &stream) {
-    assert(!_isDelimiter(stream.peek()));
+    abortif(!_isDelimiter(stream.peek()));
 
     Loc start = stream.cursor();
 
@@ -113,7 +114,7 @@ Result<SExpr, Err> _parseAtom(InputStream &stream) {
 
 /// Parse a List. stream must point to the start of the list.
 Result<SExpr, Err> _parseList(InputStream &stream) {
-    assert(stream.peek() == _LPAREN);
+    abortif(stream.peek() == _LPAREN);
 
     SExprSeq children = SExprSeq();
     Loc start = stream.cursor();
@@ -188,7 +189,7 @@ Span span(const SExpr &sexpr) {
     if (isList(sexpr)) {
         return std::get<List>(sexpr).span;
     } else {
-        assert(isAtom(sexpr));
+        abortif(isAtom(sexpr));
         return std::get<Atom>(sexpr).span;
     }
 }
@@ -211,7 +212,7 @@ std::string toString(const SExpr &sexpr) {
             out.append(atom.val);
         }
     } else {
-        assert(isList(sexpr));
+        abortif(isList(sexpr));
         const List &list = std::get<List>(sexpr);
         out.push_back(_LPAREN);
         for (size_t i = 0; i < list.children.size(); ++i) {

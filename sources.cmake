@@ -1,4 +1,5 @@
 set(SVFIR_HEADERS
+  svfir/include/Abort.h
   svfir/include/Ast.h
   svfir/include/ControlFlowGraph.h
   svfir/include/Err.h

@@ -1,7 +1,6 @@
 #ifndef AST_H
 #define AST_H
 
-#include <cassert>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -9,6 +8,7 @@
 #include <variant>
 #include <vector>
 
+#include "Abort.h"
 #include "SExprs.h"
 #include "Version.h"
 
@@ -32,8 +32,8 @@ struct Id final {
     const Span span;
 
     Id(const Name &name, const Span &span) : span(span), name(name) {
-        assert(name.size() >= 2);
-        assert(
+        abortif(name.size() >= 2);
+        abortif(
             name[0] == '%' ||
             name[0] == '@' ||
             name[0] == '!' ||

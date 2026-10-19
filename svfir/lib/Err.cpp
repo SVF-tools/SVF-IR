@@ -1,5 +1,6 @@
 #include <variant>
 
+#include "Abort.h"
 #include "Err.h"
 
 namespace SVFIR {
@@ -10,7 +11,7 @@ std::string Err::toString(void) const {
     } else {
         return msg;
     }
-    assert(false);
+    unreachable();
 }
 
 };  // namespace SVFIR

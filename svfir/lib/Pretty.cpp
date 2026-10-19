@@ -1,6 +1,7 @@
 #include <regex>
 #include <iostream>
 
+#include "Abort.h"
 #include "Ast.h"
 #include "Ops.h"
 
@@ -72,7 +73,7 @@ struct Pretty {
         else if (it.kind == IntDecType::Kind::I32) { return "i32"; }
         else if (it.kind == IntDecType::Kind::I64) { return "i64"; }
         else if (it.kind == IntDecType::Kind::I128) { return "i128"; }
-        else { assert(false); }
+        else { unreachable(); }
     }
 
     std::string operator()(const FloatDecType &ft) {
@@ -80,7 +81,7 @@ struct Pretty {
         else if (ft.kind == FloatDecType::Kind::F32) { return "f32"; }
         else if (ft.kind == FloatDecType::Kind::F64) { return "f64"; }
         else if (ft.kind == FloatDecType::Kind::F128) { return "f128"; }
-        else { assert(false); }
+        else { unreachable(); }
     }
 
     std::string operator()(const PtrDecType &) { return "ptr"; }
@@ -228,7 +229,7 @@ struct Pretty {
         else if (cmp.op == CmpStmt::Operator::GE) { op = ">="; }
         else if (cmp.op == CmpStmt::Operator::EQ) { op = "="; }
         else if (cmp.op == CmpStmt::Operator::NEQ) { op = "!="; }
-        else { assert(false); }
+        else { unreachable(); }
 
         return par(
             "cmp " +
@@ -244,7 +245,7 @@ struct Pretty {
         std::string kind;
         if (a.kind == AllocStmt::Kind::HEAP) { kind = "heap"; }
         else if (a.kind == AllocStmt::Kind::STACK) { kind = "stack"; }
-        else { assert(false); }
+        else { unreachable(); }
         return par("alloc " + kind + " " + pretty(a.id) + maybePrettyMd(a.md));
     }
 
@@ -304,7 +305,7 @@ struct Pretty {
         std::string kind;
         if (i.kind == IntExtStmt::Kind::ZERO) { kind = "zero"; }
         else if (i.kind == IntExtStmt::Kind::SIGN) { kind = "sign"; }
-        else { assert(false); }
+        else { unreachable(); }
 
         return par(
             "intext " +
@@ -332,7 +333,7 @@ struct Pretty {
         case BinaryOpStmt::Op::SHIFTL: kind = "shiftl"; break;
         case BinaryOpStmt::Op::ASHIFTR: kind = "shiftr arithmetic"; break;
         case BinaryOpStmt::Op::LSHIFTR: kind = "shiftr logical"; break;
-        default: assert(false);
+        default: unreachable();
         }
 
         return par(
@@ -348,7 +349,7 @@ struct Pretty {
         std::string kind;
         switch (u.op) {
         case UnaryOpStmt::Op::NOT: kind = "not"; break;
-        default: assert(false);
+        default: unreachable();
         }
 
         return par(

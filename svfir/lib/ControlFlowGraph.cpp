@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Abort.h"
 #include "Ast.h"
 #include "ControlFlowGraph.h"
 
@@ -10,7 +11,7 @@ using namespace SVFIR;
 
 /// Return the outgoing targets, if any, of a basic block
 std::vector<Id> getTargets(const BasicBlock &bb) {
-    assert(!bb.stmts.empty());
+    abortif(!bb.stmts.empty());
     std::vector<Id> targets;
     const Statement &lastStmt = bb.stmts[bb.stmts.size() - 1];
     if (std::holds_alternative<BrStmt>(lastStmt)) {
@@ -20,7 +21,7 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
         targets.push_back(brif.ifTarget);
         targets.push_back(brif.elseTarget);
     } else {
-        assert(std::holds_alternative<RetStmt>(lastStmt));
+        abortif(std::holds_alternative<RetStmt>(lastStmt));
         // Does not target another block in the function.
     }
 
@@ -78,7 +79,7 @@ void ControlFlowGraph::buildGraph(const FunctionBody &body) {
         std::vector<NodeId> outEdges;
         const std::vector<Id> &targets = getTargets(body[i]);
         for (const Id &tid : targets) {
-            assert(names.count(tid.name) == 1);
+            abortif(names.count(tid.name) == 1);
             outEdges.push_back(names[tid.name]);
         }
 

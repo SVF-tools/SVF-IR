@@ -1,11 +1,11 @@
 #ifndef ERR_H
 #define ERR_H
 
-#include <cassert>
 #include <optional>
 #include <string>
 #include <variant>
 
+#include "Abort.h"
 #include "Result.h"
 #include "Span.h"
 
@@ -32,13 +32,13 @@ bool isErr(const Result<T, Err> &res) {
 
 template <typename T>
 const T &getVal(const Result<T, Err> &res) {
-    assert(std::holds_alternative<T>(res));
+    abortif(std::holds_alternative<T>(res));
     return std::get<T>(res);
 }
 
 template <typename T>
 const Err &getErr(const Result<T, Err> &res) {
-    assert(isErr(res));
+    abortif(isErr(res));
     return std::get<Err>(res);
 }
 

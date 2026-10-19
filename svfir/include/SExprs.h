@@ -1,7 +1,6 @@
 #ifndef SEXPRS_H
 #define SEXPRS_H
 
-#include <cassert>
 #include <istream>
 #include <stack>
 #include <string>

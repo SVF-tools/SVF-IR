@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string>
 
+#include "Abort.h"
 #include "Ast.h"
 #include "Err.h"
 #include "Parser.h"
@@ -162,7 +163,7 @@ Result<DecType, Err> parseType(const SExpr &s) {
             return DecType(getVal(id));
         } else { return Err("Invalid scalar type.", sp); }
     } else {
-        assert(isList(s));
+        abortif(isList(s));
         const List &list = std::get<List>(s);
         const Span &sp = span(s);
 
@@ -359,7 +360,7 @@ Result<Constant, Err> parseConst(const SExpr &s) {
             return Constant(FloatConstant(val, sp));
         }
     } else {
-        assert(isList(s));
+        abortif(isList(s));
         SExprSeq elems = std::get<List>(s).children;
         auto it = elems.cbegin(), end = elems.cend();
         if (it == end) { return listCutShort("sequence", "'seq'", span(s)); }
@@ -389,7 +390,7 @@ Result<Constant, Err> parseConst(const SExpr &s) {
 
         return Constant(SeqConstant(vals, sp));
     }
-    assert(false);
+    unreachable();
 }
 
 /// <typed-const>
@@ -539,7 +540,7 @@ Result<Val, Err> parseGVal(const SExpr &s) {
         }
     } else {
         // Try for <typed-const>
-        assert(isList(s));
+        abortif(isList(s));
         const Result<TypedConstant, Err> tc = parseTypedConst(s);
         if (!isErr(tc)) { return Val(getVal(tc)); }
         else {
@@ -551,7 +552,7 @@ Result<Val, Err> parseGVal(const SExpr &s) {
             );
         }
     }
-    assert(false);
+    unreachable();
 }
 
 /// <val>
@@ -570,7 +571,7 @@ Result<Val, Err> parseVal(const SExpr &s) {
             );
         }
     } else {
-        assert(isList(s));
+        abortif(isList(s));
         const Result<TypedConstant, Err> tc = parseTypedConst(s);
         if (!isErr(tc)) { return Val(getVal(tc)); }
         else {
@@ -582,7 +583,7 @@ Result<Val, Err> parseVal(const SExpr &s) {
             );
         }
     }
-    assert(false);
+    unreachable();
 }
 
 /// <pval>
@@ -606,7 +607,7 @@ Result<PVal, Err> parsePVal(const SExpr &s) {
             span(s)
         );
     }
-    assert(false);
+    unreachable();
 }
 
 /// <ival>
@@ -630,7 +631,7 @@ Result<IVal, Err> parseIVal(const SExpr &s) {
             span(s)
         );
     }
-    assert(false);
+    unreachable();
 }
 
 /// <variable>
@@ -701,7 +702,7 @@ Result<std::vector<Variable>, Err> parseVariables(const SExpr &s) {
 /// To be called on (phi ...) only.
 Result<Statement, Err> parsePhiStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "phi"));
+    abortif(it != end && atomEq(*it, "phi"));
 
     ++it;
     if (it == end) {
@@ -753,7 +754,7 @@ Result<Statement, Err> parsePhiStmt(const List &l) {
 /// To be called on (call ...) only.
 Result<Statement, Err> parseCallStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "call"));
+    abortif(it != end && atomEq(*it, "call"));
     const Span &sp = span(l);
 
     ++it;
@@ -807,7 +808,7 @@ Result<Statement, Err> parseCallStmt(const List &l) {
 /// To be called on (br ...) only.
 Result<Statement, Err> parseBrStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "br"));
+    abortif(it != end && atomEq(*it, "br"));
 
     ++it;
     if (it == end) {
@@ -834,7 +835,7 @@ Result<Statement, Err> parseBrifStmt(const List &l) {
     static const std::string &brifDesc = "conditional branch statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "brif"));
+    abortif(it != end && atomEq(*it, "brif"));
     const Span &sp = span(l);
 
     ++it;
@@ -872,7 +873,7 @@ Result<Statement, Err> parseBrifStmt(const List &l) {
 /// To be called on (ret ...) only.
 Result<Statement, Err> parseRet(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "ret"));
+    abortif(it != end && atomEq(*it, "ret"));
 
     ++it;
     if (it == end) {
@@ -910,7 +911,7 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
     static const std::string &cmpDesc = "comparison statement";
 
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "cmp"));
+    abortif(it != end && atomEq(*it, "cmp"));
 
     ++it;
     CmpStmt::Operator op;
@@ -966,7 +967,7 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
 /// To be called on (alloc ...) only.
 Result<Statement, Err> parseAllocStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "alloc"));
+    abortif(it != end && atomEq(*it, "alloc"));
     const Span &sp = span(l);
 
     ++it;
@@ -1008,7 +1009,7 @@ Result<Statement, Err> parseAllocStmt(const List &l) {
 /// To be called on (store ...) only.
 Result<Statement, Err> parseStoreStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "store"));
+    abortif(it != end && atomEq(*it, "store"));
 
     ++it;
     if (it == end) { return listCutShort("store statement", "value", span(l)); }
@@ -1038,7 +1039,7 @@ Result<Statement, Err> parseStoreStmt(const List &l) {
 /// To be called on (load ...) only.
 Result<Statement, Err> parseLoadStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "load"));
+    abortif(it != end && atomEq(*it, "load"));
 
     ++it;
     if (it == end) {
@@ -1070,7 +1071,7 @@ Result<Statement, Err> parseLoadStmt(const List &l) {
 /// To be called on (field ...) only.
 Result<Statement, Err> parseFieldStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "field"));
+    abortif(it != end && atomEq(*it, "field"));
     const Span &sp = span(l);
 
     ++it;
@@ -1110,7 +1111,7 @@ Result<Statement, Err> parseFieldStmt(const List &l) {
 /// To be called on (bitcast/convert ...) only.
 Result<Statement, Err> parseBitCastConvertStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && (atomEq(*it, "BitCast") || atomEq(*it, "convert")));
+    abortif(it != end && (atomEq(*it, "BitCast") || atomEq(*it, "convert")));
 
     const std::string &kind = std::get<Atom>(*it).val;
     const std::string &stmtDesc = kind + " statement";
@@ -1149,13 +1150,13 @@ Result<Statement, Err> parseBitCastConvertStmt(const List &l) {
             ConvertStmt(getVal(lid), getVal(val), getVal(type), md, span(l))
         );
     }
-    assert(false);
+    unreachable();
 }
 
 /// To be called on (inttrunc ...) only.
 Result<Statement, Err> parseIntTruncStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "inttrunc"));
+    abortif(it != end && atomEq(*it, "inttrunc"));
     const Span &sp = span(l);
 
     ++it;
@@ -1193,7 +1194,7 @@ Result<Statement, Err> parseIntTruncStmt(const List &l) {
 /// To be called on (intext ...) only.
 Result<Statement, Err> parseIntExtStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "intext"));
+    abortif(it != end && atomEq(*it, "intext"));
     const Span &sp = span(l);
 
     ++it;
@@ -1244,7 +1245,7 @@ Result<Statement, Err> parseIntExtStmt(const List &l) {
 /// To be called on (add/mul/sub ...) only.
 Result<Statement, Err> parseAddMulSubStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(
+    abortif(
         it != end &&
         (atomEq(*it, "add") || atomEq(*it, "sub") || atomEq(*it, "mul"))
     );
@@ -1281,7 +1282,7 @@ Result<Statement, Err> parseAddMulSubStmt(const List &l) {
     if (kind == "add") { op = BinaryOpStmt::Op::ADD; }
     else if (kind == "sub") { op = BinaryOpStmt::Op::SUB; }
     else if (kind == "mul") { op = BinaryOpStmt::Op::MUL; }
-    else { assert(false); }
+    else { unreachable(); }
 
     return Statement(
         BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
@@ -1291,7 +1292,7 @@ Result<Statement, Err> parseAddMulSubStmt(const List &l) {
 /// To be called on (div/rem ...) only.
 Result<Statement, Err> parseDivRemStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && (atomEq(*it, "div") || atomEq(*it, "rem")));
+    abortif(it != end && (atomEq(*it, "div") || atomEq(*it, "rem")));
     const Span &sp = span(l);
 
     const std::string &kind = std::get<Atom>(*it).val;
@@ -1346,7 +1347,7 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
         op = isSigned ? BinaryOpStmt::Op::SDIV : BinaryOpStmt::Op::UDIV;
     } else if (kind == "rem") {
         op = isSigned ? BinaryOpStmt::Op::SREM : BinaryOpStmt::Op::UREM;
-    } else { assert(false); }
+    } else { unreachable(); }
 
     return Statement(BinaryOpStmt(op, lid, left, right, md, span(l)));
 }
@@ -1354,7 +1355,7 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
 /// To be called on (not ...) only.
 Result<Statement, Err> parseNotStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "not"));
+    abortif(it != end && atomEq(*it, "not"));
     const Span &sp = span(l);
 
     ++it;
@@ -1385,7 +1386,7 @@ Result<Statement, Err> parseNotStmt(const List &l) {
 /// To be called on (and/or/xor/shiftl ...) only.
 Result<Statement, Err> parseAndOrXorShiftlStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(
+    abortif(
         it != end &&
         (
             atomEq(*it, "and") ||
@@ -1428,7 +1429,7 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(const List &l) {
     else if (kind == "or") { op = BinaryOpStmt::Op::OR; }
     else if (kind == "xor") { op = BinaryOpStmt::Op::XOR; }
     else if (kind == "shiftl") { op = BinaryOpStmt::Op::SHIFTL; }
-    else { assert(false); }
+    else { unreachable(); }
 
     return Statement(
         BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
@@ -1438,7 +1439,7 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(const List &l) {
 /// To be called on (shiftr ...) only.
 Result<Statement, Err> parseShiftrStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "shiftr"));
+    abortif(it != end && atomEq(*it, "shiftr"));
     const Span &sp = span(l);
 
     ++it;
@@ -1496,7 +1497,7 @@ Result<Statement, Err> parseShiftrStmt(const List &l) {
 /// To be called on (assign ...) only.
 Result<Statement, Err> parseAssignStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "assign"));
+    abortif(it != end && atomEq(*it, "assign"));
     const Span &sp = span(l);
 
     ++it;
@@ -1529,7 +1530,7 @@ Result<Statement, Err> parseAssignStmt(const List &l) {
 /// To be called on (vararg ...) only.
 Result<Statement, Err> parseVarargStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "vararg"));
+    abortif(it != end && atomEq(*it, "vararg"));
     const Span &sp = span(l);
 
     ++it;
@@ -1560,7 +1561,7 @@ Result<Statement, Err> parseVarargStmt(const List &l) {
 /// To be called on (blackhole ...) only.
 Result<Statement, Err> parseBlackholeStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
-    assert(it != end && atomEq(*it, "blackhole"));
+    abortif(it != end && atomEq(*it, "blackhole"));
 
     ++it;
     if (it == end) {
@@ -1651,7 +1652,7 @@ Result<Statement, Err> parseStmt(const SExpr &s) {
     else if (kind == "vararg") { return parseVarargStmt(l); }
     else if (kind == "blackhole") { return parseBlackholeStmt(l); }
     else { return Err("Unknown statement kind: '" + kind + "'", span(*it)); }
-    assert(false);
+    unreachable();
 }
 
 /// <basic-block>
@@ -1710,7 +1711,7 @@ Result<std::tuple<std::vector<Param>, bool>, Err> parseFunctionParams(
         const Result<Param, Err> param = parseParam(l.children[i]);
         if (!isErr(param)) { params.push_back(getVal(param)); }
         else {
-            assert(isErr(param));
+            abortif(isErr(param));
             if (i == l.children.size() - 1) {
                 // We might have a vararg parameter.
                 if (atomEq(l.children[i], "...")) {
@@ -1776,7 +1777,7 @@ Result<Function, Err> parseFunction(const SExpr &s) {
             );
         }
     } else {
-        assert(isList(*it));
+        abortif(isList(*it));
         const Result<std::vector<BasicBlock>, Err>
         bbsr = parseFunctionBlocks(std::get<List>(*it));
         if (isErr(bbsr)) {

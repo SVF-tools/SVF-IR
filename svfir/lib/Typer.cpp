@@ -1,10 +1,10 @@
-#include <cassert>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
 
+#include "Abort.h"
 #include "Ops.h"
 #include "Err.h"
 #include "Result.h"
@@ -101,7 +101,7 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                 } else if (std::holds_alternative<BlackholeStmt>(s)) {
                     name.emplace(std::get<BlackholeStmt>(s).tid.id.name);
                 } else {
-                    assert(
+                    abortif(
                         std::holds_alternative<RetStmt>(s) ||
                         std::holds_alternative<BrStmt>(s) ||
                         std::holds_alternative<BrifStmt>(s)
@@ -244,10 +244,10 @@ bool operator==(const Type &x, const Type &y) {
     } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
     else if (isVarargType(x) && isVarargType(y)) { return true; }
     else {
-        assert(x.index() != y.index());
+        abortif(x.index() != y.index());
         return false;
     }
-    assert(false);
+    unreachable();
 }
 
 bool operator!=(const Type &x, const Type &y) {
