@@ -249,6 +249,17 @@ struct Function final {
         md(md)
     { }
 
+    Function(const Function &fn, const FunctionBody &body)
+    :
+        span(fn.span),
+        id(fn.id),
+        params(fn.params),
+        vararg(fn.vararg),
+        type(fn.type),
+        body(body),
+        md(fn.md)
+    { }
+
     bool isOpaque(void) const;
 };
 
@@ -617,7 +628,9 @@ struct BasicBlock final {
         const std::vector<Statement> &stmts,
         const MaybeMetadata &md,
         const Span &span
-    ) : span(span), id(id), stmts(stmts), md(md) { }
+    ) : span(span), id(id), stmts(stmts), md(md) {
+        insist(!empty(stmts));
+    }
 };
 
 /// Represents all AST nodes, including any possible field of an AST node
