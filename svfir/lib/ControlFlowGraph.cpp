@@ -32,6 +32,10 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
 
 namespace SVFIR {
 
+ControlFlowGraph::NodeIndex ControlFlowGraph::entry(void) const {
+    return nodes().front().id;
+}
+
 std::string ControlFlowGraph::Node::toString(void) const {
     std::string s = toAbbrString() + "\n";
 

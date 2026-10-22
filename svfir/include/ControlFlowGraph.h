@@ -44,6 +44,9 @@ public:
 public:
     ControlFlowGraph(const FunctionBody &);
 
+    /// The unique entry node.
+    NodeIndex entry(void) const;
+
     const std::vector<Node> &nodes(void) const { return _nodes; }
 
     std::string toString(void) const;
