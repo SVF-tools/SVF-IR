@@ -11,6 +11,7 @@ set(SVFIR_HEADERS
   svfir/include/Span.h
   svfir/include/SVFIR.h
   svfir/include/TypedProgram.h
+  svfir/include/UnifyReturns.h
   svfir/include/Version.h
 )
 
@@ -25,5 +26,6 @@ set(SVFIR_SOURCES
   svfir/lib/SExprs.cpp
   svfir/lib/Span.cpp
   svfir/lib/Typer.cpp
+  svfir/lib/UnifyReturns.cpp
   svfir/lib/Version.cpp
 )
