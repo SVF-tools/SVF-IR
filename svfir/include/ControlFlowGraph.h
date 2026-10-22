@@ -14,20 +14,20 @@ namespace SVFIR {
 /// edge to node n. A node with no outgoing edges is an exit node.
 class ControlFlowGraph {
 public:
-    using NodeId = size_t;
+    using NodeIndex = size_t;
 
     struct Node {
-        const NodeId id;
+        const NodeIndex id;
         // Not a key; only used for pretty printing, debugging, etc.
         const Name name;
-        const std::vector<NodeId> inEdges;
-        const std::vector<NodeId> outEdges;
+        const std::vector<NodeIndex> inEdges;
+        const std::vector<NodeIndex> outEdges;
 
         Node(
-            const NodeId &id,
+            const NodeIndex &id,
             const Name &name,
-            const std::vector<NodeId> &inEdges,
-            const std::vector<NodeId> &outEdges
+            const std::vector<NodeIndex> &inEdges,
+            const std::vector<NodeIndex> &outEdges
         ) : id(id), name(name), inEdges(inEdges), outEdges(outEdges)  { }
 
         /// Does this node only lead out of the function?

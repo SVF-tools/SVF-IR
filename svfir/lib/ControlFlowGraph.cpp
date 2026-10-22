@@ -36,12 +36,12 @@ std::string ControlFlowGraph::Node::toString(void) const {
     std::string s = toAbbrString() + "\n";
 
     s += "in :";
-    for (const NodeId &n : inEdges) { s += " " + std::to_string(n) + ","; }
+    for (const NodeIndex &n : inEdges) { s += " " + std::to_string(n) + ","; }
     s.pop_back();  // The extra ",".
     s += "\n";
 
     s += "out:";
-    for (const NodeId &n : outEdges) { s += " " + std::to_string(n) + ","; }
+    for (const NodeIndex &n : outEdges) { s += " " + std::to_string(n) + ","; }
     s.pop_back();  // The extra ",".
 
     return s;
@@ -60,11 +60,11 @@ ControlFlowGraph::ControlFlowGraph(const FunctionBody &body) {
 }
 
 void ControlFlowGraph::buildGraph(const FunctionBody &body) {
-    std::unordered_map<Name, NodeId> names;
+    std::unordered_map<Name, NodeIndex> names;
     for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
 
     // All nodes which have an outgoing edge to the key (the dst).
-    std::unordered_map<NodeId, std::vector<NodeId>> sources;
+    std::unordered_map<NodeIndex, std::vector<NodeIndex>> sources;
     for (size_t dst = 0; dst < body.size(); ++dst) {
         const Name dstName = body[dst].id.name;
         for (size_t src = 0; src < body.size(); ++src) {
@@ -75,8 +75,8 @@ void ControlFlowGraph::buildGraph(const FunctionBody &body) {
     }
 
     for (size_t i = 0; i < body.size(); ++i) {
-        const std::vector<NodeId> &inEdges = sources[i];
-        std::vector<NodeId> outEdges;
+        const std::vector<NodeIndex> &inEdges = sources[i];
+        std::vector<NodeIndex> outEdges;
         const std::vector<Id> &targets = getTargets(body[i]);
         for (const Id &tid : targets) {
             insist(names.count(tid.name) == 1);
@@ -95,7 +95,7 @@ std::string ControlFlowGraph::toString(void) const {
         // Just outgoing edges. Incoming edges will be dealt with at the source.
         if (node.outEdges.empty()) { s += "  --\n"; }
         else {
-            for (const NodeId &dst : node.outEdges) {
+            for (const NodeIndex &dst : node.outEdges) {
                 s += "  -> " + _nodes[dst].toAbbrString() + "\n";
             }
         }
