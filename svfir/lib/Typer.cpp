@@ -8,6 +8,7 @@
 #include "Ops.h"
 #include "Err.h"
 #include "Result.h"
+#include "Statements.h"
 #include "TypedProgram.h"
 
 namespace {
@@ -66,50 +67,12 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     if (fn.body.has_value()) {
         for (const auto &bb : fn.body.value()) {
             for (const auto &s : bb.stmts) {
-                std::optional<Name> name;
-                if (std::holds_alternative<PhiStmt>(s)) {
-                    name.emplace(std::get<PhiStmt>(s).id.name);
-                } else if (std::holds_alternative<CallStmt>(s)) {
-                    const CallStmt c = std::get<CallStmt>(s);
-                    if (c.id.has_value()) {
-                        name.emplace(c.id.value().name);
-                    }
-                } else if (std::holds_alternative<CmpStmt>(s)) {
-                    name.emplace(std::get<CmpStmt>(s).id.name);
-                } else if (std::holds_alternative<AllocStmt>(s)) {
-                    name.emplace(std::get<AllocStmt>(s).id.name);
-                } else if (std::holds_alternative<LoadStmt>(s)) {
-                    name.emplace(std::get<LoadStmt>(s).tid.id.name);
-                } else if (std::holds_alternative<FieldStmt>(s)) {
-                    name.emplace(std::get<FieldStmt>(s).id.name);
-                } else if (std::holds_alternative<BitCastStmt>(s)) {
-                    name.emplace(std::get<BitCastStmt>(s).id.name);
-                } else if (std::holds_alternative<ConvertStmt>(s)) {
-                    name.emplace(std::get<ConvertStmt>(s).id.name);
-                } else if (std::holds_alternative<BinaryOpStmt>(s)) {
-                    name.emplace(std::get<BinaryOpStmt>(s).id.name);
-                } else if (std::holds_alternative<UnaryOpStmt>(s)) {
-                    name.emplace(std::get<UnaryOpStmt>(s).id.name);
-                } else if (std::holds_alternative<AssignStmt>(s)) {
-                    name.emplace(std::get<AssignStmt>(s).id.name);
-                } else if (std::holds_alternative<VarargStmt>(s)) {
-                    name.emplace(std::get<VarargStmt>(s).tid.id.name);
-                } else if (std::holds_alternative<BlackholeStmt>(s)) {
-                    name.emplace(std::get<BlackholeStmt>(s).tid.id.name);
-                } else {
-                    insist(
-                        std::holds_alternative<RetStmt>(s) ||
-                        std::holds_alternative<BrStmt>(s) ||
-                        std::holds_alternative<BrifStmt>(s)
-                    );
-                    // Nothing to do.
-                }
-
-                if (name.has_value()) {
-                    if (names.insert(name.value()).second) {
+                const std::optional<Id> id = introducedId(s);
+                if (id.has_value()) {
+                    const Name name = id.value().name;
+                    if (names.insert(name).second) {
                         return Err(
-                            "Variable '" + name.value() + "' declared twice",
-                            span(s)
+                            "Variable '" + name + "' declared twice", span(s)
                         );
                     }
                 }

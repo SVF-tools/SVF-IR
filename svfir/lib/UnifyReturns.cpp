@@ -2,6 +2,7 @@
 
 #include "Ast.h"
 #include "Span.h"
+#include "Statements.h"
 #include "UnifyReturns.h"
 #include "TypedProgram.h"
 
@@ -9,12 +10,12 @@ namespace {
 
 using namespace SVFIR;
 
-bool isRet(const Statement &s) { return std::holds_alternative<RetStmt>(s); }
-
-/// The number of return instructions scattered in fn.
+/// The number of return instructions scattered in fn. Opaque functions have
+/// 0 returns.
 unsigned int countReturns(const Function &fn) {
+    if (fn.isOpaque()) { return 0; }
     unsigned int rets = 0;
-    for (const BasicBlock &bb : fn.stmts) {
+    for (const BasicBlock &bb : fn.body.value()) {
         if (isRet(bb.stmts.back())) { ++rets; }
     }
     return rets;
@@ -27,7 +28,9 @@ Id uniqueBlockId(const Function &fn, const std::string prefix) {
     std::string newName = '!' + prefix;
     if (!fn.isOpaque()) {
         std::unordered_set<Name> names;
-        for (const BasicBlock &bb : fn.stmts) { names.insert(bb.id.name); }
+        for (const BasicBlock &bb : fn.body.value()) {
+            names.insert(bb.id.name);
+        }
         while (names.find(newName) != names.cend()) { newName += "_"; }
     }
     return Id(newName, FAB_SPAN);
@@ -42,8 +45,8 @@ Id uniqueLocalId(const Function &fn, const std::string prefix) {
     std::unordered_set<Name> names;
     for (const Param &p : fn.params) { names.insert(p.id.name); }
     if (!fn.isOpaque()) {
-        for (const BasicBlock &bb : fn.stmts) {
-            for (const Statement &s : bb) {
+        for (const BasicBlock &bb : fn.body.value()) {
+            for (const Statement &s : bb.stmts) {
                 const std::optional<Id> id = introducedId(s);
                 if (id.has_value()) { names.insert(id.value().name); }
             }
@@ -58,7 +61,7 @@ Id uniqueLocalId(const Function &fn, const std::string prefix) {
 /// potentially 1) a new block with a single return, 2) a phi in that
 /// block to gather all return values, and 3) jumps to that block in
 /// place of returns.
-FunctionBody unify(const Function &fn) {
+Function unify(const Function &fn) {
     // TODO: should add metadata stating the new stuff is from this.
 
     // Nothing to unify.
@@ -67,7 +70,7 @@ FunctionBody unify(const Function &fn) {
     if (nrets == 0 || nrets == 1) { return fn; }
 
     // Blocks ending in ret will now target urid. urid will be the final block.
-    const Id urid = uniqueBlockId(bbs, "unified-ret");
+    const Id urid = uniqueBlockId(fn, "unified-ret");
     std::vector<BasicBlock> newBlocks;
     std::vector<PhiStmt::Operand> phiArgs;
 
@@ -97,7 +100,7 @@ FunctionBody unify(const Function &fn) {
     std::vector<Statement> urStmts;
     if (!phiArgs.empty()) {
         // Non-void.
-        const Id pid = uniqueLocalId(bbs, "unified-ret");
+        const Id pid = uniqueLocalId(fn, "unified-ret");
         urStmts.push_back(PhiStmt(pid, phiArgs, std::nullopt, FAB_SPAN));
         urStmts.push_back(RetStmt(pid, std::nullopt, FAB_SPAN));
     } else {
@@ -116,14 +119,13 @@ FunctionBody unify(const Function &fn) {
 namespace SVFIR {
 
 Program unifyReturns(const TypedProgram &tp) {
-    const Program &p = tp.program;
+    const Program &p = tp.program();
     std::vector<Function> unifiedFunctions;
     for (const Function &fn : p.functions) {
         if (fn.isOpaque()) { unifiedFunctions.push_back(fn); }
         else {
             const FunctionBody &bbs = fn.body.value();
-            const Function ufn = Function(fn, unify(bbs));
-            unifiedFunctions.push_back(ufn);
+            unifiedFunctions.push_back(unify(fn));
         }
     }
 
