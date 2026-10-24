@@ -12,10 +12,15 @@ namespace SVFIR {
 /// correspond to the 0th (first) basic block, repeat for n).
 /// That a node n has an incoming edge from node m means node m has an outgoing
 /// edge to node n. A node with no outgoing edges is an exit node.
+/// A CFG can only be constructed from a non-empty function body. Thus there is
+/// no CFG for an opaque function.
 class ControlFlowGraph {
 public:
     using NodeIndex = size_t;
 
+    /// Note specifically that inEdges/outEdges are NodeIndexes, not Nodes.
+    /// They can be accessed through the containing CFG's nodes(). Unideal...
+    /// but it avoids the need for pointers.
     struct Node {
         const NodeIndex id;
         // Not a key; only used for pretty printing, debugging, etc.
@@ -42,6 +47,8 @@ public:
     };
 
 public:
+    /// The given FunctionBody must be non-empty. (An empty body is not part of
+    /// a valid program in either case.)
     ControlFlowGraph(const FunctionBody &);
 
     /// The unique entry node.
