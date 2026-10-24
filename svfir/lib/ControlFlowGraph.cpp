@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -34,6 +35,20 @@ namespace SVFIR {
 
 ControlFlowGraph::NodeIndex ControlFlowGraph::entry(void) const {
     return nodes().front().id;
+}
+
+std::optional<ControlFlowGraph::NodeIndex>
+ControlFlowGraph::uniqueExit(void) const {
+    std::optional<NodeIndex> exit = std::nullopt;
+    for (const Node &n : nodes()) {
+        if (n.isExitNode()) {
+            // First exit node we come across.
+            if (!exit.has_value()) { exit.emplace(n.id); }
+            // More than one exit node.
+            else { return std::nullopt; }
+        }
+    }
+    return exit;
 }
 
 std::string ControlFlowGraph::Node::toString(void) const {

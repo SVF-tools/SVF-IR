@@ -1,6 +1,9 @@
 #ifndef CONTROLFLOWFGRAPH_H
 #define CONTROLFLOWFGRAPH_H
 
+#include <optional>
+#include <vector>
+
 #include "Ast.h"
 
 namespace SVFIR {
@@ -53,6 +56,9 @@ public:
 
     /// The unique entry node.
     NodeIndex entry(void) const;
+
+    /// Return this CFG's only exit node, if it has an only exit node.
+    std::optional<NodeIndex> uniqueExit(void) const;
 
     const std::vector<Node> &nodes(void) const { return _nodes; }
 
