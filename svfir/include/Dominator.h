@@ -1,0 +1,65 @@
+#ifndef DOMINATOR_H
+#define DOMINATOR_H
+
+#include <string>
+#include <vector>
+#include <set>
+
+#include "Ast.h"
+#include "ControlFlowGraph.h"
+
+namespace SVFIR {
+
+/// Dominator tree, beginning at root, constructed from a CFG. In this tree,
+/// a parent node is the immediate dominator of any children nodes. Being a
+/// tree, thus, the root/entry dominates all other nodes in the tree
+/// transitively. The root has no dominator. Nodes not reachable in the CFG
+/// are not represented in the tree and are thus not deemed dominated by the
+/// root (or by any node, including other unreachable nodes that may jump to
+/// such nodes). Such nodes are saved in a separate field for reference.
+class DominatorTree {
+public:
+    using NodeIndex = ControlFlowGraph::NodeIndex;
+
+    struct Node {
+        const NodeIndex id;
+        // Not a key; only used for pretty printing, debugging, etc.
+        const Name name;
+        const std::vector<Node> children;
+
+        Node(
+            const NodeIndex id,
+            const Name &name,
+            const std::vector<Node> &children
+        ) : id(id), name(name), children(children) { }
+
+        /// [id name]
+        std::string toAbbrString(void) const;
+        /// [id name]
+        /// children: ...
+        std::string toString(void) const;
+
+        bool operator==(const Node &) const;
+        bool operator<(const Node &) const;
+    };
+
+public:
+    /// The root node, which corresponds to the entry of the CFG it was
+    /// constructed from.
+    const Node root;
+
+    /// Nodes which are not reachable in the CFG this tree was constructed
+    /// from (and are thus not dominated by root so are not part of the tree).
+    const std::set<Node> unreachables;
+
+public:
+    /// The control flow graph must be non-empty, i.e., must have an entry node.
+    /// (Any CFG constructed from a valid function body fulfils this.)
+    DominatorTree(const ControlFlowGraph &);
+
+    std::string toString(void) const;
+};
+
+}  // namespace SVFIR
+
+#endif // DOMINATOR_H
