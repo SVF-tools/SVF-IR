@@ -181,7 +181,6 @@ Result<DecType, Err> parseType(const SExpr &s) {
         if (!isAtom(*it)) { return notAnAtom("number of slots", span(*it)); }
         const std::string &slotsStr = std::get<Atom>(*it).val;
         if (!std::all_of(slotsStr.begin(), slotsStr.end(), isDigit)) {
-            // TODO: what if it starts with 0
             return Err(
                 "aggregate type's number of slots is not positive number "
                 "(" + slotsStr + ").",
