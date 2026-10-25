@@ -15,45 +15,103 @@ using Node = DominatorTree::Node;
 
 static const size_t undef = size_t(-1);
 
+/// This structure contains means to interpret the CFG appropriately for
+/// calculating a dominator or post-dominator tree. This must be used when
+/// accessing edges of a node and when accessing the entry node of the CFG.
+/// For calculating dominator trees, it interprets the CFG as it is. For
+/// calculating post-dominator trees, it
+///   1) flips incoming and outgoing edges, and
+///   2) treats the (unique) exit node as the entry node.
+/// This avoids the need for either a separate implementation of the
+/// construction algorithm or preparation/modification of the CFG beforehand.
+struct CFGInterpreter {
+    using Kind = DominatorTree::Kind;
+    using CFGN = ControlFlowGraph::Node;
+    using DTN = DominatorTree::Node;
+    using NodeIndex = DominatorTree::NodeIndex;
+
+
+    CFGInterpreter(const Kind kind)
+    :
+        inEdges(kind == Kind::DOM ? actualInEdges : actualOutEdges),
+        outEdges(kind == Kind::DOM ? actualOutEdges : actualInEdges),
+        entry(kind == Kind::DOM ? actualEntry : exit)
+    { insist(kind == Kind::DOM || kind == Kind::POSTDOM); }
+
+    /// "Incoming" edges of a node.
+    std::function<const std::vector<NodeIndex> &(const CFGN &)> inEdges;
+    /// "Outgoing" edges of a node.
+    std::function<const std::vector<NodeIndex> &(const CFGN &)> outEdges;
+    /// Entry node to the CFG.
+    const std::function<NodeIndex(const ControlFlowGraph &)> entry;
+
+private:
+    static const std::vector<NodeIndex> &actualInEdges(const CFGN &n) {
+        return n.inEdges;
+    }
+    static const std::vector<NodeIndex> &actualOutEdges(const CFGN &n) {
+        return n.outEdges;
+    }
+
+    static NodeIndex actualEntry(const ControlFlowGraph &cfg) {
+        return cfg.entry();
+    }
+    static NodeIndex exit(const ControlFlowGraph &cfg) {
+        std::optional<NodeIndex> exit = cfg.uniqueExit();
+        // Only used (as entry) when we get POSTDOM, so must have a unique exit.
+        insist(exit.has_value());
+        return exit.value();
+    }
+};
+
 /// Return the postorder traversal order of the nodes in cfg starting from
 /// the entry node (the first node). Nodes unreachable from the entry node
 /// are excluded.
-std::vector<NodeIndex> postOrder(const ControlFlowGraph &cfg) {
+std::vector<NodeIndex> postOrder(
+    const ControlFlowGraph &cfg,
+    const CFGInterpreter &ci
+) {
     const std::vector<ControlFlowGraph::Node> nodes = cfg.nodes();
     insist(!nodes.empty());
 
     std::vector<NodeIndex> order;
     std::unordered_set<NodeIndex> visited;
     std::function<void(const NodeIndex)>
-    visit = [&nodes, &visited, &order, &visit](const NodeIndex &cur) {
+    visit = [&ci, &nodes, &visited, &order, &visit](const NodeIndex &cur) {
         if (visited.find(cur) == visited.cend()) {
             visited.insert(cur);
-            for (const NodeIndex child : nodes[cur].outEdges) { visit(child); }
+            for (const NodeIndex child : ci.outEdges(nodes[cur])) {
+                visit(child);
+            }
             order.push_back(cur);
         }
     };
 
-    visit(nodes.front().id);
+    visit(ci.entry(cfg));
+
     return order;
 }
 
 /// Returns a vector mapping nodes to their immediate dominator node.
 /// "A Simple, Fast Dominance Algorithm" -- Cooper, Harvey, Kennedy (p. 7).
-std::vector<NodeIndex> calculateIDoms(const ControlFlowGraph &cfg) {
+std::vector<NodeIndex> calculateIDoms(
+    const ControlFlowGraph &cfg,
+    const CFGInterpreter &ci
+) {
     static const size_t undef = size_t(-1);
 
     insist(!cfg.nodes().empty());
 
     // We do *everything* with the nodes labelled with the post-order traversal.
-    const std::vector<NodeIndex> po2id = postOrder(cfg);
+    const std::vector<NodeIndex> po2id = postOrder(cfg, ci);
     // This is not a vector because unreachable nodes are not represented in po.
     std::unordered_map<NodeIndex, NodeIndex> id2po;
     for (size_t i = 0; i < po2id.size(); ++i) { id2po[po2id[i]] = i; }
 
 
     std::vector<NodeIndex> podoms(cfg.nodes().size(), undef);
-    // The entry node is the last node in postorder.
-    podoms.back() = podoms.size() - 1;
+    const NodeIndex poentry = id2po[ci.entry(cfg)];
+    podoms[poentry] = id2po[poentry];
 
     const auto intersect = [&podoms](const NodeIndex b1, const NodeIndex b2) {
         NodeIndex finger1 = b1;
@@ -71,13 +129,27 @@ std::vector<NodeIndex> calculateIDoms(const ControlFlowGraph &cfg) {
         // -1-1 drops the entry node, which in a postorder must be the last.
         for (NodeIndex b = (po2id.size() - 1) - 1; b != NodeIndex(-1); --b) {
             const ControlFlowGraph::Node &bn = cfg.nodes()[po2id[b]];
+            const std::vector<NodeIndex> preds = ci.inEdges(bn);
+
+            // Pick a processed/calculated predecessor.
+            NodeIndex newIDom = undef;
+            NodeIndex pickedPred = undef;
             // b must have incoming edge because it is reachable (in po2id).
-            NodeIndex newIDom = id2po[bn.inEdges.front()];
-            for (
-                auto it = bn.inEdges.cbegin() + 1; it != bn.inEdges.cend(); ++it
-            ) {
-                const NodeIndex p = id2po[*it];
-                if (podoms[p] != undef) { newIDom = intersect(p, newIDom); }
+            for (const NodeIndex pred : preds) {
+                const NodeIndex popred = id2po[pred];
+                if (podoms[popred] != undef) {
+                    pickedPred = pred;
+                    newIDom = popred;
+                }
+            }
+            insist(newIDom != undef && pickedPred != undef);
+
+            for (const NodeIndex idp : preds) {
+                // We are looking at all predecessors except the one we picked.
+                if (pickedPred != idp) {
+                    const NodeIndex p = id2po[idp];
+                    if (podoms[p] != undef) { newIDom = intersect(p, newIDom); }
+                }
             }
 
             if (podoms[b] != newIDom) {
@@ -94,16 +166,19 @@ std::vector<NodeIndex> calculateIDoms(const ControlFlowGraph &cfg) {
     }
 
     // Nothing dominates the entry node.
-    doms[cfg.entry()] = undef;
+    doms[ci.entry(cfg)] = undef;
 
     return doms;
 }
 
 /// Construct cfg's dominator tree, returns the root.
-DominatorTree::Node build(const ControlFlowGraph &cfg) {
+DominatorTree::Node build(
+    const ControlFlowGraph &cfg,
+    const CFGInterpreter &ci
+) {
     insist(!cfg.nodes().empty());
 
-    const std::vector<NodeIndex> idoms = calculateIDoms(cfg);
+    const std::vector<NodeIndex> idoms = calculateIDoms(cfg, ci);
     std::vector<std::vector<NodeIndex>> childrenIndices(idoms.size());
     for (NodeIndex i = 0; i < idoms.size(); ++i) {
         if (idoms[i] != undef) {
@@ -122,17 +197,20 @@ DominatorTree::Node build(const ControlFlowGraph &cfg) {
         return Node(ni, cfg.nodes()[ni].name, children);
     };
 
-    return mkNode(cfg.entry());
+    return mkNode(ci.entry(cfg));
 }
 
 /// Returns any node that cannot be reached from cfg's entry node.
-std::set<Node> unreachableNodes(const ControlFlowGraph &cfg) {
+std::set<Node> unreachableNodes(
+    const ControlFlowGraph &cfg,
+    const CFGInterpreter &ci
+) {
     insist(!cfg.nodes().empty());
 
     std::set<Node> unreachables;
 
     // Any "gaps" in the list of reachable nodes are unreachable nodes.
-    std::vector<NodeIndex> reachables = postOrder(cfg);
+    std::vector<NodeIndex> reachables = postOrder(cfg, ci);
     std::sort(reachables.begin(), reachables.end());
     // To avoid special casing the end, we (potentially) induce a gap.
     // There is no need to special case at the start because the entry node is
@@ -157,10 +235,15 @@ std::set<Node> unreachableNodes(const ControlFlowGraph &cfg) {
 
 namespace SVFIR {
 
-DominatorTree::DominatorTree(const ControlFlowGraph &cfg)
-: root(build(cfg)), unreachables(unreachableNodes(cfg)) {
+DominatorTree::DominatorTree(const ControlFlowGraph &cfg, const Kind kind)
+:
+    kind(kind),
+    root(build(cfg, CFGInterpreter(kind))),
+    unreachables(unreachableNodes(cfg, CFGInterpreter(kind)))
+{
     // It'll be checked in helpers, but it's nice to document.
     insist(!cfg.nodes().empty());
+    insist(kind != Kind::POSTDOM || cfg.uniqueExit().has_value());
 }
 
 std::string DominatorTree::toString(void) const {

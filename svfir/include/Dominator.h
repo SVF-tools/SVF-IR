@@ -17,9 +17,18 @@ namespace SVFIR {
 /// are not represented in the tree and are thus not deemed dominated by the
 /// root (or by any node, including other unreachable nodes that may jump to
 /// such nodes). Such nodes are saved in a separate field for reference.
+///
+/// This class can represent post-dominator trees too and the constructor
+/// takes a switch on that. In that case the provided CFG must have a unique
+/// exit (see unifyReturns). Everything about the previous paragraph holds
+/// true for the post-dominator tree except:
+/// 1) replace the term 'dominate' with 'post-dominate', and
+/// 2) the root/entry is the unique exit of the CFG the tree is built from.
 class DominatorTree {
 public:
     using NodeIndex = ControlFlowGraph::NodeIndex;
+
+    enum class Kind { DOM, POSTDOM };
 
     struct Node {
         const NodeIndex id;
@@ -44,6 +53,9 @@ public:
     };
 
 public:
+    // Dominator tree vs post-dominator tree.
+    const Kind kind;
+
     /// The root node, which corresponds to the entry of the CFG it was
     /// constructed from.
     const Node root;
@@ -55,7 +67,7 @@ public:
 public:
     /// The control flow graph must be non-empty, i.e., must have an entry node.
     /// (Any CFG constructed from a valid function body fulfils this.)
-    DominatorTree(const ControlFlowGraph &);
+    DominatorTree(const ControlFlowGraph &, const Kind kind);
 
     std::string toString(void) const;
 };
