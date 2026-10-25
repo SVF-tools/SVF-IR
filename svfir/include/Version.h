@@ -29,7 +29,6 @@ public:
 
     std::string toString(void) const;
 
-    // TODO: we may not need these, actually.
     /// x < y when the major version is of x is less than that of y or the
     /// minor version of x is less than that of y when both have the same
     /// major version.
