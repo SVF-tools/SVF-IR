@@ -119,11 +119,17 @@ std::string ControlFlowGraph::toString(void) const {
     for (const Node &node : _nodes) {
         s += node.toAbbrString() + "\n";
 
-        // Just outgoing edges. Incoming edges will be dealt with at the source.
         if (node.outEdges.empty()) { s += "  --\n"; }
         else {
             for (const NodeIndex &dst : node.outEdges) {
                 s += "  -> " + _nodes[dst].toAbbrString() + "\n";
+            }
+        }
+
+        if (node.inEdges.empty()) { s += "  --\n"; }
+        else {
+            for (const NodeIndex &src : node.inEdges) {
+                s += "  <- " + _nodes[src].toAbbrString() + "\n";
             }
         }
     }
