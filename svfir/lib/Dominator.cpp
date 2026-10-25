@@ -13,7 +13,7 @@ using namespace SVFIR;
 using NodeIndex = DominatorTree::NodeIndex;
 using Node = DominatorTree::Node;
 
-static const size_t undef = size_t(-1);
+static const size_t NO_DOM = size_t(-1);
 
 /// This structure contains means to interpret the CFG appropriately for
 /// calculating a dominator or post-dominator tree. This must be used when
@@ -98,8 +98,6 @@ std::vector<NodeIndex> calculateIDoms(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    static const size_t undef = size_t(-1);
-
     insist(!cfg.nodes().empty());
 
     // We do *everything* with the nodes labelled with the post-order traversal.
@@ -109,7 +107,7 @@ std::vector<NodeIndex> calculateIDoms(
     for (size_t i = 0; i < po2id.size(); ++i) { id2po[po2id[i]] = i; }
 
 
-    std::vector<NodeIndex> podoms(cfg.nodes().size(), undef);
+    std::vector<NodeIndex> podoms(cfg.nodes().size(), NO_DOM);
     const NodeIndex poentry = id2po[ci.entry(cfg)];
     podoms[poentry] = id2po[poentry];
 
@@ -132,23 +130,23 @@ std::vector<NodeIndex> calculateIDoms(
             const std::vector<NodeIndex> preds = ci.inEdges(bn);
 
             // Pick a processed/calculated predecessor.
-            NodeIndex newIDom = undef;
-            NodeIndex pickedPred = undef;
+            NodeIndex newIDom = NO_DOM;
+            NodeIndex pickedPred = NO_DOM;
             // b must have incoming edge because it is reachable (in po2id).
             for (const NodeIndex pred : preds) {
                 const NodeIndex popred = id2po[pred];
-                if (podoms[popred] != undef) {
+                if (podoms[popred] != NO_DOM) {
                     pickedPred = pred;
                     newIDom = popred;
                 }
             }
-            insist(newIDom != undef && pickedPred != undef);
+            insist(newIDom != NO_DOM && pickedPred != NO_DOM);
 
             for (const NodeIndex idp : preds) {
                 // We are looking at all predecessors except the one we picked.
                 if (pickedPred != idp) {
                     const NodeIndex p = id2po[idp];
-                    if (podoms[p] != undef) { newIDom = intersect(p, newIDom); }
+                    if (podoms[p] != NO_DOM) { newIDom = intersect(p, newIDom); }
                 }
             }
 
@@ -160,13 +158,13 @@ std::vector<NodeIndex> calculateIDoms(
     }
 
     // Back from the post-order labelling to the real labels.
-    std::vector<NodeIndex> doms(podoms.size(), undef);
+    std::vector<NodeIndex> doms(podoms.size(), NO_DOM);
     for (NodeIndex i = 0; i < podoms.size(); ++i) {
         doms[po2id[i]] = po2id[podoms[i]];
     }
 
     // Nothing dominates the entry node.
-    doms[ci.entry(cfg)] = undef;
+    doms[ci.entry(cfg)] = NO_DOM;
 
     return doms;
 }
@@ -181,7 +179,7 @@ DominatorTree::Node build(
     const std::vector<NodeIndex> idoms = calculateIDoms(cfg, ci);
     std::vector<std::vector<NodeIndex>> childrenIndices(idoms.size());
     for (NodeIndex i = 0; i < idoms.size(); ++i) {
-        if (idoms[i] != undef) {
+        if (idoms[i] != NO_DOM) {
             // Read as: idoms[i] dominates i, so idoms[i] is parent to i.
             childrenIndices[idoms[i]].push_back(i);
         }
