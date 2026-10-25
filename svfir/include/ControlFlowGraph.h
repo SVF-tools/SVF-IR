@@ -65,10 +65,6 @@ public:
     std::string toString(void) const;
 
 private:
-    /// As the name suggests. Sets the nodes field. To be called by constructor.
-    void buildGraph(const FunctionBody &);
-
-private:
     /// Described in class comment.
     std::vector<Node> _nodes;
 };

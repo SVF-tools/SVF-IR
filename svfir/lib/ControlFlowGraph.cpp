@@ -10,6 +10,9 @@ namespace {
 
 using namespace SVFIR;
 
+using Node = ControlFlowGraph::Node;
+using NodeIndex = ControlFlowGraph::NodeIndex;
+
 /// Return the outgoing targets, if any, of a basic block
 std::vector<Id> getTargets(const BasicBlock &bb) {
     insist(!bb.stmts.empty());
@@ -27,6 +30,39 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
     }
 
     return targets;
+}
+
+/// Return full list of built out nodes for CFG of body. Respects constraints
+/// on _nodes in ControlFlowGraph.
+std::vector<Node> build(const FunctionBody &body) {
+    std::unordered_map<Name, NodeIndex> names;
+    for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
+
+    // All nodes which have an outgoing edge to the key (the dst).
+    std::unordered_map<NodeIndex, std::vector<NodeIndex>> sources;
+    for (size_t dst = 0; dst < body.size(); ++dst) {
+        const Name dstName = body[dst].id.name;
+        for (size_t src = 0; src < body.size(); ++src) {
+            for (const Id &id : getTargets(body[src])) {
+                if (id.name == dstName) { sources[dst].push_back(src); }
+            }
+        }
+    }
+
+    std::vector<Node> nodes;
+    for (size_t i = 0; i < body.size(); ++i) {
+        const std::vector<NodeIndex> &inEdges = sources[i];
+        std::vector<NodeIndex> outEdges;
+        const std::vector<Id> &targets = getTargets(body[i]);
+        for (const Id &tid : targets) {
+            insist(names.count(tid.name) == 1);
+            outEdges.push_back(names[tid.name]);
+        }
+
+        nodes.push_back(Node(i, body[i].id.name, inEdges, outEdges));
+    }
+
+    return nodes;
 }
 
 }  // Anonymous namespace
@@ -75,35 +111,7 @@ bool ControlFlowGraph::Node::isExitNode(void) const {
 }
 
 ControlFlowGraph::ControlFlowGraph(const FunctionBody &body) {
-    buildGraph(body);
-}
-
-void ControlFlowGraph::buildGraph(const FunctionBody &body) {
-    std::unordered_map<Name, NodeIndex> names;
-    for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
-
-    // All nodes which have an outgoing edge to the key (the dst).
-    std::unordered_map<NodeIndex, std::vector<NodeIndex>> sources;
-    for (size_t dst = 0; dst < body.size(); ++dst) {
-        const Name dstName = body[dst].id.name;
-        for (size_t src = 0; src < body.size(); ++src) {
-            for (const Id &id : getTargets(body[src])) {
-                if (id.name == dstName) { sources[dst].push_back(src); }
-            }
-        }
-    }
-
-    for (size_t i = 0; i < body.size(); ++i) {
-        const std::vector<NodeIndex> &inEdges = sources[i];
-        std::vector<NodeIndex> outEdges;
-        const std::vector<Id> &targets = getTargets(body[i]);
-        for (const Id &tid : targets) {
-            insist(names.count(tid.name) == 1);
-            outEdges.push_back(names[tid.name]);
-        }
-
-        _nodes.push_back(Node(i, body[i].id.name, inEdges, outEdges));
-    }
+    _nodes = build(body);
 }
 
 std::string ControlFlowGraph::toString(void) const {
