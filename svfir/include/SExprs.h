@@ -46,8 +46,8 @@ struct List {
     : children(children), span(span) { }
 };
 
-/// Parse an S-expression, including allowance for whitespace or comments at
-/// the start.
+/// Parse an S-expression, including allowance for whitespace or comments at the
+/// start. A comment or whitespace on their own does not make an s-expression.
 Result<SExpr, Err> parse(InputStream &);
 
 /// Parse a sequence of S-expressions separated by whitespace, comments, or

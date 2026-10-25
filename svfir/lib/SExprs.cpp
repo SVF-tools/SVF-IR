@@ -95,7 +95,7 @@ Result<SExpr, Err> _parseAtom(InputStream &stream) {
 
         // We haven't consumed the closing quote so EOF indicates an error.
         if (stream.atEof()) {
-            return Err("unclosed quote");
+            return Err("Reached EOF with an unclosed atom (expected '\"').");
         }
 
         // Consume closing quote.
@@ -132,7 +132,7 @@ Result<SExpr, Err> _parseList(InputStream &stream) {
     }
 
     if (stream.peek() != _RPAREN) {
-        return Err("unclosed list");
+        return Err("Reached EOF with an unclosed list (expected ')').");
     }
 
     stream.advance(1);
@@ -150,15 +150,14 @@ Result<SExpr, Err> parse(InputStream &stream) {
         if (_skipNonSignificant(stream)) { }
         else if (c == _LPAREN) { return _parseList(stream); }
         else if (c == _RPAREN) {
-            return Err("unexpected ')'");
+            return Err("Unexpected ')'; does not close a list.");
         } else { return _parseAtom(stream); }
         // The above calls will appropriately advance.
     }
 
-    return Err("no sexpr given");
+    return Err("Expected an s-expression, got nothing.");
 }
 
-/// Parse a stream purported to be a sequence of consecutive s-expressions.
 Result<SExprSeq, Err> parseSeq(InputStream &stream) {
     SExprSeq seq;
     while (!stream.atEof()) {
