@@ -229,6 +229,30 @@ std::set<Node> unreachableNodes(
     return unreachables;
 }
 
+/// Performs the tour. noden is the total number of nodes in the CFG the tree
+/// is constructed from.
+DominatorTree::Tour mkTour(
+    const DominatorTree::Node &root,
+    const unsigned int noden
+) {
+    using Timestamp = DominatorTree::Tour::Timestamp;
+    std::vector<Timestamp> arrival(noden, -1);
+    std::vector<Timestamp> withdrawal(noden, -1);
+
+    // Start at -1, bump to arrive, bump to withdraw, return withdrawal time.
+    std::function<Timestamp(const Node &, Timestamp)> visit =
+    [&arrival, &withdrawal, &visit](const Node &n, Timestamp ts) {
+        ++ts; arrival[n.id] = ts;
+        for (const Node &c : n.children) { ts = visit(c, ts); }
+        ++ts; withdrawal[n.id] = ts;
+        return ts;
+    };
+
+    visit(root, -1);
+
+    return DominatorTree::Tour(arrival, withdrawal);
+}
+
 }  // Anonymous namespace
 
 namespace SVFIR {
@@ -237,11 +261,34 @@ DominatorTree::DominatorTree(const ControlFlowGraph &cfg, const Kind kind)
 :
     kind(kind),
     root(build(cfg, CFGInterpreter(kind))),
-    unreachables(unreachableNodes(cfg, CFGInterpreter(kind)))
+    unreachables(unreachableNodes(cfg, CFGInterpreter(kind))),
+    tour(mkTour(root, cfg.nodes().size()))
 {
     // It'll be checked in helpers, but it's nice to document.
     insist(!cfg.nodes().empty());
     insist(kind != Kind::POSTDOM || cfg.uniqueExit().has_value());
+}
+
+bool DominatorTree::dominates(const NodeIndex x, const NodeIndex y) const {
+    if (
+        std::any_of(
+            unreachables.cbegin(),
+            unreachables.cend(),
+            [&x](const Node &n) { return x == n.id; }
+        )
+    ) { return false; }
+
+    if (
+        std::any_of(
+            unreachables.cbegin(),
+            unreachables.cend(),
+            [&y](const Node &n) { return y == n.id; }
+        )
+    ) { return false; }
+
+    return
+        tour.arrival[x] < tour.arrival[y] &&
+        tour.withdrawal[x] > tour.withdrawal[y];
 }
 
 std::string DominatorTree::toString(void) const {
