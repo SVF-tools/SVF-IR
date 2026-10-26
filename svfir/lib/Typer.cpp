@@ -5,6 +5,7 @@
 #include <variant>
 
 #include "Contracts.h"
+#include "ControlFlowGraph.h"
 #include "Ops.h"
 #include "Err.h"
 #include "Result.h"
@@ -194,6 +195,69 @@ std::optional<Err> checkVarargStmts(const Program &p) {
     return std::nullopt;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkUndeclaredBlocks
+/// DEPS: --
+/// Raise an error if branches are used incorrectly. This comes down to:
+///  * br and brif instructions targeting non-existent branches.
+///  * phi instructions referring to non-existent blocks in operands.
+////////////////////////////////////////////////////////////////////////////////
+
+Err _nonExistentBlock(const Name &name, const Span &span) {
+    return Err("Block '" + name + "' does not exist.", span);
+}
+
+std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
+    std::unordered_set<Name> blocks;
+    for (const BasicBlock &bb : bbs) { blocks.insert(bb.id.name); }
+
+    for (size_t i = 0; i < bbs.size(); ++i) {
+        const BasicBlock &bb = bbs[i];
+        for (const Statement &s : bb.stmts) {
+            if (std::holds_alternative<BrStmt>(s)) {
+                const BrStmt &br = std::get<BrStmt>(s);
+                if (blocks.find(br.target.name) == blocks.cend()) {
+                    return _nonExistentBlock(br.target.name, br.target.span);
+                }
+            } else if (std::holds_alternative<BrifStmt>(s)) {
+                const BrifStmt &brif = std::get<BrifStmt>(s);
+                if (blocks.find(brif.ifTarget.name) == blocks.cend()) {
+                    return _nonExistentBlock(
+                        brif.ifTarget.name, brif.ifTarget.span
+                    );
+                }
+                if (blocks.find(brif.elseTarget.name) == blocks.cend()) {
+                    return _nonExistentBlock(
+                        brif.elseTarget.name, brif.elseTarget.span
+                    );
+                }
+            } else if (std::holds_alternative<PhiStmt>(s)) {
+                const PhiStmt &phi = std::get<PhiStmt>(s);
+                for (const PhiStmt::Operand &op : phi.args) {
+                    const Id &db = op.definingBlock;
+                    if (blocks.find(db.name) == blocks.end()) {
+                        return _nonExistentBlock(db.name, db.span);
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkUndeclaredBlocks(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (fn.body.has_value()) {
+            const std::optional<Err> be =
+                _checkUndeclaredBlocks(fn.body.value());
+            if (be.has_value()) { return be.value(); }
+        }
+    }
+
+    return std::nullopt;
+}
+
 }  // Anonymous namespace
 
 namespace SVFIR {
@@ -249,6 +313,9 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
 
     std::optional<Err> ve = checkVarargStmts(p);
     if (ve.has_value()) { return ve.value(); }
+
+    std::optional<Err> be = checkUndeclaredBlocks(p);
+    if (be.has_value()) { return be.value(); }
 
     return Err("not implemented");
 }
