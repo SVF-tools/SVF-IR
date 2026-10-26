@@ -60,6 +60,9 @@ public:
     /// Return this CFG's only exit node, if it has an only exit node.
     std::optional<NodeIndex> uniqueExit(void) const;
 
+    /// The i-th node, i.e., nodes()[i].
+    const Node &node(const NodeIndex i) const;
+
     const std::vector<Node> &nodes(void) const { return _nodes; }
 
     std::string toString(void) const;

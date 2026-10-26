@@ -87,6 +87,11 @@ ControlFlowGraph::uniqueExit(void) const {
     return exit;
 }
 
+const Node &ControlFlowGraph::node(const NodeIndex i) const {
+    insist(i < nodes().size());
+    return nodes()[i];
+}
+
 std::string ControlFlowGraph::Node::toString(void) const {
     std::string s = toAbbrString() + "\n";
 
