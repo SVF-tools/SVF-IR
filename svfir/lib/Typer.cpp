@@ -22,6 +22,7 @@ using namespace SVFIR;
 ///  * Duplicately named aliases in the (types ...) block.
 ///  * Duplicately named functions and variables (same namespace).
 ///  * Duplicately named local variables within a function, including paramters.
+///  * Duplicately named blocks within a function.
 ////////////////////////////////////////////////////////////////////////////////
 
 std::optional<Err> _checkDuplicateTypeDecs(const std::vector<TypeAlias> &tas) {
@@ -83,6 +84,20 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     return std::nullopt;
 }
 
+std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
+    std::unordered_set<Name> names;
+    if (fn.body.has_value()) {
+        for (const auto &bb : fn.body.value()) {
+            const Name &name = bb.id.name;
+            if (names.find(name) != names.cend()) {
+                return Err("Block '" + name + "' declared twice", span(bb));
+            } else { names.insert(name); }
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<Err> checkDuplicateDecs(const Program &p) {
     const std::optional<Err> ts = _checkDuplicateTypeDecs(p.types);
     if (ts.has_value()) { return ts.value(); }
@@ -96,6 +111,9 @@ std::optional<Err> checkDuplicateDecs(const Program &p) {
     for (const Function &fn : p.functions) {
         const std::optional<Err> ls = _checkDuplicateLocalDecs(fn);
         if (ls.has_value()) { return ls.value(); }
+
+        const std::optional<Err> bs = _checkDuplicateBlockDecs(fn);
+        if (bs.has_value()) { return bs.value(); }
     }
 
     return std::nullopt;
