@@ -309,22 +309,23 @@ struct Program final {
 
 /// <control-inst> (1)/phi
 struct PhiStmt final {
-    struct Operand {
+    struct Arg {
         const Val val;
-        const Id definingBlock;
-        Operand(const Val &val, const Id &definingBlock)
-        : val(val), definingBlock(definingBlock) { }
+        const Id pred;
+        const Span &span;
+        Arg(const Val &val, const Id &pred, const Span span)
+        : val(val), pred(pred), span(span) { }
     };
 
     const Id id;
     // ! Guaranteed non-zero length.
-    const std::vector<Operand> args;
+    const std::vector<Arg> args;
     const MaybeMetadata md;
     const Span span;
 
     PhiStmt(
         const Id &id,
-        const std::vector<Operand> &args,
+        const std::vector<Arg> &args,
         const MaybeMetadata &md,
         const Span &span
     ) : span(span), id(id), args(args), md(md) { }

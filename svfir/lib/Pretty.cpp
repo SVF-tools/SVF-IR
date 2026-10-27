@@ -180,7 +180,7 @@ struct Pretty {
         for (auto o : p.args) {
             if (first) { first = false; }
             else { args += " "; }
-            args += par(pretty(o.val) + " " + pretty(o.definingBlock));
+            args += par(pretty(o.val) + " " + pretty(o.pred));
         }
 
         return par("phi " + pretty(p.id) + " " + args + maybePrettyMd(p.md));

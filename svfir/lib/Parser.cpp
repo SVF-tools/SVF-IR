@@ -711,30 +711,30 @@ Result<Statement, Err> parsePhiStmt(const List &l) {
     if (isErr(lid)) { return getErr(lid); }
 
     ++it;
-    if (!isList(*it)) { return notAList("phi operands", span(*it)); }
-    std::vector<PhiStmt::Operand> operands;
+    if (!isList(*it)) { return notAList("phi arguments", span(*it)); }
+    std::vector<PhiStmt::Arg> args;
     for (auto s : std::get<List>(*it).children) {
-        if (!isList(s)) { return notAList("phi operand", span(l)); }
+        if (!isList(s)) { return notAList("phi argument", span(l)); }
         const List &pair = std::get<List>(s);
+        auto lit = pair.children.cbegin(), lend = pair.children.cend();
 
-        if (pair.children.size() != 2) {
-            return Err(
-                "Phi operands must be value/block ID pairs. This operand has " +
-                std::to_string(pair.children.size()) + " elements.",
-                span(pair)
-            );
+        if (lit == lend) {
+            listCutShort("phi statement argument", "value", span(pair));
         }
-
         const Result<Val, Err> val = parseVal(pair.children[0]);
         if (isErr(val)) { return getErr(val); }
 
+        ++lit;
+        if (lit == lend) {
+            listCutShort("phi statement argument", "block ID", span(pair));
+        }
         const Result<Id, Err> bid = parseBlockId(pair.children[1]);
         if (isErr(bid)) { return getErr(bid); }
 
-        operands.push_back(PhiStmt::Operand(getVal(val), getVal(bid)));
+        args.push_back(PhiStmt::Arg(getVal(val), getVal(bid), span(pair)));
     }
-    if (operands.empty()) {
-        return Err("Phi statements must have at least one operand.", span(l));
+    if (args.empty()) {
+        return Err("Phi statements must have at least one argument.", span(l));
     }
 
     ++it;
@@ -747,7 +747,7 @@ Result<Statement, Err> parsePhiStmt(const List &l) {
         if (it + 1 != end) { return listTooLong("phi statement", span(l)); }
     }
 
-    return Statement(PhiStmt(getVal(lid), operands, md, span(l)));
+    return Statement(PhiStmt(getVal(lid), args, md, span(l)));
 }
 
 /// To be called on (call ...) only.

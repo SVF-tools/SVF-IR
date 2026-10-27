@@ -1,6 +1,7 @@
 #include <unordered_set>
 
 #include "Ast.h"
+#include "Ops.h"
 #include "Span.h"
 #include "Statements.h"
 #include "UnifyReturns.h"
@@ -72,7 +73,7 @@ Function unify(const Function &fn) {
     // Blocks ending in ret will now target urid. urid will be the final block.
     const Id urid = uniqueBlockId(fn, "unified-ret");
     std::vector<BasicBlock> newBlocks;
-    std::vector<PhiStmt::Operand> phiArgs;
+    std::vector<PhiStmt::Arg> phiArgs;
 
     // Modifications to the existing blocks.
     for (const BasicBlock &bb : fn.body.value()) {
@@ -81,7 +82,12 @@ Function unify(const Function &fn) {
             const RetStmt &ret = std::get<RetStmt>(bb.stmts.back());
             // No phi when returning void.
             if (ret.val.has_value()) {
-                phiArgs.push_back(PhiStmt::Operand(ret.val.value(), bb.id));
+                const Span sp = Span(
+                    span(ret.val.value()).start,
+                    span(ret.val.value()).end,
+                    true
+                );
+                phiArgs.push_back(PhiStmt::Arg(ret.val.value(), bb.id, sp));
             }
             // Unconditional jump to the unified return as terminating statement.
             std::vector<Statement> newStmts(bb.stmts);

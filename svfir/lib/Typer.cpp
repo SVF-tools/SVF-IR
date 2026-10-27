@@ -200,7 +200,7 @@ std::optional<Err> checkVarargStmts(const Program &p) {
 /// DEPS: --
 /// Raise an error if branches are used incorrectly. This comes down to:
 ///  * br and brif instructions targeting non-existent branches.
-///  * phi instructions referring to non-existent blocks in operands.
+///  * phi instructions referring to non-existent blocks in args.
 ////////////////////////////////////////////////////////////////////////////////
 
 Err _nonExistentBlock(const Name &name, const Span &span) {
@@ -233,8 +233,8 @@ std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
                 }
             } else if (std::holds_alternative<PhiStmt>(s)) {
                 const PhiStmt &phi = std::get<PhiStmt>(s);
-                for (const PhiStmt::Operand &op : phi.args) {
-                    const Id &db = op.definingBlock;
+                for (const PhiStmt::Arg &arg : phi.args) {
+                    const Id &db = arg.pred;
                     if (blocks.find(db.name) == blocks.end()) {
                         return _nonExistentBlock(db.name, db.span);
                     }
