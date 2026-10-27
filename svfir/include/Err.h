@@ -32,12 +32,6 @@ const T &getVal(const Result<T, Err> &res) {
     return get<T>(res);
 }
 
-template <typename T>
-const Err &getErr(const Result<T, Err> &res) {
-    insist(is<Err>(res));
-    return get<Err>(res);
-}
-
 }  // namespace SVFIR
 
 #endif // ERR_H
