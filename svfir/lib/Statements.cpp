@@ -10,8 +10,6 @@ namespace {
 
 namespace SVFIR {
 
-bool isRet(const Statement &s) { return is<RetStmt>(s); }
-
 std::optional<Id> introducedVar(const Statement &s) {
     std::optional<Id> id = std::nullopt;
     if (is<PhiStmt>(s)) {

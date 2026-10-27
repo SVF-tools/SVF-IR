@@ -18,7 +18,7 @@ unsigned int countReturns(const Function &fn) {
     if (fn.isOpaque()) { return 0; }
     unsigned int rets = 0;
     for (const BasicBlock &bb : fn.body.value()) {
-        if (isRet(bb.stmts.back())) { ++rets; }
+        if (is<RetStmt>(bb.stmts.back())) { ++rets; }
     }
     return rets;
 }
@@ -78,7 +78,7 @@ Function unify(const Function &fn) {
 
     // Modifications to the existing blocks.
     for (const BasicBlock &bb : fn.body.value()) {
-        if (!isRet(bb.stmts.back())) { newBlocks.push_back(bb); }
+        if (!is<RetStmt>(bb.stmts.back())) { newBlocks.push_back(bb); }
         else {
             const RetStmt &ret = get<RetStmt>(bb.stmts.back());
             // No phi when returning void.

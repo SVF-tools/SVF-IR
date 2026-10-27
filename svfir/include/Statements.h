@@ -7,8 +7,6 @@
 
 namespace SVFIR {
 
-bool isRet(const Statement &s);
-
 /// Returns the variable, if any, introduced by a statement. For example,
 /// (add %x %y (i32 2)) introduces %x.
 std::optional<Id> introducedVar(const Statement &);
