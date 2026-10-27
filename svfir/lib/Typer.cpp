@@ -258,6 +258,84 @@ std::optional<Err> checkUndeclaredBlocks(const Program &p) {
     return std::nullopt;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkPhiStmtArgs
+/// DEPS: checkUndeclaredBlocks
+/// Raise an error if a phi statement is ill-formed. This comes down to having
+/// an argument for each predecessor block of the block the phi statement is in.
+////////////////////////////////////////////////////////////////////////////////
+
+using NodeIndex = ControlFlowGraph::NodeIndex;
+std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
+    const ControlFlowGraph cfg = ControlFlowGraph(bbs);
+    for (ControlFlowGraph::NodeIndex i = 0; i < bbs.size(); ++i) {
+        const BasicBlock &bb = bbs[i];
+        for (const Statement &s : bb.stmts) {
+            if (std::holds_alternative<PhiStmt>(s)) {
+                const PhiStmt &phi = std::get<PhiStmt>(s);
+
+                // We will go through the actual args, erasing the defining
+                // block from the set of real predecessors. We have an error if
+                //  1) we try to erase something not in the set (we'll keep
+                //     track of what has been deleted to detect duplicate
+                //     args too), or
+                //  2) after all is said and done, we haven't erased everything.
+                // We could just compare sorted vectors of real vs. phi
+                // predecessors but good errors would be hard.
+                std::unordered_set<Name> preds;
+                for (const NodeIndex pi : cfg.node(i).inEdges) {
+                    preds.insert(bbs[pi].id.name);
+                }
+
+                std::unordered_set<Name> seen;
+                for (const PhiStmt::Arg &arg : phi.args) {
+                    const Name &argName = arg.pred.name;
+                    if (seen.find(argName) != seen.cend()) {
+                        return Err(
+                            "Duplicate argument for predecessor block '" +
+                            argName + "' in phi statement",
+                            arg.span
+                        );
+                    } else { seen.insert(argName); }
+                    if (!preds.erase(argName)) {
+                        return Err(
+                            "Phi argument block '" + argName + "' is not a "
+                            "predecessor block",
+                            arg.span
+                        );
+                    }
+                }
+                if (!preds.empty()) {
+                    std::string uncovered;
+                    for (const Name &pred : preds) {
+                        if (!uncovered.empty()) { uncovered += ", "; }
+                        uncovered += "'" + pred + "'";
+                    }
+                    return Err(
+                        "Phi statement arguments are not comprehensive. There "
+                        "is no corresponding argument for predecessor block" +
+                        (preds.size() == 1 ? " " + uncovered : "s " + uncovered),
+                        phi.span
+                    );
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkPhiStmtArgs(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            const std::optional<Err> pe = _checkPhiStmtArgs(fn.body.value());
+            if (pe.has_value()) { return pe.value(); }
+        }
+    }
+
+    return std::nullopt;
+}
+
 }  // Anonymous namespace
 
 namespace SVFIR {
@@ -316,6 +394,9 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
 
     std::optional<Err> be = checkUndeclaredBlocks(p);
     if (be.has_value()) { return be.value(); }
+
+    std::optional<Err> pe = checkPhiStmtArgs(p);
+    if (pe.has_value()) { return pe.value(); }
 
     return Err("not implemented");
 }
