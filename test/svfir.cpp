@@ -2,6 +2,10 @@
 #include "Parser.h"
 #include "Ops.h"
 #include "Result.h"
+#include "Variant.h"
+
+#include "ControlFlowGraph.h"
+#include "Dominator.h"
 
 #include "test.h"
 
@@ -16,7 +20,7 @@ bool roundtrip(void) {
         "(variables)\n"
         "(functions)";
     const Result<Program, Err> res1 = parseString(program1);
-    TEST(!isErr(res1));
+    TEST(!is<Err>(res1));
     TEST(pretty(getVal(res1)) == program1);
 
     const std::string program2 =
@@ -105,7 +109,7 @@ bool roundtrip(void) {
         "    (!34 (\n"
         "      (ret void))))))";
     const Result<Program, Err> res2 = parseString(program2);
-    TEST(!isErr(res2));
+    TEST(!is<Err>(res2));
     TEST(pretty(getVal(res2)) == program2);
 
     const std::string program3 =

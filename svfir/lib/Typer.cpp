@@ -11,6 +11,7 @@
 #include "Result.h"
 #include "Statements.h"
 #include "TypedProgram.h"
+#include "Variant.h"
 
 namespace {
 
@@ -177,7 +178,7 @@ std::optional<Err> checkVarargStmts(const Program &p) {
         if (fn.vararg && fn.body.has_value()) {
             for (const auto &bb : fn.body.value()) {
                 for (const auto &s : bb.stmts) {
-                    if (std::holds_alternative<VarargStmt>(s)) {
+                    if (is<VarargStmt>(s)) {
                         return Err(
                             "vararg statement '" +
                             pretty(s) +
@@ -214,13 +215,13 @@ std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
     for (size_t i = 0; i < bbs.size(); ++i) {
         const BasicBlock &bb = bbs[i];
         for (const Statement &s : bb.stmts) {
-            if (std::holds_alternative<BrStmt>(s)) {
-                const BrStmt &br = std::get<BrStmt>(s);
+            if (is<BrStmt>(s)) {
+                const BrStmt &br = get<BrStmt>(s);
                 if (blocks.find(br.target.name) == blocks.cend()) {
                     return _nonExistentBlock(br.target.name, br.target.span);
                 }
-            } else if (std::holds_alternative<BrifStmt>(s)) {
-                const BrifStmt &brif = std::get<BrifStmt>(s);
+            } else if (is<BrifStmt>(s)) {
+                const BrifStmt &brif = get<BrifStmt>(s);
                 if (blocks.find(brif.ifTarget.name) == blocks.cend()) {
                     return _nonExistentBlock(
                         brif.ifTarget.name, brif.ifTarget.span
@@ -231,8 +232,8 @@ std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
                         brif.elseTarget.name, brif.elseTarget.span
                     );
                 }
-            } else if (std::holds_alternative<PhiStmt>(s)) {
-                const PhiStmt &phi = std::get<PhiStmt>(s);
+            } else if (is<PhiStmt>(s)) {
+                const PhiStmt &phi = get<PhiStmt>(s);
                 for (const PhiStmt::Arg &arg : phi.args) {
                     const Id &db = arg.pred;
                     if (blocks.find(db.name) == blocks.end()) {
@@ -271,8 +272,8 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
     for (ControlFlowGraph::NodeIndex i = 0; i < bbs.size(); ++i) {
         const BasicBlock &bb = bbs[i];
         for (const Statement &s : bb.stmts) {
-            if (std::holds_alternative<PhiStmt>(s)) {
-                const PhiStmt &phi = std::get<PhiStmt>(s);
+            if (is<PhiStmt>(s)) {
+                const PhiStmt &phi = get<PhiStmt>(s);
 
                 // We will go through the actual args, erasing the defining
                 // block from the set of real predecessors. We have an error if
@@ -340,27 +341,27 @@ std::optional<Err> checkPhiStmtArgs(const Program &p) {
 
 namespace SVFIR {
 
-bool isVoidType(const Type &t) { return std::holds_alternative<VoidType>(t); }
-bool isPtrType(const Type &t) { return std::holds_alternative<PtrType>(t); }
-bool isIntType(const Type &t) { return std::holds_alternative<IntType>(t); }
-bool isFloatType(const Type &t) { return std::holds_alternative<FloatType>(t); }
-bool isAggType(const Type &t) { return std::holds_alternative<AggType>(t); }
-bool isTypeId(const Type &t) { return std::holds_alternative<TypeId>(t); }
+bool isVoidType(const Type &t) { return is<VoidType>(t); }
+bool isPtrType(const Type &t) { return is<PtrType>(t); }
+bool isIntType(const Type &t) { return is<IntType>(t); }
+bool isFloatType(const Type &t) { return is<FloatType>(t); }
+bool isAggType(const Type &t) { return is<AggType>(t); }
+bool isTypeId(const Type &t) { return is<TypeId>(t); }
 bool isOpaqueType(const Type &t) {
-    return std::holds_alternative<OpaqueType>(t);
+    return is<OpaqueType>(t);
 }
 
 bool operator==(const Type &x, const Type &y) {
     if (isVoidType(x) && isVoidType(y)) { return true; }
     else if (isPtrType(x) && isPtrType(y)) { return true; }
     else if (isFloatType(x) && isFloatType(y)) {
-        return std::get<FloatType>(x).kind == std::get<FloatType>(y).kind;
+        return get<FloatType>(x).kind == get<FloatType>(y).kind;
     } else if (isIntType(x) && isIntType(y)) {
-        return std::get<IntType>(x).kind == std::get<IntType>(y).kind;
+        return get<IntType>(x).kind == get<IntType>(y).kind;
     } else if (isAggType(x) && isAggType(y)) {
-        return std::get<AggType>(x).slots == std::get<AggType>(y).slots;
+        return get<AggType>(x).slots == get<AggType>(y).slots;
     } else if (isTypeId(x) && isTypeId(y)) {
-        return std::get<TypeId>(x).name == std::get<TypeId>(y).name;
+        return get<TypeId>(x).name == get<TypeId>(y).name;
     } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
     else if (isVarargType(x) && isVarargType(y)) { return true; }
     else {
@@ -376,9 +377,9 @@ bool operator!=(const Type &x, const Type &y) {
 
 bool isTerminatingStmt(const Statement &stmt) {
     return (
-        std::holds_alternative<BrStmt>(stmt) ||
-        std::holds_alternative<BrifStmt>(stmt) ||
-        std::holds_alternative<RetStmt>(stmt)
+        is<BrStmt>(stmt) ||
+        is<BrifStmt>(stmt) ||
+        is<RetStmt>(stmt)
     );
 }
 

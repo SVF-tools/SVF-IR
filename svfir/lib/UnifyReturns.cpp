@@ -6,6 +6,7 @@
 #include "Statements.h"
 #include "UnifyReturns.h"
 #include "TypedProgram.h"
+#include "Variant.h"
 
 namespace {
 
@@ -79,7 +80,7 @@ Function unify(const Function &fn) {
     for (const BasicBlock &bb : fn.body.value()) {
         if (!isRet(bb.stmts.back())) { newBlocks.push_back(bb); }
         else {
-            const RetStmt &ret = std::get<RetStmt>(bb.stmts.back());
+            const RetStmt &ret = get<RetStmt>(bb.stmts.back());
             // No phi when returning void.
             if (ret.val.has_value()) {
                 const Span sp = Span(

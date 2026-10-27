@@ -2,9 +2,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Contracts.h"
 #include "Ast.h"
+#include "Contracts.h"
 #include "ControlFlowGraph.h"
+#include "Variant.h"
 
 namespace {
 
@@ -18,14 +19,14 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
     insist(!bb.stmts.empty());
     std::vector<Id> targets;
     const Statement &lastStmt = bb.stmts[bb.stmts.size() - 1];
-    if (std::holds_alternative<BrStmt>(lastStmt)) {
-        targets.push_back(std::get<BrStmt>(lastStmt).target);
-    } else if (std::holds_alternative<BrifStmt>(lastStmt)) {
-        const BrifStmt brif = std::get<BrifStmt>(lastStmt);
+    if (is<BrStmt>(lastStmt)) {
+        targets.push_back(get<BrStmt>(lastStmt).target);
+    } else if (is<BrifStmt>(lastStmt)) {
+        const BrifStmt brif = get<BrifStmt>(lastStmt);
         targets.push_back(brif.ifTarget);
         targets.push_back(brif.elseTarget);
     } else {
-        insist(std::holds_alternative<RetStmt>(lastStmt));
+        insist(is<RetStmt>(lastStmt));
         // Does not target another block in the function.
     }
 

@@ -3,6 +3,7 @@
 #include "InputStream.h"
 #include "Result.h"
 #include "SExprs.h"
+#include "Variant.h"
 
 namespace {
 
@@ -125,7 +126,7 @@ Result<SExpr, Err> _parseList(InputStream &stream) {
         if (_skipNonSignificant(stream)) { }
         else {
             const Result<SExpr, Err> &res = SVFIR::SExprs::parse(stream);
-            if (isErr(res)) { return getErr(res); }
+            if (is<Err>(res)) { return get<Err>(res); }
             children.push_back(getVal(res));
         }
         c = stream.peek();
@@ -164,7 +165,7 @@ Result<SExprSeq, Err> parseSeq(InputStream &stream) {
         if (_skipNonSignificant(stream)) { }
         else {
             const Result<SExpr, Err> &res = parse(stream);
-            if (isErr(res)) { return getErr(res); }
+            if (is<Err>(res)) { return get<Err>(res); }
             seq.push_back(getVal(res));
         }
     }
@@ -172,32 +173,24 @@ Result<SExprSeq, Err> parseSeq(InputStream &stream) {
     return seq;
 }
 
-bool isAtom(const SExpr &sexpr) {
-    return std::holds_alternative<Atom>(sexpr);
-}
-
-bool isList(const SExpr &sexpr) {
-    return std::holds_alternative<List>(sexpr);
-}
-
 bool atomEq(const SExpr &s, const std::string &x) {
-    return isAtom(s) && std::get<Atom>(s).val == x;
+    return is<Atom>(s) && get<Atom>(s).val == x;
 }
 
 Span span(const SExpr &sexpr) {
-    if (isList(sexpr)) {
-        return std::get<List>(sexpr).span;
+    if (is<List>(sexpr)) {
+        return get<List>(sexpr).span;
     } else {
-        insist(isAtom(sexpr));
-        return std::get<Atom>(sexpr).span;
+        insist(is<Atom>(sexpr));
+        return get<Atom>(sexpr).span;
     }
 }
 
 std::string toString(const SExpr &sexpr) {
     std::string out;
 
-    if (isAtom(sexpr)) {
-        const Atom &atom = std::get<Atom>(sexpr);
+    if (is<Atom>(sexpr)) {
+        const Atom &atom = get<Atom>(sexpr);
         if (atom.val.find(_QUOTE) != std::string::npos) {
             out.reserve(out.size() + atom.val.size() + 2);
             out.push_back(_QUOTE);
@@ -211,8 +204,8 @@ std::string toString(const SExpr &sexpr) {
             out.append(atom.val);
         }
     } else {
-        insist(isList(sexpr));
-        const List &list = std::get<List>(sexpr);
+        insist(is<List>(sexpr));
+        const List &list = get<List>(sexpr);
         out.push_back(_LPAREN);
         for (size_t i = 0; i < list.children.size(); ++i) {
             if (i != 0) { out.append(" "); }

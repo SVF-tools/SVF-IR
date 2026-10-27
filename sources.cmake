@@ -14,6 +14,7 @@ set(SVFIR_HEADERS
   svfir/include/Statements.h
   svfir/include/TypedProgram.h
   svfir/include/UnifyReturns.h
+  svfir/include/Variant.h
   svfir/include/Version.h
 )
 

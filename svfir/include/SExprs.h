@@ -54,12 +54,6 @@ Result<SExpr, Err> parse(InputStream &);
 /// nothing.
 Result<SExprSeq, Err> parseSeq(InputStream &);
 
-/// Shortcut to std::holds_alternative<Atom>(...).
-bool isAtom(const SExpr &);
-
-/// Shortcut to std::holds_alternative<List>(...).
-bool isList(const SExpr &);
-
 /// Returns true when s is an atom and s's value equals x.
 bool atomEq(const SExpr &s, const std::string &x);
 

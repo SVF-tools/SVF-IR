@@ -8,6 +8,7 @@
 #include "Contracts.h"
 #include "Result.h"
 #include "Span.h"
+#include "Variant.h"
 
 namespace SVFIR {
 
@@ -26,20 +27,15 @@ struct Err {
 // Special case of Result with an error.
 
 template <typename T>
-bool isErr(const Result<T, Err> &res) {
-    return std::holds_alternative<Err>(res);
-}
-
-template <typename T>
 const T &getVal(const Result<T, Err> &res) {
-    insist(std::holds_alternative<T>(res));
-    return std::get<T>(res);
+    insist(is<T>(res));
+    return get<T>(res);
 }
 
 template <typename T>
 const Err &getErr(const Result<T, Err> &res) {
-    insist(isErr(res));
-    return std::get<Err>(res);
+    insist(is<Err>(res));
+    return get<Err>(res);
 }
 
 }  // namespace SVFIR
