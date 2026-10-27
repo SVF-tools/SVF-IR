@@ -17,6 +17,10 @@ std::optional<Id> introducedVar(const Statement &);
 /// not considered used. For example, (add %x %y (i32 2)) uses %y.
 std::vector<Id> usedVars(const Statement &);
 
+/// Return the blocks referred to by a statement, if any. For example,
+/// (phi %foo ((%x !1) (%y !x))) uses !1 and !x.
+std::vector<Id> usedBlocks(const Statement &);
+
 }  // namespace SVFIR
 
 #endif // STATEMENTS_H

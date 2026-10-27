@@ -111,4 +111,31 @@ std::vector<Id> usedVars(const Statement &s) {
     return ids;
 }
 
+std::vector<Id> usedBlocks(const Statement &s) {
+    std::vector<Id> blocks;
+
+    if (is<BrStmt>(s)) {
+        const BrStmt &br = get<BrStmt>(s);
+        blocks.push_back(br.target);
+    } else if (is<BrifStmt>(s)) {
+        const BrifStmt &brif = get<BrifStmt>(s);
+        blocks.push_back(brif.ifTarget);
+        blocks.push_back(brif.elseTarget);
+    } else if (is<PhiStmt>(s)) {
+        const PhiStmt &phi = get<PhiStmt>(s);
+        for (const PhiStmt::Arg &arg : phi.args) { blocks.push_back(arg.pred); }
+    } else {
+        // No blocks referred to.
+        insist(
+            is<CallStmt>(s) || is<RetStmt>(s) || is<AllocStmt>(s) ||
+            is<StoreStmt>(s) || is<LoadStmt>(s) || is<FieldStmt>(s) ||
+            is<BitCastStmt>(s) || is<ConvertStmt>(s) || is<BinaryOpStmt>(s) ||
+            is<UnaryOpStmt>(s) || is<AssignStmt>(s) || is<VarargStmt>(s) ||
+            is<BlackholeStmt>(s)
+        );
+    }
+
+    return blocks;
+}
+
 }  // namespace SVFIR

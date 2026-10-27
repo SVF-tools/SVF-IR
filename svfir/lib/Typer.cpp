@@ -215,30 +215,9 @@ std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
     for (size_t i = 0; i < bbs.size(); ++i) {
         const BasicBlock &bb = bbs[i];
         for (const Statement &s : bb.stmts) {
-            if (is<BrStmt>(s)) {
-                const BrStmt &br = get<BrStmt>(s);
-                if (blocks.find(br.target.name) == blocks.cend()) {
-                    return _nonExistentBlock(br.target.name, br.target.span);
-                }
-            } else if (is<BrifStmt>(s)) {
-                const BrifStmt &brif = get<BrifStmt>(s);
-                if (blocks.find(brif.ifTarget.name) == blocks.cend()) {
-                    return _nonExistentBlock(
-                        brif.ifTarget.name, brif.ifTarget.span
-                    );
-                }
-                if (blocks.find(brif.elseTarget.name) == blocks.cend()) {
-                    return _nonExistentBlock(
-                        brif.elseTarget.name, brif.elseTarget.span
-                    );
-                }
-            } else if (is<PhiStmt>(s)) {
-                const PhiStmt &phi = get<PhiStmt>(s);
-                for (const PhiStmt::Arg &arg : phi.args) {
-                    const Id &db = arg.pred;
-                    if (blocks.find(db.name) == blocks.end()) {
-                        return _nonExistentBlock(db.name, db.span);
-                    }
+            for (const Id &blk : usedBlocks(s)) {
+                if (blocks.find(blk.name) == blocks.cend()) {
+                    return _nonExistentBlock(blk.name, blk.span);
                 }
             }
         }
