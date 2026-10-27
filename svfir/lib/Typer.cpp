@@ -69,7 +69,7 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     if (fn.body.has_value()) {
         for (const auto &bb : fn.body.value()) {
             for (const auto &s : bb.stmts) {
-                const std::optional<Id> id = introducedId(s);
+                const std::optional<Id> id = introducedVar(s);
                 if (id.has_value()) {
                     const Name name = id.value().name;
                     if (names.insert(name).second) {

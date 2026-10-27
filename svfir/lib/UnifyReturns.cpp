@@ -48,7 +48,7 @@ Id uniqueLocalId(const Function &fn, const std::string prefix) {
     if (!fn.isOpaque()) {
         for (const BasicBlock &bb : fn.body.value()) {
             for (const Statement &s : bb.stmts) {
-                const std::optional<Id> id = introducedId(s);
+                const std::optional<Id> id = introducedVar(s);
                 if (id.has_value()) { names.insert(id.value().name); }
             }
         }

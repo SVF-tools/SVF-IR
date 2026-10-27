@@ -11,7 +11,7 @@ namespace SVFIR {
 
 bool isRet(const Statement &s) { return std::holds_alternative<RetStmt>(s); }
 
-std::optional<Id> introducedId(const Statement &s) {
+std::optional<Id> introducedVar(const Statement &s) {
     std::optional<Id> id = std::nullopt;
     if (std::holds_alternative<PhiStmt>(s)) {
         id.emplace(std::get<PhiStmt>(s).id);

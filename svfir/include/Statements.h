@@ -11,7 +11,7 @@ bool isRet(const Statement &s);
 
 /// Returns the ID, if any, introduced by a statement. For example,
 /// (add %x %y (i32 2)) introduces %x.
-std::optional<Id> introducedId(const Statement &);
+std::optional<Id> introducedVar(const Statement &);
 
 }  // namespace SVFIR
 
