@@ -19,8 +19,6 @@ std::optional<Id> introducedVar(const Statement &s) {
     } else if (is<CallStmt>(s)) {
         const CallStmt c = get<CallStmt>(s);
         if (c.id.has_value()) { id.emplace(c.id.value()); }
-    } else if (is<CmpStmt>(s)) {
-        id.emplace(get<CmpStmt>(s).id);
     } else if (is<AllocStmt>(s)) {
         id.emplace(get<AllocStmt>(s).id);
     } else if (is<LoadStmt>(s)) {
@@ -75,10 +73,6 @@ std::vector<Id> usedVars(const Statement &s) {
     } else if (is<BrifStmt>(s)) {
         const BrifStmt &brif = get<BrifStmt>(s);
         if (is<Id>(brif.cond)) { ids.push_back(get<Id>(brif.cond)); }
-    } else if (is<CmpStmt>(s)) {
-        const CmpStmt &cmp = get<CmpStmt>(s);
-        if (is<Id>(cmp.left)) { ids.push_back(get<Id>(cmp.left)); }
-        if (is<Id>(cmp.right)) { ids.push_back(get<Id>(cmp.right)); }
     } else if (is<LoadStmt>(s)) {
         const LoadStmt &load = get<LoadStmt>(s);
         if (is<Id>(load.src)) { ids.push_back(get<Id>(load.src)); }

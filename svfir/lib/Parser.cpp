@@ -914,15 +914,15 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
     insist(it != end && atomEq(*it, "cmp"));
 
     ++it;
-    CmpStmt::Operator op;
+    BinaryOpStmt::Op op;
     if (!is<Atom>(*it)) { return notAnAtom("comparison operator", span(*it)); }
     const std::string &kw = get<Atom>(*it).val;
-    if (kw == "<") { op = CmpStmt::Operator::LT; }
-    else if (kw == "<=") { op = CmpStmt::Operator::LE; }
-    else if (kw == ">") { op = CmpStmt::Operator::GT; }
-    else if (kw == ">=") { op = CmpStmt::Operator::GE; }
-    else if (kw == "=") { op = CmpStmt::Operator::EQ; }
-    else if (kw == "!=") { op = CmpStmt::Operator::NEQ; }
+    if (kw == "<") { op = BinaryOpStmt::Op::LT; }
+    else if (kw == "<=") { op = BinaryOpStmt::Op::LE; }
+    else if (kw == ">") { op = BinaryOpStmt::Op::GT; }
+    else if (kw == ">=") { op = BinaryOpStmt::Op::GE; }
+    else if (kw == "=") { op = BinaryOpStmt::Op::EQ; }
+    else if (kw == "!=") { op = BinaryOpStmt::Op::NEQ; }
     else {
         return badKw(
             "comparison statement (operator)",
@@ -960,7 +960,7 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
     }
 
     return Statement(
-        CmpStmt(getVal(lid), op, getVal(left), getVal(right), md, span(l))
+        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
     );
 }
 

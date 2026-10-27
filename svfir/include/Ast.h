@@ -395,27 +395,6 @@ struct RetStmt final {
     ) : span(span), val(val), md(md) { }
 };
 
-/// <cmp-inst> with <cmp-op> through op.
-struct CmpStmt final {
-    enum class Operator { LT, LE, GT, GE, EQ, NEQ };
-
-    const Id id;
-    const Operator op;
-    const Val left;
-    const Val right;
-    const MaybeMetadata md;
-    const Span span;
-
-    CmpStmt(
-        const Id &id,
-        const Operator &op,
-        const Val &left,
-        const Val &right,
-        const MaybeMetadata &md,
-        const Span &span
-    ) : span(span), id(id), op(op), left(left), right(right), md(md) { }
-};
-
 /// <mem-inst> (1)
 struct AllocStmt final {
     enum class Kind { HEAP, STACK };
@@ -518,11 +497,13 @@ struct ConvertStmt final {
     ) : span(span), id(id), val(val), type(type), md(md) { }
 };
 
-/// <arith-inst>/<bit-stmt>
+/// <arith-inst>/<bit-stmt>/<cmp-inst>, <cmp-op> through op.
+/// <cmp-inst> with <cmp-op> through op.
 struct BinaryOpStmt final {
     enum class Op {
         ADD, SUB, MUL, UDIV, SDIV, UREM, SREM,
-        AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR
+        AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR,
+        LT, LE, GT, GE, EQ, NEQ
     };
 
     const Op op;
@@ -610,7 +591,6 @@ struct BlackholeStmt final {
 /// <instruction>
 using Statement = std::variant<
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt,
-    CmpStmt,
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
     BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt,
@@ -645,7 +625,7 @@ using AnyNode = std::variant<
     IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedId, TypedConstant,
     Preamble, Variable, Param, Function, TypeAlias, Program,
-    PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, CmpStmt, AllocStmt, StoreStmt,
+    PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,
     DecType, Constant, Val, PVal, IVal, Statement

@@ -221,26 +221,6 @@ struct Pretty {
         return par("ret " + val + maybeMd);
     }
 
-    std::string operator()(const CmpStmt &cmp) {
-        std::string op;
-        if (cmp.op == CmpStmt::Operator::LT) { op = "<"; }
-        else if (cmp.op == CmpStmt::Operator::LE) { op = "<="; }
-        else if (cmp.op == CmpStmt::Operator::GT) { op = ">"; }
-        else if (cmp.op == CmpStmt::Operator::GE) { op = ">="; }
-        else if (cmp.op == CmpStmt::Operator::EQ) { op = "="; }
-        else if (cmp.op == CmpStmt::Operator::NEQ) { op = "!="; }
-        else { unreachable(); }
-
-        return par(
-            "cmp " +
-            op + " " +
-            pretty(cmp.id) + " " +
-            pretty(cmp.left) + " " +
-            pretty(cmp.right) +
-            maybePrettyMd(cmp.md)
-        );
-    }
-
     std::string operator()(const AllocStmt &a) {
         std::string kind;
         if (a.kind == AllocStmt::Kind::HEAP) { kind = "heap"; }
@@ -317,6 +297,12 @@ struct Pretty {
         case BinaryOpStmt::Op::SHIFTL: kind = "shiftl"; break;
         case BinaryOpStmt::Op::ASHIFTR: kind = "shiftr arithmetic"; break;
         case BinaryOpStmt::Op::LSHIFTR: kind = "shiftr logical"; break;
+        case BinaryOpStmt::Op::LT: kind = "cmp <"; break;
+        case BinaryOpStmt::Op::LE: kind = "cmp <="; break;
+        case BinaryOpStmt::Op::GT: kind = "cmp >"; break;
+        case BinaryOpStmt::Op::GE: kind = "cmp >="; break;
+        case BinaryOpStmt::Op::EQ: kind = "cmp ="; break;
+        case BinaryOpStmt::Op::NEQ: kind = "cmp !="; break;
         default: unreachable();
         }
 
