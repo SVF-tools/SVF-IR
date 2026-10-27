@@ -43,7 +43,9 @@ std::optional<Id> introducedVar(const Statement &s) {
         id.emplace(get<BlackholeStmt>(s).tid.id);
     } else {
         // Nothing introduced.
-        insist(is<RetStmt>(s) || is<BrStmt>(s) || is<BrifStmt>(s));
+        insist(
+            is<StoreStmt> || is<RetStmt>(s) || is<BrStmt>(s) || is<BrifStmt>(s)
+        );
     }
 
     return id;
