@@ -270,21 +270,9 @@ DominatorTree::DominatorTree(const ControlFlowGraph &cfg, const Kind kind)
 }
 
 bool DominatorTree::dominates(const NodeIndex x, const NodeIndex y) const {
-    if (
-        std::any_of(
-            unreachables.cbegin(),
-            unreachables.cend(),
-            [&x](const Node &n) { return x == n.id; }
-        )
-    ) { return false; }
-
-    if (
-        std::any_of(
-            unreachables.cbegin(),
-            unreachables.cend(),
-            [&y](const Node &n) { return y == n.id; }
-        )
-    ) { return false; }
+    for (const Node &u : unreachables) {
+        if (u.id == x || u.id == y) { return false; }
+    }
 
     return
         tour.arrival[x] < tour.arrival[y] &&
