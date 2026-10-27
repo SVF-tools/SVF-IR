@@ -21,6 +21,7 @@ The syntax of the textual format is defined in `doc/grammar.txt`.
 ## TODO
 
 * Tests.
-* Describe build.
-* Explanation of SVF-IR.
-* Validation.
+* Document build.
+* Spec (prose, to go alongside grammar).
+* Validation, typing.
+* Organise interface (Ops.h, unideal).
