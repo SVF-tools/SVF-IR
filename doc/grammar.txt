@@ -16,6 +16,7 @@
 
 <agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
 
+; See commit a6f7e2f4e8d5a0019a215189da5ae47245bb2d70 for type aliases.
 <type> : <scalar-type> | <agg-type>
 
 <int-const> : '-'?<digit>+

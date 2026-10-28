@@ -45,7 +45,7 @@ bool isAggType(const Type &t);
 bool operator==(const Type &, const Type &);
 bool operator!=(const Type &, const Type &);
 
-/// Function signature made up of shallow types.
+/// Function signature made up of types.
 struct FnSig {
     const std::vector<Type> paramTypes;
     const Type retType;
@@ -63,12 +63,12 @@ struct FnSig {
 
 /// Types for names.
 class SymbolTable {
-    /// Function IDs to their signature (shallow types).
+    /// Function IDs to their signature (types).
     std::unordered_map<Id, FnSig> fnSigs;
-    /// Global variable IDs to their shallow type underneath the pointer.
+    /// Global variable IDs to their type underneath the pointer.
     std::unordered_map<Id, Type> varTypes;
     /// Function IDs to a map of said function's local variable IDs to their
-    /// shallow type.
+    /// type.
     std::unordered_map<Id, std::unordered_map<Id, Type>> fnTables;
 };
 
