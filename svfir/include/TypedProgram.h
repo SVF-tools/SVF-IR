@@ -73,12 +73,11 @@ class SymbolTable {
 };
 
 class TypedProgram {
-    const Program _program;
+public:
+    const Program program;
 
 public:
-    TypedProgram(const Program _program) : _program(_program) { }
-
-    const Program &program(void) const { return _program; }
+    TypedProgram(const Program program) : program(program) { }
 };
 
 }  // namespace SVFIR

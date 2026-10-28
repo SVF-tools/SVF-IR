@@ -126,7 +126,7 @@ Function unify(const Function &fn) {
 namespace SVFIR {
 
 Program unifyReturns(const TypedProgram &tp) {
-    const Program &p = tp.program();
+    const Program &p = tp.program;
     std::vector<Function> unifiedFunctions;
     for (const Function &fn : p.functions) {
         if (fn.isOpaque()) { unifiedFunctions.push_back(fn); }
