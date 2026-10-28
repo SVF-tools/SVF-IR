@@ -25,8 +25,7 @@ static const size_t NO_DOM = size_t(-1);
 /// construction algorithm or preparation/modification of the CFG beforehand.
 struct CFGInterpreter {
     using Kind = DominatorTree::Kind;
-    using CFGN = ControlFlowGraph::Node;
-    using DTN = DominatorTree::Node;
+    using CFGNode = ControlFlowGraph::Node;
 
     CFGInterpreter(const Kind kind)
     :
@@ -36,17 +35,17 @@ struct CFGInterpreter {
     { insist(kind == Kind::DOM || kind == Kind::POSTDOM); }
 
     /// "Incoming" edges of a node.
-    std::function<const std::vector<Index> &(const CFGN &)> inEdges;
+    std::function<const std::vector<Index> &(const CFGNode &)> inEdges;
     /// "Outgoing" edges of a node.
-    std::function<const std::vector<Index> &(const CFGN &)> outEdges;
+    std::function<const std::vector<Index> &(const CFGNode &)> outEdges;
     /// Entry node to the CFG.
     const std::function<Index(const ControlFlowGraph &)> entry;
 
 private:
-    static const std::vector<Index> &actualInEdges(const CFGN &n) {
+    static const std::vector<Index> &actualInEdges(const CFGNode &n) {
         return n.inEdges;
     }
-    static const std::vector<Index> &actualOutEdges(const CFGN &n) {
+    static const std::vector<Index> &actualOutEdges(const CFGNode &n) {
         return n.outEdges;
     }
 
