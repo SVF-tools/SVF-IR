@@ -549,13 +549,13 @@ struct VarargStmt final {
 struct BlackholeStmt final {
     // To be impure is to be effectful.
     const bool pure;
-    const TypedId tid;
+    const std::optional<TypedId> tid;
     const MaybeMetadata md;
     const Span span;
 
     BlackholeStmt(
         const bool &pure,
-        const TypedId &tid,
+        const std::optional<TypedId> &tid,
         const MaybeMetadata &md,
         const Span &span
     ) : span(span), pure(pure), tid(tid), md(md) { }

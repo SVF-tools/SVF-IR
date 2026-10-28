@@ -1560,10 +1560,23 @@ Result<Statement, Err> parseBlackholeStmt(const List &l) {
 
     ++it;
     if (it == end) {
-        return listCutShort("blackhole statement", "(typed) ID", span(l));
+        return listCutShort(
+            "blackhole statement", "(typed) ID/'void'", span(l)
+        );
     }
-    const Result<TypedId, Err> tlid = parseTypedId(*it);
-    if (is<Err>(tlid)) { return get<Err>(tlid); }
+    std::optional<TypedId> tlid;
+    if (atomEq(*it, "void")) { tlid = std::nullopt; }
+    else {
+        const Result<TypedId, Err> tlidr = parseTypedId(*it);
+        if (is<Err>(tlidr)) {
+            return Err(
+                "Expected a typed ID or 'void'. "
+                "If you intended a typed ID here, note:\n  " +
+                get<Err>(tlidr).toString(),
+                span(*it)
+            );
+        } else { tlid.emplace(getVal(tlidr)); }
+    }
 
     ++it;
     MaybeMetadata md = std::nullopt;
@@ -1577,7 +1590,7 @@ Result<Statement, Err> parseBlackholeStmt(const List &l) {
         }
     }
 
-    return Statement(BlackholeStmt(pure, getVal(tlid), md, span(l)));
+    return Statement(BlackholeStmt(pure, tlid, md, span(l)));
 }
 
 /// <stmt>

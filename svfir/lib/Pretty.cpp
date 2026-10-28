@@ -340,7 +340,7 @@ struct Pretty {
         return par(
             "blackhole " +
             std::string(b.pure ? "pure" : "effectful") + " " +
-            pretty(b.tid) +
+            (b.tid.has_value() ? pretty(b.tid.value()) : "void") +
             maybePrettyMd(b.md)
         );
     }

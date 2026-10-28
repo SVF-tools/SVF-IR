@@ -36,7 +36,8 @@ std::optional<Id> introducedVar(const Statement &s) {
     } else if (is<VarargStmt>(s)) {
         id.emplace(get<VarargStmt>(s).tid.id);
     } else if (is<BlackholeStmt>(s)) {
-        id.emplace(get<BlackholeStmt>(s).tid.id);
+        const BlackholeStmt b = get<BlackholeStmt>(s);
+        if (b.tid.has_value()) { id.emplace(b.tid.value().id); }
     } else {
         // Nothing introduced.
         insist(

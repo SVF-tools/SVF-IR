@@ -97,4 +97,4 @@
 
 <misc-stmt> : '(' 'assign' <lid> <val> <md>? ')'
             | '(' 'vararg' <typed-lid> <ival> <md>? ')'
-            | '(' 'blackhole' ('pure'|'effectful') <typed-lid> <md>? ')'
+            | '(' 'blackhole' ('pure'|'effectful') (<typed-lid>|void) <md>? ')'
