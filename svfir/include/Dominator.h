@@ -26,18 +26,16 @@ namespace SVFIR {
 /// 2) the root/entry is the unique exit of the CFG the tree is built from.
 class DominatorTree {
 public:
-    using NodeIndex = ControlFlowGraph::NodeIndex;
-
     enum class Kind { DOM, POSTDOM };
 
     struct Node {
-        const NodeIndex id;
+        const Index id;
         // Not a key; only used for pretty printing, debugging, etc.
         const Name name;
         const std::vector<Node> children;
 
         Node(
-            const NodeIndex id,
+            const Index id,
             const Name &name,
             const std::vector<Node> &children
         ) : id(id), name(name), children(children) { }
@@ -89,7 +87,7 @@ public:
     DominatorTree(const ControlFlowGraph &, const Kind kind);
 
     /// Whether x dominates y, appropriate to kind.
-    bool dominates(const NodeIndex x, const NodeIndex y) const;
+    bool dominates(const Index x, const Index y) const;
 
     std::string toString(void) const;
 };

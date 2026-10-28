@@ -8,6 +8,7 @@
 #include "ControlFlowGraph.h"
 #include "Ops.h"
 #include "Err.h"
+#include "Index.h"
 #include "Result.h"
 #include "Statements.h"
 #include "TypedProgram.h"
@@ -230,10 +231,9 @@ std::optional<Err> checkUndeclaredBlocks(const Program &p) {
 /// an argument for each predecessor block of the block the phi statement is in.
 ////////////////////////////////////////////////////////////////////////////////
 
-using NodeIndex = ControlFlowGraph::NodeIndex;
 std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
     const ControlFlowGraph cfg = ControlFlowGraph(bbs);
-    for (ControlFlowGraph::NodeIndex i = 0; i < bbs.size(); ++i) {
+    for (Index i = 0; i < bbs.size(); ++i) {
         const BasicBlock &bb = bbs[i];
         for (const Statement &s : bb.stmts) {
             if (is<PhiStmt>(s)) {
@@ -248,7 +248,7 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
                 // We could just compare sorted vectors of real vs. phi
                 // predecessors but good errors would be hard.
                 std::unordered_set<Name> preds;
-                for (const NodeIndex pi : cfg.node(i).inEdges) {
+                for (const Index pi : cfg.node(i).inEdges) {
                     preds.insert(bbs[pi].id.name);
                 }
 

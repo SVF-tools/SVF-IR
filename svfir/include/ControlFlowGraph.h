@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Ast.h"
+#include "Index.h"
 
 namespace SVFIR {
 
@@ -19,23 +20,21 @@ namespace SVFIR {
 /// no CFG for an opaque function.
 class ControlFlowGraph {
 public:
-    using NodeIndex = size_t;
-
-    /// Note specifically that inEdges/outEdges are NodeIndexes, not Nodes.
+    /// Note specifically that inEdges/outEdges are Indexes, not Nodes.
     /// They can be accessed through the containing CFG's nodes(). Unideal...
     /// but it avoids the need for pointers.
     struct Node {
-        const NodeIndex id;
+        const Index id;
         // Not a key; only used for pretty printing, debugging, etc.
         const Name name;
-        const std::vector<NodeIndex> inEdges;
-        const std::vector<NodeIndex> outEdges;
+        const std::vector<Index> inEdges;
+        const std::vector<Index> outEdges;
 
         Node(
-            const NodeIndex &id,
+            const Index &id,
             const Name &name,
-            const std::vector<NodeIndex> &inEdges,
-            const std::vector<NodeIndex> &outEdges
+            const std::vector<Index> &inEdges,
+            const std::vector<Index> &outEdges
         ) : id(id), name(name), inEdges(inEdges), outEdges(outEdges)  { }
 
         /// Does this node only lead out of the function?
@@ -55,13 +54,13 @@ public:
     ControlFlowGraph(const FunctionBody &);
 
     /// The unique entry node.
-    NodeIndex entry(void) const;
+    Index entry(void) const;
 
     /// Return this CFG's only exit node, if it has an only exit node.
-    std::optional<NodeIndex> uniqueExit(void) const;
+    std::optional<Index> uniqueExit(void) const;
 
     /// The i-th node, i.e., nodes()[i].
-    const Node &node(const NodeIndex i) const;
+    const Node &node(const Index i) const;
 
     const std::vector<Node> &nodes(void) const { return _nodes; }
 

@@ -5,6 +5,7 @@
 #include "Ast.h"
 #include "Contracts.h"
 #include "ControlFlowGraph.h"
+#include "Index.h"
 #include "Variant.h"
 
 namespace {
@@ -12,7 +13,6 @@ namespace {
 using namespace SVFIR;
 
 using Node = ControlFlowGraph::Node;
-using NodeIndex = ControlFlowGraph::NodeIndex;
 
 /// Return the outgoing targets, if any, of a basic block
 std::vector<Id> getTargets(const BasicBlock &bb) {
@@ -36,11 +36,11 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
 /// Return full list of built out nodes for CFG of body. Respects constraints
 /// on _nodes in ControlFlowGraph.
 std::vector<Node> build(const FunctionBody &body) {
-    std::unordered_map<Name, NodeIndex> names;
+    std::unordered_map<Name, Index> names;
     for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
 
     // All nodes which have an outgoing edge to the key (the dst).
-    std::unordered_map<NodeIndex, std::vector<NodeIndex>> sources;
+    std::unordered_map<Index, std::vector<Index>> sources;
     for (size_t dst = 0; dst < body.size(); ++dst) {
         const Name dstName = body[dst].id.name;
         for (size_t src = 0; src < body.size(); ++src) {
@@ -52,8 +52,8 @@ std::vector<Node> build(const FunctionBody &body) {
 
     std::vector<Node> nodes;
     for (size_t i = 0; i < body.size(); ++i) {
-        const std::vector<NodeIndex> &inEdges = sources[i];
-        std::vector<NodeIndex> outEdges;
+        const std::vector<Index> &inEdges = sources[i];
+        std::vector<Index> outEdges;
         const std::vector<Id> &targets = getTargets(body[i]);
         for (const Id &tid : targets) {
             insist(names.count(tid.name) == 1);
@@ -70,13 +70,12 @@ std::vector<Node> build(const FunctionBody &body) {
 
 namespace SVFIR {
 
-ControlFlowGraph::NodeIndex ControlFlowGraph::entry(void) const {
+Index ControlFlowGraph::entry(void) const {
     return nodes().front().id;
 }
 
-std::optional<ControlFlowGraph::NodeIndex>
-ControlFlowGraph::uniqueExit(void) const {
-    std::optional<NodeIndex> exit = std::nullopt;
+std::optional<Index> ControlFlowGraph::uniqueExit(void) const {
+    std::optional<Index> exit = std::nullopt;
     for (const Node &n : nodes()) {
         if (n.isExitNode()) {
             // First exit node we come across.
@@ -88,7 +87,7 @@ ControlFlowGraph::uniqueExit(void) const {
     return exit;
 }
 
-const Node &ControlFlowGraph::node(const NodeIndex i) const {
+const Node &ControlFlowGraph::node(const Index i) const {
     insist(i < nodes().size());
     return nodes()[i];
 }
@@ -97,12 +96,12 @@ std::string ControlFlowGraph::Node::toString(void) const {
     std::string s = toAbbrString() + "\n";
 
     s += "in :";
-    for (const NodeIndex &n : inEdges) { s += " " + std::to_string(n) + ","; }
+    for (const Index &n : inEdges) { s += " " + std::to_string(n) + ","; }
     s.pop_back();  // The extra ",".
     s += "\n";
 
     s += "out:";
-    for (const NodeIndex &n : outEdges) { s += " " + std::to_string(n) + ","; }
+    for (const Index &n : outEdges) { s += " " + std::to_string(n) + ","; }
     s.pop_back();  // The extra ",".
 
     return s;
@@ -127,14 +126,14 @@ std::string ControlFlowGraph::toString(void) const {
 
         if (node.outEdges.empty()) { s += "  --\n"; }
         else {
-            for (const NodeIndex &dst : node.outEdges) {
+            for (const Index &dst : node.outEdges) {
                 s += "  -> " + _nodes[dst].toAbbrString() + "\n";
             }
         }
 
         if (node.inEdges.empty()) { s += "  --\n"; }
         else {
-            for (const NodeIndex &src : node.inEdges) {
+            for (const Index &src : node.inEdges) {
                 s += "  <- " + _nodes[src].toAbbrString() + "\n";
             }
         }
