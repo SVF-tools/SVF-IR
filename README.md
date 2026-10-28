@@ -13,6 +13,25 @@ repository will host multiple translators to SVF-IR.
 
 The syntax of the textual format is defined in `doc/grammar.txt`.
 
+## Building
+
+Build with CMake. From the top-level:
+```
+cmake -S. -DCMAKE_BUILD_TYPE=Debug -Bdebug-build
+cmake --build debug-build
+```
+
+This will produce a debug build in directory `debug-build`. Alternatively,
+`CMAKE_BUILD_TYPE` can be set to `Release` for a release build.
+
+The build directory will now contain:
+* `libsvfir.a`: this library contains that needed for parsing, type checking,
+  and manipulating SVFIR programs in memory.
+* `testsvfir`: this executable contains tests for SVFIR (against `libsvfir.a`).
+   It is currently quite bare.
+
+SVFIR requires C++17.
+
 ## Making changes
 
 * Adding or removing source files requires updating `sources.cmake`.
@@ -21,7 +40,6 @@ The syntax of the textual format is defined in `doc/grammar.txt`.
 ## TODO
 
 * Tests.
-* Document build.
 * Spec (prose, to go alongside grammar).
 * Validation, typing.
 * Organise interface (Ops.h, unideal).
