@@ -16,7 +16,6 @@ bool roundtrip(void) {
         "(preamble\n"
         "  (version 0.0)\n"
         "  (source hand))\n"
-        "(types)\n"
         "(variables)\n"
         "(functions)";
     const Result<Program, Err> res1 = parseString(program1);
@@ -27,8 +26,6 @@ bool roundtrip(void) {
         "(preamble\n"
         "  (version 0.0)\n"
         "  (source hand))\n"
-        "(types\n"
-        "  (~struct.node (agg 2)))\n"
         "(variables\n"
         "  (@MAX_LENGTH (i32 10)))\n"
         "(functions\n"
@@ -116,8 +113,6 @@ bool roundtrip(void) {
         "(preamble\n"
         "  (version 0.0)\n"
         "  (source hand))\n"
-        "(types\n"
-        "  (~foo opaque))\n"
         "(variables\n"
         "  (@bar opaque))\n"
         "(functions\n"

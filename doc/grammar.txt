@@ -7,7 +7,6 @@
 <lid> : '%'<name>
 <gid> : '@'<name>
 <bid> : '!'<name>
-<tid> : '~'<name>
 <var-id> : <lid> | <gid>
 <typed-lid> : '(' <type> <lid> ')'
 
@@ -17,7 +16,7 @@
 
 <agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
 
-<type> : <scalar-type> | <agg-type> | <tid>
+<type> : <scalar-type> | <agg-type>
 
 <int-const> : '-'?<digit>+
 <flt-const> : <int-const>'.'<digit>+('e''-'?<digit>+)? | '-inf' | '+inf' | 'nan'
@@ -37,7 +36,7 @@
 <pval> : <var-id> | <null-const>
 <ival> : <var-id> | <int-const>
 
-<program> : <preamble> <types> <variables> <functions> <md>?
+<program> : <preamble> <variables> <functions> <md>?
 
 <preamble> :
   '(' 'preamble'
@@ -50,9 +49,6 @@
 
 <variable> : '(' <gid> (<gval>|'opaque') <md>? ')'  ; TODO: limit gval id to fns?
 <variables> : '(' 'variables' <variable>* ')'
-
-<type-alias> : '(' <tid> (<type>|'opaque') <md>? ')'
-<types> : '(' 'types' <type-alias> ')'
 
 <basic-block> : '(' <bid> '(' <instruction>+ ')' <md>? ')'
 

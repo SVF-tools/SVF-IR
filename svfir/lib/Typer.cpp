@@ -21,22 +21,10 @@ using namespace SVFIR;
 /// PASS: checkDuplicateDecs
 /// DEPS: --
 /// Raise an error if duplicate IDs are declared. This comes down to:
-///  * Duplicately named aliases in the (types ...) block.
 ///  * Duplicately named functions and variables (same namespace).
 ///  * Duplicately named local variables within a function, including paramters.
 ///  * Duplicately named blocks within a function.
 ////////////////////////////////////////////////////////////////////////////////
-
-std::optional<Err> _checkDuplicateTypeDecs(const std::vector<TypeAlias> &tas) {
-    std::unordered_set<Name> names;
-    for (const auto &ta : tas) {
-        const Name name = ta.id.name;
-        if (names.insert(name).second) {
-            return Err("Type alias '" + name + "' declared twice", ta.span);
-        }
-    }
-    return std::nullopt;
-}
 
 std::optional<Err> _checkDuplicateGlobalDecs(
     const std::vector<Variable> &vs,
@@ -101,9 +89,6 @@ std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
 }
 
 std::optional<Err> checkDuplicateDecs(const Program &p) {
-    const std::optional<Err> ts = _checkDuplicateTypeDecs(p.types);
-    if (ts.has_value()) { return ts.value(); }
-
     const std::optional<Err> gs = _checkDuplicateGlobalDecs(
         p.variables,
         p.functions
@@ -325,10 +310,6 @@ bool isPtrType(const Type &t) { return is<PtrType>(t); }
 bool isIntType(const Type &t) { return is<IntType>(t); }
 bool isFloatType(const Type &t) { return is<FloatType>(t); }
 bool isAggType(const Type &t) { return is<AggType>(t); }
-bool isTypeId(const Type &t) { return is<TypeId>(t); }
-bool isOpaqueType(const Type &t) {
-    return is<OpaqueType>(t);
-}
 
 bool operator==(const Type &x, const Type &y) {
     if (isVoidType(x) && isVoidType(y)) { return true; }
@@ -339,10 +320,7 @@ bool operator==(const Type &x, const Type &y) {
         return get<IntType>(x).kind == get<IntType>(y).kind;
     } else if (isAggType(x) && isAggType(y)) {
         return get<AggType>(x).slots == get<AggType>(y).slots;
-    } else if (isTypeId(x) && isTypeId(y)) {
-        return get<TypeId>(x).name == get<TypeId>(y).name;
-    } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
-    else {
+    } else {
         insist(x.index() != y.index());
         return false;
     }

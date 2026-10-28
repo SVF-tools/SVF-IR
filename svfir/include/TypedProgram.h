@@ -24,23 +24,14 @@ struct AggType {
     const uint64_t slots;
     AggType(const uint64_t slots) : slots(slots) { }
 };
-struct TypeId {
-    Name name;
-    TypeId(const Name name) : name(name) { }
-};
-struct OpaqueType { };
 
-using Type = std::variant<
-    VoidType, PtrType, IntType, FloatType, AggType, TypeId, OpaqueType
->;
+using Type = std::variant<VoidType, PtrType, IntType, FloatType, AggType>;
 
 bool isVoidType(const Type &t);
 bool isPtrType(const Type &t);
 bool isIntType(const Type &t);
 bool isFloatType(const Type &t);
 bool isAggType(const Type &t);
-bool isTypeId(const Type &t);
-bool isOpaqueType(const Type &t);
 
 /// Equality:
 ///  * Any two void types are equal.
@@ -50,7 +41,6 @@ bool isOpaqueType(const Type &t);
 ///  * Any two float types with the same kind are equal.
 ///  * Any two aggregate types with the same number of slots are equal (thus
 ///    what those slots may represent is irrelevant).
-///  * Any two type IDs with the same ID are equal.
 ///  * All other pairs of types are not equal (N.B. that includes opaque types).
 bool operator==(const Type &, const Type &);
 bool operator!=(const Type &, const Type &);
@@ -80,8 +70,6 @@ class SymbolTable {
     /// Function IDs to a map of said function's local variable IDs to their
     /// shallow type.
     std::unordered_map<Id, std::unordered_map<Id, Type>> fnTables;
-    /// Type IDs to the type they represent. Those types are deep, by necessity.
-    std::unordered_map<Id, Type> typeAliases;
 };
 
 class TypedProgram {

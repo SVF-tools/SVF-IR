@@ -33,12 +33,7 @@ struct Id final {
 
     Id(const Name &name, const Span &span) : span(span), name(name) {
         insist(name.size() >= 2);
-        insist(
-            name[0] == '%' ||
-            name[0] == '@' ||
-            name[0] == '!' ||
-            name[0] == '~'
-        );
+        insist(name[0] == '%' || name[0] == '@' || name[0] == '!');
     }
 
     /// One of the following predicate functions is guaranteed to be true
@@ -47,7 +42,6 @@ struct Id final {
     bool isLocal(void) const;
     bool isGlobal(void) const;
     bool isBlock(void) const;
-    bool isType(void) const;
 };
 
 /// <scalar-type> (1)
@@ -263,28 +257,9 @@ struct Function final {
     bool isOpaque(void) const;
 };
 
-/// <type-alias>
-struct TypeAlias final {
-    const Id id;
-    // A missing value indicates a declaration, otherwise it's a definition.
-    const std::optional<DecType> type;
-    const MaybeMetadata md;
-    const Span span;
-
-    TypeAlias(
-        const Id &id,
-        const std::optional<DecType> &type,
-        const MaybeMetadata &md,
-        const Span &span
-    ) : span(span), id(id), type(type), md(md) { }
-
-    bool isOpaque(void) const;
-};
-
 /// <program>
 struct Program final {
     const Preamble preamble;
-    const std::vector<TypeAlias> types;
     const std::vector<Variable> variables;
     const std::vector<Function> functions;
     const MaybeMetadata md;
@@ -292,7 +267,6 @@ struct Program final {
 
     Program(
         const Preamble &preamble,
-        const std::vector<TypeAlias> &types,
         const std::vector<Variable> &variables,
         const std::vector<Function> &functions,
         const MaybeMetadata &md,
@@ -300,7 +274,6 @@ struct Program final {
     ) :
         span(span),
         preamble(preamble),
-        types(types),
         variables(variables),
         functions(functions),
         md(md)
@@ -624,7 +597,7 @@ using AnyNode = std::variant<
     VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType,
     IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedId, TypedConstant,
-    Preamble, Variable, Param, Function, TypeAlias, Program,
+    Preamble, Variable, Param, Function, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,

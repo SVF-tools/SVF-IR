@@ -102,15 +102,6 @@ Result<Metadata, Err> parseMetadata(const SExpr &s) {
     return Metadata(*it, span(*it));
 }
 
-/// <tid>
-Result<Id, Err> parseTypeId(const SExpr &s) {
-    if (!is<Atom>(s)) { return notAnAtom("type ID", span(s)); }
-    const std::string &text = get<Atom>(s).val;
-    if (text.size() < 2) { return shortId("Type", span(s)); }
-    if (text[0] != '~') { return noSpecialCharId("Type", "~", span(s)); }
-    return Id(text, span(s));
-}
-
 /// <type>
 Result<DecType, Err> parseType(const SExpr &s) {
     const Span &sp = span(s);
@@ -151,17 +142,6 @@ Result<DecType, Err> parseType(const SExpr &s) {
                     sp
                 );
             }
-        } else if (!atom.val.empty() && atom.val[0] == '~') {
-            const Result<Id, Err> id = parseTypeId(s);
-            if (is<Err>(id)) {
-                return Err(
-                    "Invalid scalar type.\n"
-                    "If you intended a type ID here, note:\n  " +
-                    get<Err>(id).toString(),
-                    span(s)
-                );
-            }
-            return DecType(getVal(id));
         } else { return Err("Invalid scalar type.", sp); }
     } else {
         insist(is<List>(s));
@@ -1816,71 +1796,6 @@ Result<std::vector<Function>, Err> parseFunctions(const SExpr &s) {
     return functions;
 }
 
-/// <type-alias>
-Result<TypeAlias, Err> parseTypeAlias(const SExpr &s) {
-    if (!is<List>(s)) { return notAList("type alias", span(s)); }
-    const List &l = get<List>(s);
-    auto it = l.children.cbegin(), end = l.children.cend();
-    const Span &sp = span(s);
-
-    if (it == end) { return listCutShort("type alias", "name (type ID)", sp); }
-    const Result<Id, Err> tid = parseTypeId(*it);
-    if (is<Err>(tid)) { return get<Err>(tid); }
-
-    ++it;
-    if (it == end) { return listCutShort("type alias", "type/'opaque'", sp); }
-    std::optional<DecType> type;
-    if (atomEq(*it, "opaque")) { type = std::nullopt; }
-    else {
-        const Result<DecType, Err> typer = parseType(*it);
-        if (is<Err>(typer)) {
-            return Err(
-                "Expected a type to alias or 'opaque'. "
-                "If you intended a type here, note:\n  " +
-                get<Err>(typer).toString(),
-                span(*it)
-            );
-        }
-        type.emplace(getVal(typer));
-    }
-
-    ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("type alias", sp); }
-    }
-
-    return TypeAlias(getVal(tid), type, md, span(s));
-}
-
-/// <types>
-Result<std::vector<TypeAlias>, Err> parseTypes(const SExpr &s) {
-    if (!is<List>(s)) { return notAList("top-level type aliases", span(s)); }
-    const List &l = get<List>(s);
-    auto it = l.children.cbegin(), end = l.children.cend();
-
-    if (it == end) { return listCutShort("type aliases", "'types'", span(s)); }
-    if (!is<Atom>(*it)) { return notAnAtom("'types'", span(*it)); }
-    const std::string &kw = get<Atom>(*it).val;
-    if (kw != "types") {
-        return badKw("type aliases", "'types'", kw, span(*it));
-    }
-
-    ++it;
-    std::vector<TypeAlias> tas;
-    for (; it != end; ++it) {
-        const Result<TypeAlias, Err> ta = parseTypeAlias(*it);
-        if (is<Err>(ta)) { return get<Err>(ta); }
-        tas.push_back(getVal(ta));
-    }
-
-    return tas;
-}
-
 /// <program>
 Result<Program, Err> parseProgram(SExprSeq ss) {
     auto it = ss.cbegin(), end = ss.cend();
@@ -1888,11 +1803,6 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
     if (it == end) { return Err("Program missing preamble block."); }
     const Result<Preamble, Err> preamble = parsePreamble(*it);
     if (is<Err>(preamble)) { return get<Err>(preamble); }
-
-    ++it;
-    if (it == end) { return Err("Program missing type aliases block."); }
-    const Result<std::vector<TypeAlias>, Err> types = parseTypes(*it);
-    if (is<Err>(types)) { return get<Err>(types); }
 
     ++it;
     if (it == end) { return Err("Program missing variables block."); }
@@ -1918,7 +1828,6 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
 
     return Program(
         getVal(preamble),
-        getVal(types),
         getVal(variables),
         getVal(functions),
         md,

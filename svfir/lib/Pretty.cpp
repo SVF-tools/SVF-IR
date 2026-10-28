@@ -150,14 +150,6 @@ struct Pretty {
         );
     }
 
-    std::string operator()(const TypeAlias &ta) {
-        return par(
-            pretty(ta.id) + " " +
-            (ta.type.has_value() ? pretty(ta.type.value()) : "opaque") +
-            maybePrettyMd(ta.md)
-        );
-    }
-
     std::string operator()(const Program &p) {
         auto block = [](const std::string &name, const std::string &block) {
             if (block.empty()) {
@@ -168,7 +160,6 @@ struct Pretty {
         };
 
         return pretty(p.preamble) + "\n" +
-            block("types", prettyVec(p.types, "\n")) + "\n" +
             block("variables", prettyVec(p.variables, "\n")) + "\n" +
             block("functions", prettyVec(p.functions, "\n")) +
             (p.md.has_value() ? "\n" + pretty(p.md.value()) : "");
