@@ -50,13 +50,13 @@ struct FnSig {
     const std::vector<Type> paramTypes;
     const Type retType;
     /// If it accepts a vararg parameter.
-    const bool varargParam;
+    const bool vararg;
 
     FnSig(
         const std::vector<Type> paramTypes,
         const Type retType,
-        const bool varargParam
-    ) : paramTypes(paramTypes), retType(retType), varargParam(varargParam) { }
+        const bool vararg
+    ) : paramTypes(paramTypes), retType(retType), vararg(vararg) { }
 };
 
 //using SymbolTable = std::unordered_map<Id, Type>;
