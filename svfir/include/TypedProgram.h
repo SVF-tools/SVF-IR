@@ -29,11 +29,9 @@ struct TypeId {
     TypeId(const Name name) : name(name) { }
 };
 struct OpaqueType { };
-struct VarargType { };
 
 using Type = std::variant<
-    VoidType, PtrType, IntType, FloatType, AggType, TypeId,
-    OpaqueType, VarargType
+    VoidType, PtrType, IntType, FloatType, AggType, TypeId, OpaqueType
 >;
 
 bool isVoidType(const Type &t);
@@ -43,7 +41,6 @@ bool isFloatType(const Type &t);
 bool isAggType(const Type &t);
 bool isTypeId(const Type &t);
 bool isOpaqueType(const Type &t);
-bool isVarargType(const Type &t);
 
 /// Equality:
 ///  * Any two void types are equal.
@@ -54,7 +51,6 @@ bool isVarargType(const Type &t);
 ///  * Any two aggregate types with the same number of slots are equal (thus
 ///    what those slots may represent is irrelevant).
 ///  * Any two type IDs with the same ID are equal.
-///  * Any two vararg types are equal.
 ///  * All other pairs of types are not equal (N.B. that includes opaque types).
 bool operator==(const Type &, const Type &);
 bool operator!=(const Type &, const Type &);

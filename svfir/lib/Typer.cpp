@@ -342,7 +342,6 @@ bool operator==(const Type &x, const Type &y) {
     } else if (isTypeId(x) && isTypeId(y)) {
         return get<TypeId>(x).name == get<TypeId>(y).name;
     } else if (isOpaqueType(x) && isOpaqueType(y)) { return false; }
-    else if (isVarargType(x) && isVarargType(y)) { return true; }
     else {
         insist(x.index() != y.index());
         return false;
