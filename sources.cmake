@@ -4,6 +4,7 @@ set(SVFIR_HEADERS
   svfir/include/ControlFlowGraph.h
   svfir/include/Dominator.h
   svfir/include/Err.h
+  svfir/include/Index.h
   svfir/include/InputStream.h
   svfir/include/Parser.h
   svfir/include/Ops.h
