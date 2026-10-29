@@ -184,14 +184,14 @@ struct Preamble final {
 };
 
 /// <variable>
-struct Variable final {
+struct GlobalVar final {
     const Id id;
     // A missing value indicates a declaration, otherwise it's a definition.
     const std::optional<Val> val;
     const MaybeMetadata md;
     const Span span;
 
-    Variable(
+    GlobalVar(
         const Id &id,
         const std::optional<Val> &val,
         const MaybeMetadata &md,
@@ -262,21 +262,21 @@ struct Function final {
 /// <program>
 struct Program final {
     const Preamble preamble;
-    const std::vector<Variable> variables;
+    const std::vector<GlobalVar> globalVars;
     const std::vector<Function> functions;
     const MaybeMetadata md;
     const Span span;
 
     Program(
         const Preamble &preamble,
-        const std::vector<Variable> &variables,
+        const std::vector<GlobalVar> &globalVars,
         const std::vector<Function> &functions,
         const MaybeMetadata &md,
         const Span &span
     ) :
         span(span),
         preamble(preamble),
-        variables(variables),
+        globalVars(globalVars),
         functions(functions),
         md(md)
     { }
@@ -584,7 +584,7 @@ using AnyNode = std::variant<
     VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType,
     IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedId, TypedConstant,
-    Preamble, Variable, Param, Function, Program,
+    Preamble, GlobalVar, Param, Function, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,
