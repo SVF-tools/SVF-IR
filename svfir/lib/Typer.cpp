@@ -427,6 +427,40 @@ std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
     return std::nullopt;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkGlobalDefBeforeUse
+/// DEPS: --
+/// Raises an error if any global variable is used without being defined.
+////////////////////////////////////////////////////////////////////////////////
+
+std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
+    std::unordered_set<Name> globals;
+    for (const Variable &gv : p.variables) { globals.insert(gv.id.name); }
+
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
+                    for (const Id &u : usedVars(s)) {
+                        if (
+                            u.isGlobal() &&
+                            globals.find(u.name) == globals.cend()
+                        ) {
+                            return Err(
+                                "Global variable '" + u.name + "' used but "
+                                "not defined.",
+                                span(u)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 }  // Anonymous namespace
 
 namespace SVFIR {
@@ -481,8 +515,11 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
     std::optional<Err> pe = checkPhiStmtArgs(p);
     if (pe.has_value()) { return pe.value(); }
 
-    std::optional<Err> dbue = checkLocalDefBeforeUse(p);
-    if (dbue.has_value()) { return dbue.value(); }
+    std::optional<Err> gdbue = checkGlobalDefBeforeUse(p);
+    if (gdbue.has_value()) { return gdbue.value(); }
+
+    std::optional<Err> ldbue = checkLocalDefBeforeUse(p);
+    if (ldbue.has_value()) { return ldbue.value(); }
 
     return Err("not implemented");
 }
