@@ -23,20 +23,22 @@ using namespace SVFIR;
 /// PASS: checkDuplicateDecs
 /// DEPS: --
 /// Raise an error if duplicate IDs are declared. This comes down to:
-///  * Duplicately named functions and variables (same namespace).
+///  * Duplicately named functions and global variables (same namespace).
 ///  * Duplicately named local variables within a function, including paramters.
 ///  * Duplicately named blocks within a function.
 ////////////////////////////////////////////////////////////////////////////////
 
 std::optional<Err> _checkDuplicateGlobalDecs(
-    const std::vector<Variable> &vs,
+    const std::vector<GlobalVariable> &vs,
     const std::vector<Function> &fns
 ) {
     std::unordered_set<Name> names;
     for (const auto &v : vs) {
         const Name name = v.id.name;
         if (names.insert(name).second) {
-            return Err("Variable name '" + name + "' declared twice", v.span);
+            return Err(
+                "Global variable name '" + name + "' declared twice", v.span
+            );
         }
     }
     for (const auto &fn : fns) {
@@ -92,8 +94,7 @@ std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
 
 std::optional<Err> checkDuplicateDecs(const Program &p) {
     const std::optional<Err> gs = _checkDuplicateGlobalDecs(
-        p.variables,
-        p.functions
+        p.globals, p.functions
     );
     if (gs.has_value()) { return gs.value(); }
 
@@ -434,8 +435,8 @@ std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
 ////////////////////////////////////////////////////////////////////////////////
 
 std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
-    std::unordered_set<Name> globals;
-    for (const Variable &gv : p.variables) { globals.insert(gv.id.name); }
+    std::unordered_set<Name> gnames;
+    for (const GlobalVariable &gv : p.globals) { gnames.insert(gv.id.name); }
 
     for (const Function &fn : p.functions) {
         if (!fn.isOpaque()) {
@@ -444,7 +445,7 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
                     for (const Id &u : usedVars(s)) {
                         if (
                             u.isGlobal() &&
-                            globals.find(u.name) == globals.cend()
+                            gnames.find(u.name) == gnames.cend()
                         ) {
                             return Err(
                                 "Global variable '" + u.name + "' used but "

@@ -37,7 +37,7 @@
 <pval> : <var-id> | <null-const>
 <ival> : <var-id> | <int-const>
 
-<program> : <preamble> <variables> <functions> <md>?
+<program> : <preamble> <gvariables> <functions> <md>?
 
 <preamble> :
   '(' 'preamble'
@@ -48,8 +48,8 @@
 <function> : '(' <gid> <type> '(' <param>* '...'? ')' ('(' <basic-block>+ ')'|'opaque') <md>? ')'
 <functions> : '(' 'functions' <function>* ')'
 
-<variable> : '(' <gid> (<gval>|'opaque') <md>? ')'  ; TODO: limit gval id to fns?
-<variables> : '(' 'variables' <variable>* ')'
+<gvariable> : '(' <gid> (<gval>|'opaque') <md>? ')'  ; TODO: limit gval id to fns?
+<gvariables> : '(' 'gvariables' <gvariable>* ')'
 
 <basic-block> : '(' <bid> '(' <instruction>+ ')' <md>? ')'
 

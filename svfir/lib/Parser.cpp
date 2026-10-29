@@ -622,7 +622,7 @@ Result<IVal, Err> parseIVal(const SExpr &s) {
 }
 
 /// <variable>
-Result<Variable, Err> parseVariable(const SExpr &s) {
+Result<GlobalVariable, Err> parseGlobalVariable(const SExpr &s) {
     if (!is<List>(s)) { return notAList("variable", span(s)); }
     const Span &sp = span(s);
 
@@ -659,11 +659,11 @@ Result<Variable, Err> parseVariable(const SExpr &s) {
         if (it + 1 != end) { return listTooLong("variable", sp); }
     }
 
-    return Variable(getVal(gid), gval, md, span(s));
+    return GlobalVariable(getVal(gid), gval, md, span(s));
 }
 
 /// <variables>
-Result<std::vector<Variable>, Err> parseVariables(const SExpr &s) {
+Result<std::vector<GlobalVariable>, Err> parseGlobalVariables(const SExpr &s) {
     if (!is<List>(s)) { return notAList("variables", span(s)); }
     const List &list = get<List>(s);
     auto it = list.children.cbegin(), end = list.children.cend();
@@ -676,9 +676,9 @@ Result<std::vector<Variable>, Err> parseVariables(const SExpr &s) {
     }
 
     ++it;
-    std::vector<Variable> variables;
+    std::vector<GlobalVariable> variables;
     for (; it != end; ++it) {
-        const Result<Variable, Err> variable = parseVariable(*it);
+        const Result<GlobalVariable, Err> variable = parseGlobalVariable(*it);
         if (is<Err>(variable)) { return get<Err>(variable); }
         variables.push_back(getVal(variable));
     }
@@ -1792,7 +1792,8 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
 
     ++it;
     if (it == end) { return Err("Program missing variables block."); }
-    const Result<std::vector<Variable>, Err> variables = parseVariables(*it);
+    const Result<std::vector<GlobalVariable>, Err> variables =
+        parseGlobalVariables(*it);
     if (is<Err>(variables)) { return get<Err>(variables); }
 
     ++it;

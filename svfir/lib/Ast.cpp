@@ -6,7 +6,7 @@ bool Function::isOpaque(void) const {
     return !body.has_value();
 }
 
-bool Variable::isOpaque(void) const {
+bool GlobalVariable::isOpaque(void) const {
     return !val.has_value();
 }
 
