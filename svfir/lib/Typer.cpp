@@ -349,7 +349,10 @@ std::unordered_map<Name, StmtLoc> _localDefSites(const FunctionBody &bbs) {
     return defs;
 }
 
-std::optional<Err> _checkLocalDefBeforeUse(const FunctionBody &bbs) {
+std::optional<Err> _checkLocalDefBeforeUse(
+    const FunctionBody &bbs,
+    std::unordered_set<Name> params
+) {
     const std::unordered_map<Name, StmtLoc> defs = _localDefSites(bbs);
     const ControlFlowGraph &cfg = ControlFlowGraph(bbs);
     const DominatorTree &dt = DominatorTree(cfg, DominatorTree::Kind::DOM);
@@ -362,7 +365,11 @@ std::optional<Err> _checkLocalDefBeforeUse(const FunctionBody &bbs) {
             const std::vector<Id> uses = usedVars(s);
 
             for (const Id &u : uses) {
-                if (u.isLocal() && defs.find(u.name) == defs.cend()) {
+                if (
+                    u.isLocal() &&
+                    params.find(u.name) == params.cend() &&
+                    defs.find(u.name) == defs.cend()
+                ) {
                     return Err(
                         "Local variable '" + u.name + "' not defined.",
                         span(u)
@@ -372,7 +379,11 @@ std::optional<Err> _checkLocalDefBeforeUse(const FunctionBody &bbs) {
 
             if (!is<PhiStmt>(s)) {
                 for (const Id &u : usedVars(s)) {
-                    if (u.isLocal() && !sl.after(dt, defs.at(u.name))) {
+                    if (
+                        u.isLocal() &&
+                        params.find(u.name) == params.cend() &&
+                        !sl.after(dt, defs.at(u.name))
+                    ) {
                         return Err(
                             "Local variable '" + u.name + "' used "
                             "before definition (use must always come "
@@ -398,8 +409,13 @@ std::optional<Err> _checkLocalDefBeforeUse(const FunctionBody &bbs) {
                         const Index pi = preds.at(arg.pred.name);
                         const StmtLoc &dl = defs.at(var.name);
                         // The use is in this block, not pred, so we check that
-                        // we are either defined in pred or some dominator.
-                        if (!(pi == dl.block || dt.dominates(dl.block, pi))) {
+                        // we are either defined in pred or some dominator. If
+                        // it's a parameter of course, no problem.
+                        if (
+                            params.find(var.name) == params.cend() &&
+                            pi != dl.block &&
+                            !dt.dominates(dl.block ,pi)
+                        ) {
                             return Err(
                                 "Local variable '" + var.name + "' in phi "
                                 "argument was not defined in or strictly "
@@ -419,8 +435,13 @@ std::optional<Err> _checkLocalDefBeforeUse(const FunctionBody &bbs) {
 std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
     for (const Function &fn : p.functions) {
         if (!fn.isOpaque()) {
+            std::unordered_set<Name> params;
+            for (const Param &param : fn.params) {
+                params.insert(param.id.name);
+            }
+
             const std::optional<Err> e =
-                _checkLocalDefBeforeUse(fn.body.value());
+                _checkLocalDefBeforeUse(fn.body.value(), params);
             if (e.has_value()) { return e.value(); }
         }
     }
