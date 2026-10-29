@@ -119,7 +119,7 @@ struct Pretty {
             ")";
     }
 
-    std::string operator()(const GlobalVariable &v) {
+    std::string operator()(const Variable &v) {
         return par(
             pretty(v.id) + " " +
             (v.val.has_value() ? pretty(v.val.value()) : "opaque") +
@@ -160,7 +160,7 @@ struct Pretty {
         };
 
         return pretty(p.preamble) + "\n" +
-            block("variables", prettyVec(p.globals, "\n")) + "\n" +
+            block("variables", prettyVec(p.variables, "\n")) + "\n" +
             block("functions", prettyVec(p.functions, "\n")) +
             (p.md.has_value() ? "\n" + pretty(p.md.value()) : "");
     }

@@ -136,7 +136,7 @@ Program unifyReturns(const TypedProgram &tp) {
         }
     }
 
-    return Program(p.preamble, p.globals, unifiedFunctions, p.md, p.span);
+    return Program(p.preamble, p.variables, unifiedFunctions, p.md, p.span);
 }
 
 }  // namespace SVFIR
