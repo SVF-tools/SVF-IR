@@ -31,8 +31,6 @@ std::optional<Id> introducedVar(const Statement &s) {
         id.emplace(get<BinaryOpStmt>(s).id);
     } else if (is<UnaryOpStmt>(s)) {
         id.emplace(get<UnaryOpStmt>(s).id);
-    } else if (is<AssignStmt>(s)) {
-        id.emplace(get<AssignStmt>(s).id);
     } else if (is<VarargStmt>(s)) {
         id.emplace(get<VarargStmt>(s).tid.id);
     } else if (is<BlackholeStmt>(s)) {
@@ -96,9 +94,6 @@ std::vector<Id> usedVars(const Statement &s) {
     } else if (is<UnaryOpStmt>(s)) {
         const UnaryOpStmt &unop = get<UnaryOpStmt>(s);
         if (is<Id>(unop.val)) { ids.push_back(get<Id>(unop.val)); }
-    } else if (is<AssignStmt>(s)) {
-        const AssignStmt &assign = get<AssignStmt>(s);
-        if (is<Id>(assign.val)) { ids.push_back(get<Id>(assign.val)); }
     } else if (is<VarargStmt>(s)) {
         const VarargStmt &vararg = get<VarargStmt>(s);
         if (is<Id>(vararg.index)) { ids.push_back(get<Id>(vararg.index)); }
@@ -129,8 +124,7 @@ std::vector<Id> usedBlocks(const Statement &s) {
             is<CallStmt>(s) || is<RetStmt>(s) || is<AllocStmt>(s) ||
             is<StoreStmt>(s) || is<LoadStmt>(s) || is<FieldStmt>(s) ||
             is<BitCastStmt>(s) || is<ConvertStmt>(s) || is<BinaryOpStmt>(s) ||
-            is<UnaryOpStmt>(s) || is<AssignStmt>(s) || is<VarargStmt>(s) ||
-            is<BlackholeStmt>(s)
+            is<UnaryOpStmt>(s) || is<VarargStmt>(s) || is<BlackholeStmt>(s)
         );
     }
 

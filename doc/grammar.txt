@@ -28,7 +28,7 @@
 
 <const> : <int-const> | <flt-const> | <null-const> | <seq-const>
 
-<typed-const> : '(' <type> <const> ')'
+<typed-const> : '(' <type> <const> <md>? ')'
 
 <md> : '(' 'md' <s-expr> ')'
 
@@ -95,6 +95,5 @@
            | '(' 'shiftl' <lid> <val> <val> <md>? ')'
            | '(' 'shiftr' ('logical'|'arithmetic') <lid> <val> <val> <md>? ')'
 
-<misc-stmt> : '(' 'assign' <lid> <val> <md>? ')'
-            | '(' 'vararg' <typed-lid> <ival> <md>? ')'
+<misc-stmt> : '(' 'vararg' <typed-lid> <ival> <md>? ')'
             | '(' 'blackhole' ('pure'|'effectful') (<typed-lid>|void) <md>? ')'

@@ -153,13 +153,15 @@ using Constant = std::variant<
 struct TypedConstant final {
     const Constant constant;
     const DecType type;
+    const MaybeMetadata md;
     const Span span;
 
     TypedConstant(
         const Constant &constant,
         const DecType &type,
+        const MaybeMetadata md,
         const Span &span
-    ) : span(span), constant(constant), type(type) { }
+    ) : span(span), constant(constant), type(type), md(md) { }
 };
 
 /// <pval>
@@ -515,21 +517,6 @@ struct UnaryOpStmt final {
 };
 
 /// <misc-inst> (1)
-struct AssignStmt final {
-    const Id id;
-    const Val val;
-    const MaybeMetadata md;
-    const Span span;
-
-    AssignStmt(
-        const Id &id,
-        const Val &val,
-        const MaybeMetadata &md,
-        const Span &span
-    ) : span(span), id(id), val(val), md(md) { }
-};
-
-/// <misc-inst> (2)
 struct VarargStmt final {
     const TypedId tid;
     const IVal index;
@@ -545,7 +532,7 @@ struct VarargStmt final {
     : span(span), tid(tid), index(index), md(md) { }
 };
 
-/// <misc-inst> (3)
+/// <misc-inst> (2)
 struct BlackholeStmt final {
     // To be impure is to be effectful.
     const bool pure;
@@ -567,7 +554,7 @@ using Statement = std::variant<
     AllocStmt, StoreStmt, LoadStmt, FieldStmt,
     BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt,
-    AssignStmt, VarargStmt, BlackholeStmt
+    VarargStmt, BlackholeStmt
 >;
 
 /// <basic-block>

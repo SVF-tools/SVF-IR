@@ -321,12 +321,6 @@ struct Pretty {
         );
     }
 
-    std::string operator()(const AssignStmt &a) {
-        return par(
-            "assign " + pretty(a.id) + " " + pretty(a.val) + maybePrettyMd(a.md)
-        );
-    }
-
     std::string operator()(const VarargStmt &v) {
         return par(
             "vararg " +

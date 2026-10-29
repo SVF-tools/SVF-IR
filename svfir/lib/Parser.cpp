@@ -390,9 +390,16 @@ Result<TypedConstant, Err> parseTypedConst(const SExpr &s) {
     const Result<Constant, Err> constant = parseConst(*it);
     if (is<Err>(constant)) { return get<Err>(constant); }
 
-    if (it + 1 != end) { return listTooLong("typed constant", span(s)); }
+    ++it;
+    MaybeMetadata md = std::nullopt;
+    if (it != end) {
+        Result<Metadata, Err> mdr = parseMetadata(*it);
+        if (is<Err>(mdr)) { return get<Err>(mdr); }
+        md.emplace(getVal(mdr));
+        if (it + 1 != end) { return listTooLong("typed constant", span(s)); }
+    }
 
-    return TypedConstant(getVal(constant), getVal(type), span(s));
+    return TypedConstant(getVal(constant), getVal(type), md, span(s));
 }
 
 /// Version in preamble.
@@ -1465,39 +1472,6 @@ Result<Statement, Err> parseShiftrStmt(const List &l) {
     );
 }
 
-/// To be called on (assign ...) only.
-Result<Statement, Err> parseAssignStmt(const List &l) {
-    auto it = l.children.cbegin(), end = l.children.cend();
-    insist(it != end && atomEq(*it, "assign"));
-    const Span &sp = span(l);
-
-    ++it;
-    if (it == end) {
-        return listCutShort("assignment statement", "local ID", sp);
-    }
-    const Result<Id, Err> lid = parseLocalId(*it);
-    if (is<Err>(lid)) { return get<Err>(lid); }
-
-    ++it;
-    if (it == end) {
-        return listCutShort("assignment statement", "value", sp);
-    }
-    const Result<Val, Err> val = parseVal(*it);
-    if (is<Err>(val)) { return get<Err>(val); }
-
-    ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("assignment statement", sp); }
-    }
-
-    return Statement(AssignStmt(getVal(lid), getVal(val), md, span(l)));
-}
-
 /// To be called on (vararg ...) only.
 Result<Statement, Err> parseVarargStmt(const List &l) {
     auto it = l.children.cbegin(), end = l.children.cend();
@@ -1629,7 +1603,6 @@ Result<Statement, Err> parseStmt(const SExpr &s) {
         kind == "shiftl"
     ) { return parseAndOrXorShiftlStmt(l); }
     else if (kind == "shiftr") { return parseShiftrStmt(l); }
-    else if (kind == "assign") { return parseAssignStmt(l); }
     else if (kind == "vararg") { return parseVarargStmt(l); }
     else if (kind == "blackhole") { return parseBlackholeStmt(l); }
     else { return Err("Unknown statement kind: '" + kind + "'", span(*it)); }
