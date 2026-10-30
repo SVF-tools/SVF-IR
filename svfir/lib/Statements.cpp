@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <optional>
 
 #include "Ast.h"
@@ -49,59 +50,58 @@ std::optional<Id> introducedVar(const Statement &s) {
     return id;
 }
 
-std::vector<Id> usedVars(const Statement &s) {
-    std::vector<Id> ids;
+// TODO: null pvals, ignore them?
+std::vector<Val> usedVals(const Statement &s) {
+    std::vector<Val> vals;
     if (is<PhiStmt>(s)) {
-        const PhiStmt &phi = get<PhiStmt>(s);
-        for (const PhiStmt::Arg &arg : phi.args) {
-            if (is<Id>(arg.val)) { ids.push_back(get<Id>(arg.val)); }
+        for (const PhiStmt::Arg &arg : get<PhiStmt>(s).args) {
+            vals.push_back(arg.val);
         }
     } else if (is<CallStmt>(s)) {
         const CallStmt &call = get<CallStmt>(s);
-        if (is<Id>(call.callee)) { ids.push_back(get<Id>(call.callee)); }
-        for (const Val &arg : call.args) {
-            if (is<Id>(arg)) { ids.push_back(get<Id>(arg)); }
-        }
+        if (is<Id>(call.callee)) { vals.push_back(get<Id>(call.callee)); }
+        for (const Val &arg : call.args) { vals.push_back(arg); }
     } else if (is<RetStmt>(s)) {
         const RetStmt &ret = get<RetStmt>(s);
-        if (ret.val.has_value() && is<Id>(ret.val.value())) {
-            ids.push_back(get<Id>(ret.val.value()));
-        }
-    } else if (is<BrifStmt>(s)) {
-        const BrifStmt &brif = get<BrifStmt>(s);
-        if (is<Id>(brif.cond)) { ids.push_back(get<Id>(brif.cond)); }
-    } else if (is<LoadStmt>(s)) {
+        if (ret.val.has_value()) { vals.push_back(ret.val.value()); }
+    } else if (is<BrifStmt>(s)) { vals.push_back(get<BrifStmt>(s).cond); }
+    else if (is<LoadStmt>(s)) {
         const LoadStmt &load = get<LoadStmt>(s);
-        if (is<Id>(load.src)) { ids.push_back(get<Id>(load.src)); }
+        if (is<Id>(load.src)) { vals.push_back(get<Id>(load.src)); }
     } else if (is<StoreStmt>(s)) {
         const StoreStmt &store = get<StoreStmt>(s);
-        if (is<Id>(store.val)) { ids.push_back(get<Id>(store.val)); }
-        if (is<Id>(store.dst)) { ids.push_back(get<Id>(store.dst)); }
+        vals.push_back(store.val);
+        if (is<Id>(store.dst)) { vals.push_back(get<Id>(store.dst)); }
     } else if (is<FieldStmt>(s)) {
         const FieldStmt &field = get<FieldStmt>(s);
-        if (is<Id>(field.src)) { ids.push_back(get<Id>(field.src)); }
-        if (is<Id>(field.index)) { ids.push_back(get<Id>(field.index)); }
-    } else if (is<BitCastStmt>(s)) {
-        const BitCastStmt &bitcast = get<BitCastStmt>(s);
-        if (is<Id>(bitcast.val)) { ids.push_back(get<Id>(bitcast.val)); }
-    } else if (is<ConvertStmt>(s)) {
-        const ConvertStmt &convert = get<ConvertStmt>(s);
-        if (is<Id>(convert.val)) { ids.push_back(get<Id>(convert.val)); }
-    } else if (is<BinaryOpStmt>(s)) {
+        if (is<Id>(field.src)) { vals.push_back(get<Id>(field.src)); }
+        if (is<Id>(field.index)) { vals.push_back(get<Id>(field.index)); }
+    } else if (is<BitCastStmt>(s)) { vals.push_back(get<BitCastStmt>(s).val); }
+    else if (is<ConvertStmt>(s)) { vals.push_back(get<ConvertStmt>(s).val); }
+    else if (is<BinaryOpStmt>(s)) {
         const BinaryOpStmt &binop = get<BinaryOpStmt>(s);
-        if (is<Id>(binop.left)) { ids.push_back(get<Id>(binop.left)); }
-        if (is<Id>(binop.right)) { ids.push_back(get<Id>(binop.right)); }
-    } else if (is<UnaryOpStmt>(s)) {
-        const UnaryOpStmt &unop = get<UnaryOpStmt>(s);
-        if (is<Id>(unop.val)) { ids.push_back(get<Id>(unop.val)); }
-    } else if (is<VarargStmt>(s)) {
+        vals.push_back(binop.left);
+        vals.push_back(binop.right);
+    } else if (is<UnaryOpStmt>(s)) { vals.push_back(get<UnaryOpStmt>(s).val); }
+    else if (is<VarargStmt>(s)) {
         const VarargStmt &vararg = get<VarargStmt>(s);
-        if (is<Id>(vararg.index)) { ids.push_back(get<Id>(vararg.index)); }
+        if (is<Id>(vararg.index)) {
+            vals.push_back(Val(get<Id>(vararg.index)));
+        }
     } else {
         // Nothing used.
         insist(is<AllocStmt>(s) || is<BrStmt>(s) || is<BlackholeStmt>(s));
     }
 
+    return vals;
+}
+
+std::vector<Id> usedVars(const Statement &s) {
+    std::vector<Id> ids;
+    for (const Val &val : usedVals(s)) {
+        // Vectors small enough for performance to be a non-issue.
+        if (is<Id>(val)) { ids.push_back(get<Id>(val)); }
+    }
     return ids;
 }
 
