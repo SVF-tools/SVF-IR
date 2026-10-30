@@ -45,62 +45,73 @@ struct Id final {
 };
 
 /// <scalar-type> (1)
-struct VoidDecType final {
+struct VoidType final {
     const Span span;
 
-    VoidDecType(const Span &span) : span(span) { }
+    VoidType(const Span &span) : span(span) { }
 };
 
 /// <scalar-type> (2)
-struct IntDecType final {
+struct IntType final {
     enum class Kind { I8, I16, I32, I64, I128 };
 
     const Kind kind;
     const Span span;
 
-    IntDecType(const Kind &kind, const Span &span)
+    IntType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
 };
 
 /// <scalar-type> (3)
-struct FloatDecType final  {
+struct FloatType final  {
     enum class Kind { F16, F32, F64, F128 };
 
     const Kind kind;
     const Span span;
 
-    FloatDecType(const Kind &kind, const Span &span)
+    FloatType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
 };
 
 /// <scalar-type> (4)
-struct PtrDecType final {
+struct PtrType final {
     const Span span;
 
-    PtrDecType(const Span &span) : span(span) { }
+    PtrType(const Span &span) : span(span) { }
 };
 
 /// <seq-type>
-struct AggDecType final {
+struct AggType final {
     const uint64_t slots;
     const Span span;
 
-    AggDecType(const uint64_t &slots, const Span &span)
+    AggType(const uint64_t &slots, const Span &span)
     : span(span), slots(slots) { }
 };
 
 /// <type>
-using DecType = std::variant<
-    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType, Id
->;
+using Type = std::variant<VoidType, IntType, FloatType, PtrType, AggType>;
+
+/// Equality:
+///  * Any two void types are equal.
+///  * Any two pointer types are equal (thus what they may point to is
+///    irrelevant).
+///  * Any two int types with the same kind are equal.
+///  * Any two float types with the same kind are equal.
+///  * Any two aggregate types with the same number of slots are equal (thus
+///    what those slots may represent is irrelevant).
+///  * All other pairs of types are not equal (N.B. that includes opaque types).
+bool operator==(const Type &, const Type &);
+bool operator!=(const Type &, const Type &);
+
 
 /// <typed-lid>
 struct TypedId final {
     const Id id;
-    const DecType type;
+    const Type type;
     const Span span;
 
-    TypedId(const Id &id, const DecType &type, const Span &span)
+    TypedId(const Id &id, const Type &type, const Span &span)
     : span(span), id(id), type(type) { }
 };
 
@@ -152,13 +163,13 @@ using Constant = std::variant<
 /// <typed-const>
 struct TypedConstant final {
     const Constant constant;
-    const DecType type;
+    const Type type;
     const MaybeMetadata md;
     const Span span;
 
     TypedConstant(
         const Constant &constant,
-        const DecType &type,
+        const Type &type,
         const MaybeMetadata md,
         const Span &span
     ) : span(span), constant(constant), type(type), md(md) { }
@@ -204,13 +215,13 @@ struct GlobalVar final {
 /// <param>
 struct Param final {
     const Id id;
-    const DecType type;
+    const Type type;
     const MaybeMetadata md;
     const Span span;
 
     Param(
         const Id &id,
-        const DecType &type,
+        const Type &type,
         const MaybeMetadata &md,
         const Span &span
     ) : span(span), id(id), type(type), md(md) { }
@@ -222,7 +233,7 @@ struct Function final {
     const Id id;
     const std::vector<Param> params;
     const bool vararg;
-    const DecType type;
+    const Type type;
     const std::optional<FunctionBody> body;
     const MaybeMetadata md;
     const Span span;
@@ -231,7 +242,7 @@ struct Function final {
         const Id &id,
         const std::vector<Param> &params,
         const bool &vararg,
-        const DecType &type,
+        const Type &type,
         const std::optional<FunctionBody> &body,
         const MaybeMetadata &md,
         const Span &span
@@ -438,14 +449,14 @@ struct FieldStmt final {
 struct BitCastStmt final {
     const Id id;
     const Val val;
-    const DecType type;
+    const Type type;
     const MaybeMetadata md;
     const Span span;
 
     BitCastStmt(
         const Id &id,
         const Val &val,
-        const DecType &type,
+        const Type &type,
         const MaybeMetadata &md,
         const Span &span
     ) : span(span), id(id), val(val), type(type), md(md) { }
@@ -457,7 +468,7 @@ struct ConvertStmt final {
 
     const Id id;
     const Val val;
-    const DecType type;
+    const Type type;
     std::optional<ExtKind> extKind;
     const MaybeMetadata md;
     const Span span;
@@ -465,7 +476,7 @@ struct ConvertStmt final {
     ConvertStmt(
         const Id &id,
         const Val &val,
-        const DecType &type,
+        const Type &type,
         std::optional<ExtKind> extKind,
         const MaybeMetadata &md,
         const Span &span
@@ -581,14 +592,14 @@ struct BasicBlock final {
 using AnyNode = std::variant<
     Metadata,
     Id,
-    VoidDecType, IntDecType, FloatDecType, PtrDecType, AggDecType,
+    VoidType, IntType, FloatType, PtrType, AggType,
     IntConstant, FloatConstant, NullConstant, SeqConstant,
     TypedId, TypedConstant,
     Preamble, GlobalVar, Param, Function, Program,
     PhiStmt, CallStmt, BrStmt, BrifStmt, RetStmt, AllocStmt, StoreStmt,
     LoadStmt, FieldStmt, BitCastStmt, ConvertStmt,
     BinaryOpStmt, UnaryOpStmt, BlackholeStmt, BasicBlock,
-    DecType, Constant, Val, PVal, IVal, Statement
+    Type, Constant, Val, PVal, IVal, Statement
 >;
 
 }  // namespace SVFIR

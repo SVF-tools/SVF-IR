@@ -103,40 +103,36 @@ Result<Metadata, Err> parseMetadata(const SExpr &s) {
 }
 
 /// <type>
-Result<DecType, Err> parseType(const SExpr &s) {
+Result<Type, Err> parseType(const SExpr &s) {
     const Span &sp = span(s);
     if (is<Atom>(s)) {
         const Atom &atom = get<Atom>(s);
-        if (atom.val == "void") { return DecType(VoidDecType(sp)); }
-        else if (atom.val == "ptr") { return DecType(PtrDecType(sp)); }
+        if (atom.val == "void") { return Type(VoidType(sp)); }
+        else if (atom.val == "ptr") { return Type(PtrType(sp)); }
         else if (atom.val.size() > 1 && atom.val[0] == 'i') {
-            using Kind = IntDecType::Kind;
+            using Kind = IntType::Kind;
             // + 1 to skip the 'i'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 8) { return DecType(IntDecType(Kind::I8, sp)); }
-            else if (width == 16) { return DecType(IntDecType(Kind::I16, sp)); }
-            else if (width == 32) { return DecType(IntDecType(Kind::I32, sp)); }
-            else if (width == 64) { return DecType(IntDecType(Kind::I64, sp)); }
-            else if (width == 128) {
-                return DecType(IntDecType(Kind::I128, sp));
-            } else {
+            if (width == 8) { return Type(IntType(Kind::I8, sp)); }
+            else if (width == 16) { return Type(IntType(Kind::I16, sp)); }
+            else if (width == 32) { return Type(IntType(Kind::I32, sp)); }
+            else if (width == 64) { return Type(IntType(Kind::I64, sp)); }
+            else if (width == 128) { return Type(IntType(Kind::I128, sp)); }
+            else {
                 return Err(
                     "Bad width for int type (" + std::to_string(width) + ").",
                     sp
                 );
             }
         } else if (!atom.val.empty() && atom.val[0] == 'f') {
-            using Kind = FloatDecType::Kind;
+            using Kind = FloatType::Kind;
             // + 1 to skip the 'f'.
             const int width = std::atoi(atom.val.c_str() + 1);
-            if (width == 16) { return DecType(FloatDecType(Kind::F16, sp)); }
-            else if (width == 32) {
-                return DecType(FloatDecType(Kind::F32, sp));
-            } else if (width == 64) {
-                return DecType(FloatDecType(Kind::F64, sp));
-            } else if (width == 128) {
-                return DecType(FloatDecType(Kind::F128, sp));
-            } else {
+            if (width == 16) { return Type(FloatType(Kind::F16, sp)); }
+            else if (width == 32) { return Type(FloatType(Kind::F32, sp)); }
+            else if (width == 64) { return Type(FloatType(Kind::F64, sp)); }
+            else if (width == 128) { return Type(FloatType(Kind::F128, sp)); }
+            else {
                 return Err(
                     "Bad width for float type (" + std::to_string(width) + ").",
                     sp
@@ -179,7 +175,7 @@ Result<DecType, Err> parseType(const SExpr &s) {
 
         if (it + 1 != end) { return listTooLong("aggregate type", sp); }
 
-        return DecType(AggDecType(slots, sp));
+        return Type(AggType(slots, sp));
     }
 }
 
@@ -230,7 +226,7 @@ Result<TypedId, Err> parseTypedId(const SExpr &s) {
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("typed (local) ID", "type", sp); }
-    const Result<DecType, Err> type = parseType(*it);
+    const Result<Type, Err> type = parseType(*it);
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
@@ -252,7 +248,7 @@ Result<Param, Err> parseParam(const SExpr &s) {
     auto it = list.children.cbegin(), end = list.children.cend();
 
     if (it == end) { return listCutShort("parameter", "type", sp); }
-    const Result<DecType, Err> type = parseType(*it);
+    const Result<Type, Err> type = parseType(*it);
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
@@ -383,7 +379,7 @@ Result<TypedConstant, Err> parseTypedConst(const SExpr &s) {
         return listCutShort("typed constant", "constant", span(s));
     }
 
-    const Result<DecType, Err> type = parseType(*it);
+    const Result<Type, Err> type = parseType(*it);
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
@@ -1114,7 +1110,7 @@ Result<Statement, Err> parseBitCastStmt(const List &l) {
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "type", span(l)); }
-    const Result<DecType, Err> type = parseType(*it);
+    const Result<Type, Err> type = parseType(*it);
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
@@ -1153,7 +1149,7 @@ Result<Statement, Err> parseConvertStmt(const List &l) {
     ++it;
     if (it == end) { return listCutShort("convert statement", "type", sp); }
     std::optional<ConvertStmt::ExtKind> extKind;
-    // We need to assign a DecType conditionally (either a type directly or from
+    // We need to assign a Type conditionally (either a type directly or from
     // (ext-kind type)). Re-assigning std::variants is a pain. Thus we will find
     // the position of this type and use it. This is unideal. I'm sorry.
     SExprSeq::const_iterator typePos;
@@ -1202,7 +1198,7 @@ Result<Statement, Err> parseConvertStmt(const List &l) {
     } else {
         typePos = it;
     }
-    const Result<DecType, Err> type = parseType(*typePos);
+    const Result<Type, Err> type = parseType(*typePos);
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
@@ -1702,9 +1698,9 @@ Result<Function, Err> parseFunction(const SExpr &s) {
 
     ++it;
     if (it == end) { return listCutShort("function", "return type", span(s)); }
-    const Result<DecType, Err> typer = parseType(*it);
+    const Result<Type, Err> typer = parseType(*it);
     if (is<Err>(typer)) { return get<Err>(typer); }
-    const DecType type = getVal(typer);
+    const Type type = getVal(typer);
 
     ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }

@@ -487,32 +487,6 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
 
 namespace SVFIR {
 
-bool isVoidType(const Type &t) { return is<VoidType>(t); }
-bool isPtrType(const Type &t) { return is<PtrType>(t); }
-bool isIntType(const Type &t) { return is<IntType>(t); }
-bool isFloatType(const Type &t) { return is<FloatType>(t); }
-bool isAggType(const Type &t) { return is<AggType>(t); }
-
-bool operator==(const Type &x, const Type &y) {
-    if (isVoidType(x) && isVoidType(y)) { return true; }
-    else if (isPtrType(x) && isPtrType(y)) { return true; }
-    else if (isFloatType(x) && isFloatType(y)) {
-        return get<FloatType>(x).kind == get<FloatType>(y).kind;
-    } else if (isIntType(x) && isIntType(y)) {
-        return get<IntType>(x).kind == get<IntType>(y).kind;
-    } else if (isAggType(x) && isAggType(y)) {
-        return get<AggType>(x).slots == get<AggType>(y).slots;
-    } else {
-        insist(x.index() != y.index());
-        return false;
-    }
-    unreachable();
-}
-
-bool operator!=(const Type &x, const Type &y) {
-    return !(x == y);
-}
-
 bool isTerminatingStmt(const Statement &stmt) {
     return (
         is<BrStmt>(stmt) ||
