@@ -6,6 +6,12 @@ bool Function::isOpaque(void) const {
     return !body.has_value();
 }
 
+std::vector<Type> Function::paramTypes(void) const {
+    std::vector<Type> types;
+    for (const Param &p : params) { types.push_back(p.type); }
+    return types;
+}
+
 bool GlobalVar::isOpaque(void) const {
     return !val.has_value();
 }

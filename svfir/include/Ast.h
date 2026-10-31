@@ -268,6 +268,9 @@ struct Function final {
     { }
 
     bool isOpaque(void) const;
+
+    /// Param -> Type on params.
+    std::vector<Type> paramTypes(void) const;
 };
 
 /// <program>
