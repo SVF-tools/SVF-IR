@@ -64,7 +64,7 @@ bool roundtrip(void) {
         "      (store %0 %3)\n"
         "      (store %1 %4)\n"
         "      (load (ptr %7) %3)\n"
-        "      (call %8 @count (%7))\n"
+        "      (call (i32 %8) @count (%7))\n"
         "      (cmp = %9 %8 (i32 10))\n"
         "      (brif %9 !10 !11)))\n"
         "    (!10 (\n"

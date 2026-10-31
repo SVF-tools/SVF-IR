@@ -322,19 +322,19 @@ struct PhiStmt final {
 
 /// <control-inst> (2)/call
 struct CallStmt final {
-    const std::optional<Id> id;
+    const std::optional<TypedId> tid;
     const PVal callee;
     const std::vector<Val> args;
     const MaybeMetadata md;
     const Span span;
 
     CallStmt(
-        const std::optional<Id> &id,
+        const std::optional<TypedId> &tid,
         const PVal &callee,
         const std::vector<Val> &args,
         const MaybeMetadata &md,
         const Span &span
-    ) : span(span), id(id), callee(callee), args(args), md(md) { }
+    ) : span(span), tid(tid), callee(callee), args(args), md(md) { }
 };
 
 /// <control-inst> (3)/jump

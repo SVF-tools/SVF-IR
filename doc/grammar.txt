@@ -66,7 +66,7 @@
   | <bit-stmt>
 
 <control-stmt> : '(' 'phi' <lid> '(' ('(' <val> <bid> ')')+ ')' <md>? ')'
-               | '(' 'call' ('void'|<lid>) <pval> '(' <val>* ')' <md>? ')'
+               | '(' 'call' ('void'|<typed-lid>) <pval> '(' <val>* ')' <md>? ')'
                | '(' 'br' <bid> <md>? ')'
                | '(' 'brif' <val> <bid> <bid> <md>? ')'
                | '(' 'ret' (<val>|'void') <md>? ')'

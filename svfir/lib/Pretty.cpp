@@ -179,7 +179,7 @@ struct Pretty {
 
     std::string operator()(const CallStmt &c) {
         std::string ret;
-        if (c.id.has_value()) { ret = pretty(c.id.value()); }
+        if (c.tid.has_value()) { ret = pretty(c.tid.value()); }
         else { ret = "void"; }
         std::string args = prettyVec(c.args, " ");
         return par(

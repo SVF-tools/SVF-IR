@@ -17,7 +17,7 @@ std::optional<Id> introducedVar(const Statement &s) {
         id.emplace(get<PhiStmt>(s).id);
     } else if (is<CallStmt>(s)) {
         const CallStmt c = get<CallStmt>(s);
-        if (c.id.has_value()) { id.emplace(c.id.value()); }
+        if (c.tid.has_value()) { id.emplace(c.tid.value().id); }
     } else if (is<AllocStmt>(s)) {
         id.emplace(get<AllocStmt>(s).id);
     } else if (is<LoadStmt>(s)) {

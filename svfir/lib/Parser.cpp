@@ -742,22 +742,29 @@ Result<Statement, Err> parseCallStmt(const List &l) {
 
     ++it;
     if (it == end) {
-        return listCutShort("call statement", "local ID or 'void'", sp);
+        return listCutShort("call statement", "typed ID or 'void'", sp);
     }
-    if (!is<Atom>(*it)) { return notAnAtom("local ID or 'void'", span(*it)); }
-    std::optional<Id> lid = std::nullopt;
-    if (!atomEq(*it, "void")) {
-        // Try a local ID.
-        const Result<Id, Err> lidr = parseLocalId(*it);
-        if (is<Err>(lidr)) {
+
+    std::optional<TypedId> tlid = std::nullopt;
+    if (is<Atom>(*it)) {
+        if (!atomEq(*it, "void")) {
             return Err(
-                "Expected a local ID or 'void'. "
-                "If you intended a local ID here, note:\n  " +
-                get<Err>(lidr).toString(),
+                "Expected a typed ID or 'void'. "
+                "Got '" + get<Atom>(*it).val + "'\n  ",
                 span(*it)
             );
         }
-        lid.emplace(getVal(lidr));
+    } else {
+        const Result<TypedId, Err> tlidr = parseTypedId(*it);
+        if (is<Err>(tlidr)) {
+            return Err(
+                "Expected a typed ID or 'void'. "
+                "If you intended a typed ID here, note:\n  " +
+                get<Err>(tlidr).toString(),
+                span(*it)
+            );
+        }
+        tlid.emplace(getVal(tlidr));
     }
 
     ++it;
@@ -785,7 +792,7 @@ Result<Statement, Err> parseCallStmt(const List &l) {
         if (it + 1 != end) { return listTooLong("call statement", sp); }
     }
 
-    return Statement(CallStmt(lid, getVal(callee), args, md, span(l)));
+    return Statement(CallStmt(tlid, getVal(callee), args, md, span(l)));
 }
 
 /// To be called on (br ...) only.
