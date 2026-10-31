@@ -10,16 +10,16 @@ namespace SVFIR {
 
 /// Function signature made up of types.
 struct FnSig {
-    const std::vector<Type> paramTypes;
-    const Type retType;
+    const std::vector<Type> params;
+    const Type ret;
     /// If it accepts a vararg parameter.
     const bool vararg;
 
-    FnSig(
-        const std::vector<Type> paramTypes,
-        const Type retType,
-        const bool vararg
-    ) : paramTypes(paramTypes), retType(retType), vararg(vararg) { }
+    FnSig(const Function &fn);
+
+    /// Whether the types of some arguments match this signature. Importantly,
+    /// this accounts for varargs.
+    bool matches(const std::vector<Type> args) const;
 };
 
 //using SymbolTable = std::unordered_map<Id, Type>;
