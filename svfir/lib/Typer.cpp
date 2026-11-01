@@ -156,6 +156,45 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkEntryPredecessors
+/// DEPS: checkTerminatingStmts
+/// Raise an error if the entry block has a predecessor.
+////////////////////////////////////////////////////////////////////////////////
+
+std::optional<Err> checkEntryPredecessors(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            const Name &entry = fn.body.value().front().id.name;
+            for (const BasicBlock &bb : fn.body.value()) {
+                const Statement &ts = bb.stmts.back();
+                insist(isTerminatingStmt(ts));
+                std::vector<Name> targets;
+                if (is<BrStmt>(ts)) {
+                    targets.push_back(get<BrStmt>(ts).target.name);
+                } else if (is<BrifStmt>(ts)) {
+                    const BrifStmt &brif = get<BrifStmt>(ts);
+                    targets.push_back(brif.ifTarget.name);
+                    targets.push_back(brif.elseTarget.name);
+                } else { insist(is<RetStmt>(ts)); }
+
+                for (const Name &target : targets) {
+                    if (target == entry) {
+                        return Err(
+                            "The entry block '" + entry + "' of function '" +
+                            fn.id.name + "' is targeted by '" + pretty(ts) +
+                            "'. Entry blocks cannot have predecessors.",
+                            span(ts)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkVarargStmts
 /// DEPS: --
 /// Raise an error if a vararg statement is used in a non-vararg function.
@@ -523,6 +562,9 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
 
     std::optional<Err> te = checkTerminatingStmts(p);
     if (te.has_value()) { return te.value(); }
+
+    std::optional<Err> epe = checkEntryPredecessors(p);
+    if (epe.has_value()) { return epe.value(); }
 
     std::optional<Err> ve = checkVarargStmts(p);
     if (ve.has_value()) { return ve.value(); }
