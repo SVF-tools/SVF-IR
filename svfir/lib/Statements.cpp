@@ -96,7 +96,7 @@ std::vector<Val> usedVals(const Statement &s) {
     return vals;
 }
 
-std::vector<Id> usedVars(const Statement &s) {
+std::vector<Id> directlyUsedVars(const Statement &s) {
     std::vector<Id> ids;
     for (const Val &val : usedVals(s)) {
         // Vectors small enough for performance to be a non-issue.

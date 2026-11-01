@@ -14,7 +14,7 @@ std::optional<Id> introducedVar(const Statement &);
 /// Returns the variables, if any, used directly by a statement. This excludes
 /// variables referred to in seq constants. Defined variables are not considered
 /// used. For example, (add %x %y (i32 2)) uses %y.
-std::vector<Id> usedVars(const Statement &);
+std::vector<Id> directlyUsedVars(const Statement &);
 
 /// Returns the values (variables, typed constants), if any, used by a
 /// statement. Defined variables are not considered used. For example,

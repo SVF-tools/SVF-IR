@@ -362,7 +362,7 @@ std::optional<Err> _checkLocalDefBeforeUse(
         for (Index si = 0; si < bb.stmts.size(); ++si) {
             const Statement &s = bb.stmts[si];
             const StmtLoc sl = StmtLoc(bbi, si);
-            const std::vector<Id> uses = usedVars(s);
+            const std::vector<Id> uses = directlyUsedVars(s);
 
             for (const Id &u : uses) {
                 if (
@@ -378,7 +378,7 @@ std::optional<Err> _checkLocalDefBeforeUse(
             }
 
             if (!is<PhiStmt>(s)) {
-                for (const Id &u : usedVars(s)) {
+                for (const Id &u : directlyUsedVars(s)) {
                     if (
                         u.isLocal() &&
                         params.find(u.name) == params.cend() &&
@@ -463,7 +463,7 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
         if (!fn.isOpaque()) {
             for (const BasicBlock &bb : fn.body.value()) {
                 for (const Statement &s : bb.stmts) {
-                    for (const Id &u : usedVars(s)) {
+                    for (const Id &u : directlyUsedVars(s)) {
                         if (
                             u.isGlobal() &&
                             globals.find(u.name) == globals.cend()
