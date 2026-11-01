@@ -2,9 +2,7 @@
 
 namespace SVFIR {
 
-bool Function::isOpaque(void) const {
-    return !body.has_value();
-}
+bool Function::isOpaque(void) const { return !body.has_value(); }
 
 std::vector<Type> Function::paramTypes(void) const {
     std::vector<Type> types;
@@ -12,9 +10,7 @@ std::vector<Type> Function::paramTypes(void) const {
     return types;
 }
 
-bool GlobalVar::isOpaque(void) const {
-    return !val.has_value();
-}
+bool GlobalVar::isOpaque(void) const { return !val.has_value(); }
 
 bool Id::isLocal(void) const { return name[0] == '%'; }
 bool Id::isGlobal(void) const { return name[0] == '@'; }
@@ -52,8 +48,6 @@ bool operator==(const Type &x, const Type &y) {
     unreachable();
 }
 
-bool operator!=(const Type &x, const Type &y) {
-    return !(x == y);
-}
+bool operator!=(const Type &x, const Type &y) { return !(x == y); }
 
 }  // namespace SVFIR
