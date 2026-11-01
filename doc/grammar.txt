@@ -23,7 +23,6 @@
 <flt-const> : <int-const>'.'<digit>+('e''-'?<digit>+)? | '-inf' | '+inf' | 'nan'
 <null-const> : 'null'
 
-; TODO: Maybe some shortcut like '(' <type> (<const>|<var-id>)* ')'
 <seq-const> : '(' 'seq' (<scalar-const>|<var-id>)* ')'
 
 <scalar-const> : <int-const> | <flt-const> | <null-const>
