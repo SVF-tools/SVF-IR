@@ -20,6 +20,22 @@ bool Id::isLocal(void) const { return name[0] == '%'; }
 bool Id::isGlobal(void) const { return name[0] == '@'; }
 bool Id::isBlock(void) const { return name[0] == '!'; }
 
+unsigned int IntType::width(void) const {
+    if (kind == Kind::I8) { return 8; }
+    else if (kind == Kind::I16) { return 16; }
+    else if (kind == Kind::I32) { return 32; }
+    else if (kind == Kind::I64) { return 64; }
+    else if (kind == Kind::I128) { return 128; }
+    else { unreachable(); }
+}
+
+unsigned int FloatType::width(void) const {
+    if (kind == Kind::F16) { return 16; }
+    else if (kind == Kind::F32) { return 32; }
+    else if (kind == Kind::F64) { return 64; }
+    else { unreachable(); }
+}
+
 bool operator==(const Type &x, const Type &y) {
     if (is<VoidType>(x) && is<VoidType>(y)) { return true; }
     else if (is<PtrType>(x) && is<PtrType>(y)) { return true; }

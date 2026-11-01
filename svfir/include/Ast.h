@@ -60,6 +60,9 @@ struct IntType final {
 
     IntType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
+
+    /// Bits of this type.
+    unsigned int width(void) const;
 };
 
 /// <scalar-type> (3)
@@ -71,6 +74,9 @@ struct FloatType final  {
 
     FloatType(const Kind &kind, const Span &span)
     : span(span), kind(kind) { }
+
+    /// Bits of this type.
+    unsigned int width(void) const;
 };
 
 /// <scalar-type> (4)
@@ -103,7 +109,6 @@ using Type = std::variant<VoidType, IntType, FloatType, PtrType, AggType>;
 ///  * All other pairs of types are not equal (N.B. that includes opaque types).
 bool operator==(const Type &, const Type &);
 bool operator!=(const Type &, const Type &);
-
 
 /// <typed-lid>
 struct TypedId final {
