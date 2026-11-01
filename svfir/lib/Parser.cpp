@@ -361,7 +361,12 @@ Result<Constant, Err> parseConst(const SExpr &s) {
                         span(*it)
                     );
                 } else { vals.push_back(getVal(vi)); }
-            } else { vals.push_back(getVal(tc)); }
+            } else {
+                if (is<SeqConstant>(getVal(tc).constant)) {
+                    return Err("seq constants must be flattened.", span(*it));
+                }
+                vals.push_back(getVal(tc));
+            }
         }
 
         return Constant(SeqConstant(vals, sp));

@@ -24,9 +24,10 @@
 <null-const> : 'null'
 
 ; TODO: Maybe some shortcut like '(' <type> (<const>|<var-id>)* ')'
-<seq-const> : '(' 'seq' (<typed-const>|<var-id>)* ')'
+<seq-const> : '(' 'seq' (<scalar-const>|<var-id>)* ')'
 
-<const> : <int-const> | <flt-const> | <null-const> | <seq-const>
+<scalar-const> : <int-const> | <flt-const> | <null-const>
+<const> : <scalar-const> | <seq-const>
 
 <typed-const> : '(' <type> <const> <md>? ')'
 
