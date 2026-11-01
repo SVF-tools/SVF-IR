@@ -492,7 +492,14 @@ struct BinaryOpStmt final {
     enum class Op {
         ADD, SUB, MUL, UDIV, SDIV, UREM, SREM,
         AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR,
-        LT, LE, GT, GE, EQ, NEQ
+        // For non-integers.
+        LT, LE, GT, GE,
+        // For signed integers.
+        SLT, SLE, SGT, SGE,
+        // For unsigned integers.
+        ULT, ULE, UGT, UGE,
+        // For all types.
+        EQ, NEQ
     };
 
     const Op op;

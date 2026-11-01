@@ -292,6 +292,14 @@ struct Pretty {
         case BinaryOpStmt::Op::LE: kind = "cmp <="; break;
         case BinaryOpStmt::Op::GT: kind = "cmp >"; break;
         case BinaryOpStmt::Op::GE: kind = "cmp >="; break;
+        case BinaryOpStmt::Op::SLT: kind = "cmp (signed <)"; break;
+        case BinaryOpStmt::Op::SLE: kind = "cmp (signed <=)"; break;
+        case BinaryOpStmt::Op::SGT: kind = "cmp (signed >)"; break;
+        case BinaryOpStmt::Op::SGE: kind = "cmp (signed >=)"; break;
+        case BinaryOpStmt::Op::ULT: kind = "cmp (unsigned <)"; break;
+        case BinaryOpStmt::Op::ULE: kind = "cmp (unsigned <=)"; break;
+        case BinaryOpStmt::Op::UGT: kind = "cmp (unsigned >)"; break;
+        case BinaryOpStmt::Op::UGE: kind = "cmp (unsigned >=)"; break;
         case BinaryOpStmt::Op::EQ: kind = "cmp ="; break;
         case BinaryOpStmt::Op::NEQ: kind = "cmp !="; break;
         default: unreachable();

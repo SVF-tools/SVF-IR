@@ -901,6 +901,90 @@ Result<Statement, Err> parseRet(const List &l) {
     return RetStmt(val, md, span(l));
 }
 
+Result <BinaryOpStmt::Op, Err> parseCmpOp(const SExpr &s) {
+    BinaryOpStmt::Op op;
+    if (is<Atom>(s)) {
+        const std::string &kw = get<Atom>(s).val;
+        if (kw == "<") { op = BinaryOpStmt::Op::LT; }
+        else if (kw == "<=") { op = BinaryOpStmt::Op::LE; }
+        else if (kw == ">") { op = BinaryOpStmt::Op::GT; }
+        else if (kw == ">=") { op = BinaryOpStmt::Op::GE; }
+        else if (kw == "=") { op = BinaryOpStmt::Op::EQ; }
+        else if (kw == "!=") { op = BinaryOpStmt::Op::NEQ; }
+        else {
+            return badKw(
+                "comparison statement (operator)",
+                "'<'/'<='/'>'/'>='/(their signed/unsigned counterparts)/"
+                "'='/'!='",
+                kw,
+                span(s)
+            );
+        }
+    } else {
+        insist(is<List>(s));
+        const List &l = get<List>(s);
+        auto it = l.children.cbegin(), end = l.children.cend();
+
+        if (it == end) {
+            return listCutShort(
+                "comparison statement (operator)",
+                "'signed'/'unsigned'",
+                span(l)
+            );
+        }
+        if (!is<Atom>(*it)) {
+            return notAnAtom("'signed'/'unsigned'", span(*it));
+        }
+        const std::string &skw = get<Atom>(*it).val;
+        if (skw != "unsigned" && skw != "signed") {
+            return badKw(
+                "comparison statement (operator)",
+                "'signed'/'unsigned'",
+                skw,
+                span(*it)
+            );
+        }
+
+        ++it;
+        if (it == end) {
+            return listCutShort(
+                "comparison statement (operator)",
+                "'<'/'<='/'>'/'>='",
+                span(l)
+            );
+        }
+        if (!is<Atom>(*it)) {
+            return notAnAtom("'<'/'<='/'>'/'>='", span(*it));
+        }
+        const std::string &okw = get<Atom>(*it).val;
+        if (okw != "<" && okw != "<=" && okw != ">" && okw != ">=") {
+            return badKw(
+                "comparison statement (operator)",
+                "'<'/'<='/'>'/'>='",
+                okw,
+                span(*it)
+            );
+        }
+
+        if (skw == "signed") {
+            if (okw == "<") { op = BinaryOpStmt::Op::SLT; }
+            else if (okw == "<=") { op = BinaryOpStmt::Op::SLE; }
+            else if (okw == ">") { op = BinaryOpStmt::Op::SGT; }
+            else if (okw == ">=") { op = BinaryOpStmt::Op::SGE; }
+            else { unreachable(); }
+        } else {
+            insist(skw == "unsigned");
+            if (okw == "<") { op = BinaryOpStmt::Op::ULT; }
+            else if (okw == "<=") { op = BinaryOpStmt::Op::ULE; }
+            else if (okw == ">") { op = BinaryOpStmt::Op::UGT; }
+            else if (okw == ">=") { op = BinaryOpStmt::Op::UGE; }
+            else { unreachable(); }
+        }
+    }
+
+    return op;
+}
+
 /// To be called on (cmp ...) only.
 Result<Statement, Err> parseCmpStmt(const List &l) {
     static const std::string &cmpDesc = "comparison statement";
@@ -909,23 +993,11 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
     insist(it != end && atomEq(*it, "cmp"));
 
     ++it;
-    BinaryOpStmt::Op op;
-    if (!is<Atom>(*it)) { return notAnAtom("comparison operator", span(*it)); }
-    const std::string &kw = get<Atom>(*it).val;
-    if (kw == "<") { op = BinaryOpStmt::Op::LT; }
-    else if (kw == "<=") { op = BinaryOpStmt::Op::LE; }
-    else if (kw == ">") { op = BinaryOpStmt::Op::GT; }
-    else if (kw == ">=") { op = BinaryOpStmt::Op::GE; }
-    else if (kw == "=") { op = BinaryOpStmt::Op::EQ; }
-    else if (kw == "!=") { op = BinaryOpStmt::Op::NEQ; }
-    else {
-        return badKw(
-            "comparison statement (operator)",
-            "'<', '<=', '>', '>=', '=', or '!='",
-            kw,
-            span(*it)
-        );
+    if (it == end) {
+        return listCutShort(cmpDesc, "comparison operator", span(l));
     }
+    const Result<BinaryOpStmt::Op, Err> op = parseCmpOp(*it);
+    if (is<Err>(op)) { return get<Err>(op); }
 
     ++it;
     if (it == end) { return listCutShort(cmpDesc, "local ID", span(l)); }
@@ -954,9 +1026,14 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
         }
     }
 
-    return Statement(
-        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
-    );
+    return Statement(BinaryOpStmt(
+        getVal(op),
+        getVal(lid),
+        getVal(left),
+        getVal(right),
+        md,
+        span(l)
+    ));
 }
 
 /// To be called on (alloc ...) only.
