@@ -525,6 +525,96 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkConstantTypes
+/// DEPS: --
+/// Checks that the type of a typed constant matches its partner constant.
+/// TODO: this can be pushed to the grammar, consider that...
+/// TODO: consider semantics for int/float not fitting in width.
+////////////////////////////////////////////////////////////////////////////////
+
+Err _typedConstMismatchErr(const TypedConstant &tc) {
+    std::string expType;
+    if (is<IntConstant>(tc.constant)) { expType = "integer type"; }
+    else if (is<FloatConstant>(tc.constant)) { expType = "float type"; }
+    else if (is<NullConstant>(tc.constant)) { expType = "pointer type"; }
+    else if (is<SeqConstant>(tc.constant)) { expType = "aggregation type"; }
+    else { unreachable(); }
+
+    return Err(
+        "Constant typed incorrectly. Declared as '" + pretty(tc.type) + "' but "
+        "expected " + expType + " for '" + pretty(tc.constant) + "' in '" +
+        pretty(tc) + "'.",
+        span(tc)
+    );
+}
+
+std::optional<Err> _checkConstantType(const TypedConstant &tc) {
+    if (
+        is<VoidType>(tc.type) ||
+        (is<IntType>(tc.type) && !is<IntConstant>(tc.constant)) ||
+        (is<FloatType>(tc.type) && !is<FloatConstant>(tc.constant)) ||
+        (is<PtrType>(tc.type) && !is<NullConstant>(tc.constant)) ||
+        (is<AggType>(tc.type) && !is<SeqConstant>(tc.constant))
+    ) {
+        return _typedConstMismatchErr(tc);
+    }
+
+    if (is<SeqConstant>(tc.constant)) {
+        // We check is<AggType> above.
+        const AggType &at = get<AggType>(tc.type);
+        const SeqConstant &sc = get<SeqConstant>(tc.constant);
+        if (sc.vals.size() != at.slots) {
+            return Err(
+                "Declared sequence constant to have " +
+                std::to_string(at.slots) + "slots but in actuality has " +
+                std::to_string(sc.vals.size()) + " slots in '" +
+                pretty(tc) + "'.",
+                span(tc)
+            );
+        }
+
+        for (const Val &v : get<SeqConstant>(tc.constant).vals) {
+            if (is<TypedConstant>(v)) {
+                const std::optional<Err> ce =
+                    _checkConstantType(get<TypedConstant>(v));
+                if (ce.has_value()) { return ce.value(); }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkConstantTypes(const Program &p) {
+    for (const GlobalVar &gv : p.globalVars) {
+        if (!gv.isOpaque() && is<TypedConstant>(gv.val.value())) {
+            const TypedConstant &tc = get<TypedConstant>(gv.val.value());
+            const std::optional<Err> ce = _checkConstantType(tc);
+            if (ce.has_value()) { return ce.value(); }
+        }
+    }
+
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
+                    const std::vector<Val> uvs = usedVals(s);
+                    for (const Val &uv : uvs) {
+                        if (is<TypedConstant>(uv)) {
+                            const std::optional<Err> &ce =
+                                _checkConstantType(get<TypedConstant>(uv));
+                            if (ce.has_value()) { return ce.value(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 /// PASS: buildSymbolTable
 /// DEPS: ALL OTHER PASSES
 /// Type checks the program, raising an error on any type error. Otherwise
@@ -555,12 +645,7 @@ public:
         }
     }
 
-    std::optional<Err> type(const Statement &s) {
-        const std::optional<Err> &cte = checkConstantTypes(s);
-        if (cte.has_value()) { return cte.value(); }
-
-        return std::visit(*this, s);
-    }
+    std::optional<Err> type(const Statement &s) { return std::visit(*this, s); }
 
     const SymbolTable::TypeMap &types(void) const { return _types; }
 
@@ -920,17 +1005,8 @@ private:
     const VoidType FabVoidType = VoidType(FAB_SPAN);
 
 private:
-    std::optional<Err> checkConstantTypes(const Statement &s) const {
-        // TODO
-        return std::nullopt;
-    }
-
-    /// The type of val. Assumes
-    ///  1) if val is a constant type it has been previously checked
-    ///     (checkConstantTypes), and
-    ///  2) if val is an ID, the defining statement for ID has been
-    ///     previously checked (operator()).
-    ///  ^ TODO: put (1) more?
+    /// The type of val. Assumes that if val is an ID, the defining statement
+    /// for ID has been previously checked (operator()).
     Type valType(const Val &val) const {
         if (is<Id>(val)) {
             const Id &id = get<Id>(val);
@@ -1108,6 +1184,9 @@ bool isTerminatingStmt(const Statement &stmt) {
 }
 
 Result<TypedProgram, Err> typeProgram(const Program &p) {
+    std::optional<Err> ce = checkConstantTypes(p);
+    if (ce.has_value()) { return ce.value(); }
+
     std::optional<Err> de = checkDuplicateDecs(p);
     if (de.has_value()) { return de.value(); }
 
