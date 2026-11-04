@@ -536,37 +536,9 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
 ///  * That typed constants carry appropriate types.
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Return an ordering of the blocks in fn such that for all i, there are no two
-/// blocks order[i] and order[i+n] (positive n) such that a variable is defined
-/// in the latter and used in the former.
-std::vector<Index> _defUseBlockOrder(const Function &fn) {
-    // The order will be such that the higher nodes in a dominator tree come
-    // first. Unreachable will come last (they can be anywhere). This works
-    // because we checked that def-before-use is correct thus any def
-    // dominates any use.
-    std::vector<Index> order;
-    if (fn.isOpaque()) { return order; }
-
-    using Node = DominatorTree::Node;
-
-    const ControlFlowGraph &cfg = ControlFlowGraph(fn.body.value());
-    const DominatorTree &dt = DominatorTree(cfg, DominatorTree::Kind::DOM);
-
-    const std::function<void(const Node &)> visit =
-    [&order, &visit](const Node &n) {
-        order.push_back(n.id);
-        for (const Node &c : n.children) { visit(c); }
-    };
-
-    visit(dt.root);
-    for (const Node &u : dt.unreachables) { order.push_back(u.id); }
-
-    return order;
-}
-
-/// To be used by the typeProgram pass. type() should be cotinually called on
-/// statements in def-use order. At the end of this, a mapping of local names
-/// to types can then be pulled out via types().
+/// To be used by the buildSymbolTable pass. (*this)() should be cotinually
+/// called on statements in def-use order. At the end of this, a mapping of
+/// local names to types can then be pulled out via types().
 struct Typer {
 private:
     SymbolTable::TypeMap _types;
@@ -1041,6 +1013,34 @@ private:
         return s;
     }
 };
+
+/// Return an ordering of the blocks in fn such that for all i, there are no two
+/// blocks order[i] and order[i+n] (positive n) such that a variable is defined
+/// in the latter and used in the former.
+std::vector<Index> _defUseBlockOrder(const Function &fn) {
+    // The order will be such that the higher nodes in a dominator tree come
+    // first. Unreachable will come last (they can be anywhere). This works
+    // because we checked that def-before-use is correct thus any def
+    // dominates any use.
+    std::vector<Index> order;
+    if (fn.isOpaque()) { return order; }
+
+    using Node = DominatorTree::Node;
+
+    const ControlFlowGraph &cfg = ControlFlowGraph(fn.body.value());
+    const DominatorTree &dt = DominatorTree(cfg, DominatorTree::Kind::DOM);
+
+    const std::function<void(const Node &)> visit =
+    [&order, &visit](const Node &n) {
+        order.push_back(n.id);
+        for (const Node &c : n.children) { visit(c); }
+    };
+
+    visit(dt.root);
+    for (const Node &u : dt.unreachables) { order.push_back(u.id); }
+
+    return order;
+}
 
 Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     SymbolTable::SigMap sigs;
