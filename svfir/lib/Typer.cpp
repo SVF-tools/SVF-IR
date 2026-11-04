@@ -21,6 +21,10 @@ namespace {
 
 using namespace SVFIR;
 
+const PtrType FabPtrType = PtrType(FAB_SPAN);
+const IntType FabInt8Type = IntType(IntType::Kind::I8, FAB_SPAN);
+const VoidType FabVoidType = VoidType(FAB_SPAN);
+
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkDuplicateDecs
 /// DEPS: --
@@ -1000,11 +1004,6 @@ public:
     }
 
 private:
-    const PtrType FabPtrType = PtrType(FAB_SPAN);
-    const IntType FabInt8Type = IntType(IntType::Kind::I8, FAB_SPAN);
-    const VoidType FabVoidType = VoidType(FAB_SPAN);
-
-private:
     /// The type of val. Assumes that if val is an ID, the defining statement
     /// for ID has been previously checked (operator()).
     Type valType(const Val &val) const {
@@ -1145,7 +1144,20 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
         fnTables.insert({fn.id.name, typer.types()});
     }
 
-    return SymbolTable(sigs, fnTables);
+    SymbolTable::TypeMap globalVarTypes;
+    for (const GlobalVar &gv : p.globalVars) {
+        insist(globalVarTypes.count(gv.id.name) == 0);
+        if (gv.isOpaque()) { globalVarTypes.insert({gv.id.name, FabVoidType}); }
+        else if (is<TypedConstant>(gv.val.value())) {
+            const TypedConstant &tc = get<TypedConstant>(gv.val.value());
+            globalVarTypes.insert({gv.id.name, tc.type});
+        } else {
+            insist(is<Id>(gv.val.value()));
+            globalVarTypes.insert({gv.id.name, FabPtrType});
+        }
+    }
+
+    return SymbolTable(sigs, globalVarTypes, fnTables);
 }
 
 }  // Anonymous namespace

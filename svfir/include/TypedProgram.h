@@ -32,16 +32,19 @@ struct SymbolTable {
     using FnTables = std::unordered_map<Name, TypeMap>;
 
     /// Function names to their signature (types).
-    const SigMap sigs;
+    const SigMap fnSigs;
     /// Global variable (non-function) names to their type underneath the
-    /// pointer.
-    // std::unordered_map<Name, Type> varTypes;
+    /// pointer. Opaque global variables are given void types here.
+    TypeMap globalVarTypes;
     /// Function names to a map of said function's local variable names to their
     /// type.
     const FnTables fnTables;
 
-    SymbolTable(const SigMap &sigs, const FnTables fnTables)
-    : sigs(sigs), fnTables(fnTables) { }
+    SymbolTable(
+        const SigMap &fnSigs,
+        const TypeMap &globalVarTypes,
+        const FnTables fnTables
+    ) : fnSigs(fnSigs), globalVarTypes(globalVarTypes), fnTables(fnTables) { }
 };
 
 class TypedProgram {
