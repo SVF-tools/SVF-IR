@@ -707,7 +707,7 @@ public:
         case BinaryOpStmt::Op::ASHIFTR:
         case BinaryOpStmt::Op::LSHIFTR:
             if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
-            assignType(binop.id.name, FabInt8Type);
+            assignType(binop.id.name, lt);
             break;
 
         default: unreachable();
