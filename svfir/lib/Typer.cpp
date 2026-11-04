@@ -33,17 +33,17 @@ std::optional<Err> _checkDuplicateGlobalDecs(
     const std::vector<Function> &fns
 ) {
     std::unordered_set<Name> names;
-    for (const auto &v : vs) {
+    for (const GlobalVar &v : vs) {
         const Name name = v.id.name;
-        if (names.insert(name).second) {
+        if (!names.insert(name).second) {
             return Err(
                 "Global variable name '" + name + "' declared twice", v.span
             );
         }
     }
-    for (const auto &fn : fns) {
+    for (const Function &fn : fns) {
         const Name name = fn.id.name;
-        if (names.insert(name).second) {
+        if (!names.insert(name).second) {
             return Err("Function name '" + name + "' declared twice", fn.span);
         }
     }
@@ -54,7 +54,7 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     std::unordered_set<Name> names;
     for (const auto &p : fn.params) {
         const Name name = p.id.name;
-        if (names.insert(name).second) {
+        if (!names.insert(name).second) {
             return Err("Parameter '" + name + "' declared twice", fn.span);
         }
     }
@@ -65,7 +65,7 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                 const std::optional<Id> id = introducedVar(s);
                 if (id.has_value()) {
                     const Name name = id.value().name;
-                    if (names.insert(name).second) {
+                    if (!names.insert(name).second) {
                         return Err(
                             "Variable '" + name + "' declared twice", span(s)
                         );
