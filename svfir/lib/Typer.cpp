@@ -497,6 +497,7 @@ std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
 std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
     std::unordered_set<Name> globals;
     for (const GlobalVar &gv : p.globalVars) { globals.insert(gv.id.name); }
+    for (const Function &fn : p.functions) { globals.insert(fn.id.name); }
 
     for (const Function &fn : p.functions) {
         if (!fn.isOpaque()) {
