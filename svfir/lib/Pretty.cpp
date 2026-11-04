@@ -12,45 +12,6 @@ namespace {
 
 using namespace SVFIR;
 
-const std::string INDENTATION = "  ";
-
-/// Add an INDENTATION to the start of every line.
-std::string indent(const std::string &s) {
-    static std::regex lineEndRe("\n");
-
-    return std::regex_replace(
-        s.empty() ? s : INDENTATION + s,
-        lineEndRe,
-        "\n" + INDENTATION
-    );
-}
-
-/// Strings together each element of xs, calling pretty on each (TODO: not
-/// expressed in the type), delimited by delim.
-template <typename T>
-std::string prettyVec(const std::vector<T> &xs, const std::string &delim) {
-    std::string s;
-
-    bool first = true;
-    for (auto x : xs) {
-        if (first) { first = false; }
-        else { s += delim; }
-        s += pretty(x);
-    }
-
-    return s;
-}
-
-/// If md has a value returns a pretty string of it preceded by a space,
-/// otherwise returns an empty string.
-std::string maybePrettyMd(const MaybeMetadata md) {
-    return md.has_value() ? " " + pretty(md.value()) : "";
-}
-
-std::string par(const std::string &s) {
-    return "(" + s + ")";
-}
-
 struct Pretty {
     // Delete catch-all so compiler catches missing overloads.
     template<class T> void operator()(const T &) = delete;
@@ -93,7 +54,7 @@ struct Pretty {
     std::string operator()(const Id &id) { return id.name; }
 
     std::string operator()(const TypedId &tid) {
-        return "(" + pretty(tid.type) + " " + pretty(tid.id) + ")";
+        return "(" + operator()(tid.type) + " " + operator()(tid.id) + ")";
     }
 
     std::string operator()(const IntConstant &ic) { return ic.val; }
@@ -104,12 +65,12 @@ struct Pretty {
 
     std::string operator()(const SeqConstant &sc) {
         std::string vals;
-        for (const Val &v : sc.vals) { vals += " " + pretty(v); }
+        for (const Val &v : sc.vals) { vals += " " + operator()(v); }
         return par("seq" + vals);
     }
 
     std::string operator()(const TypedConstant &tc) {
-        return "(" + pretty(tc.type) + " " + pretty(tc.constant) + ")";
+        return "(" + operator()(tc.type) + " " + operator()(tc.constant) + ")";
     }
 
     std::string operator()(const Preamble &p) {
@@ -121,37 +82,39 @@ struct Pretty {
 
     std::string operator()(const GlobalVar &v) {
         return par(
-            pretty(v.id) + " " +
-            (v.val.has_value() ? pretty(v.val.value()) : "opaque") +
-            maybePrettyMd(v.md)
+            operator()(v.id) + " " +
+            (v.val.has_value() ? operator()(v.val.value()) : "opaque") +
+            maybeOpMd(" ", v.md)
         );
     }
 
     std::string operator()(const Param &p) {
-        return par(pretty(p.type) + " " + pretty(p.id) + maybePrettyMd(p.md));
+        return par(
+            operator()(p.type) + " " + operator()(p.id) + maybeOpMd(" ", p.md)
+        );
     }
 
     std::string operator()(const Function &f) {
-        std::string params = prettyVec(f.params, " ");
+        std::string params = opVec(f.params, " ");
         if (f.vararg) {
             if (!f.params.empty()) { params += " "; }
             params += "...";
         }
 
         return par(
-            pretty(f.id) + " " +
-            pretty(f.type) + " " +
+            operator()(f.id) + " " +
+            operator()(f.type) + " " +
             par(params) + " " +
             (f.body.has_value() ?
-                "(\n" + indent(prettyVec(f.body.value(), "\n")) + ")" :
+                "(\n" + indent(opVec(f.body.value(), "\n")) + ")" :
                 "opaque"
             ) +
-            maybePrettyMd(f.md)
+            maybeOpMd(" ", f.md)
         );
     }
 
     std::string operator()(const Program &p) {
-        auto block = [](const std::string &name, const std::string &block) {
+        auto block = [this](const std::string &name, const std::string &block) {
             if (block.empty()) {
                 return "(" + name + ")";
             } else {
@@ -159,10 +122,10 @@ struct Pretty {
             }
         };
 
-        return pretty(p.preamble) + "\n" +
-            block("variables", prettyVec(p.globalVars, "\n")) + "\n" +
-            block("functions", prettyVec(p.functions, "\n")) +
-            (p.md.has_value() ? "\n" + pretty(p.md.value()) : "");
+        return operator()(p.preamble) + "\n" +
+            block("variables", opVec(p.globalVars, "\n")) + "\n" +
+            block("functions", opVec(p.functions, "\n")) +
+            (p.md.has_value() ? "\n" + operator()(p.md.value()) : "");
     }
 
     std::string operator()(const PhiStmt &p) {
@@ -171,44 +134,46 @@ struct Pretty {
         for (auto o : p.args) {
             if (first) { first = false; }
             else { args += " "; }
-            args += par(pretty(o.val) + " " + pretty(o.pred));
+            args += par(operator()(o.val) + " " + operator()(o.pred));
         }
 
-        return par("phi " + pretty(p.id) + " " + args + maybePrettyMd(p.md));
+        return par(
+            "phi " + operator()(p.id) + " " + args + maybeOpMd(" ", p.md)
+        );
     }
 
     std::string operator()(const CallStmt &c) {
         std::string ret;
-        if (c.tid.has_value()) { ret = pretty(c.tid.value()); }
+        if (c.tid.has_value()) { ret = operator()(c.tid.value()); }
         else { ret = "void"; }
-        std::string args = prettyVec(c.args, " ");
+        std::string args = opVec(c.args, " ");
         return par(
             "call " +
             ret + " " +
-            pretty(c.callee) + " " +
-            par(args) +  // built string has trailing space.
-            maybePrettyMd(c.md)
+            operator()(c.callee) + " " +
+            par(args) +
+            maybeOpMd(" ", c.md)
         );
     }
 
     std::string operator()(const BrStmt &br) {
-        return par("br " + pretty(br.target) + maybePrettyMd(br.md));
+        return par("br " + operator()(br.target) + maybeOpMd(" ", br.md));
     }
 
     std::string operator()(const BrifStmt &brif) {
         return par(
             "brif " +
-            pretty(brif.cond) + " " +
-            pretty(brif.ifTarget) + " " +
-            pretty(brif.elseTarget) +
-            maybePrettyMd(brif.md)
+            operator()(brif.cond) + " " +
+            operator()(brif.ifTarget) + " " +
+            operator()(brif.elseTarget) +
+            maybeOpMd(" ", brif.md)
         );
     }
 
     std::string operator()(const RetStmt &ret) {
         const std::string val =
-            ret.val.has_value() ? pretty(ret.val.value()) : "void";
-        const std::string maybeMd = maybePrettyMd(ret.md);
+            ret.val.has_value() ? operator()(ret.val.value()) : "void";
+        const std::string maybeMd = maybeOpMd(" ", ret.md);
         return par("ret " + val + maybeMd);
     }
 
@@ -217,38 +182,46 @@ struct Pretty {
         if (a.kind == AllocStmt::Kind::HEAP) { kind = "heap"; }
         else if (a.kind == AllocStmt::Kind::STACK) { kind = "stack"; }
         else { unreachable(); }
-        return par("alloc " + kind + " " + pretty(a.id) + maybePrettyMd(a.md));
+        return par(
+            "alloc " + kind + " " + operator()(a.id) + maybeOpMd(" ", a.md)
+        );
     }
 
     std::string operator()(const StoreStmt &s) {
         return par(
-            "store " + pretty(s.val) + " " + pretty(s.dst) + maybePrettyMd(s.md)
+            "store " +
+            operator()(s.val) + " " +
+            operator()(s.dst) +
+            maybeOpMd(" ", s.md)
         );
     }
 
     std::string operator()(const LoadStmt &l) {
         return par(
-            "load " + pretty(l.tid) + " " + pretty(l.src) + maybePrettyMd(l.md)
+            "load " +
+            operator()(l.tid) + " " +
+            operator()(l.src) +
+            maybeOpMd(" ", l.md)
         );
     }
 
     std::string operator()(const FieldStmt &i) {
         return par(
             "field " +
-            pretty(i.id) + " " +
-            pretty(i.src) + " " +
-            pretty(i.index) +
-            maybePrettyMd(i.md)
+            operator()(i.id) + " " +
+            operator()(i.src) + " " +
+            operator()(i.index) +
+            maybeOpMd(" ", i.md)
         );
     }
 
     std::string operator()(const BitCastStmt &r) {
         return par(
             "bitcast " +
-            pretty(r.id) + " " +
-            pretty(r.val) + " " +
-            pretty(r.type) +
-            maybePrettyMd(r.md)
+            operator()(r.id) + " " +
+            operator()(r.val) + " " +
+            operator()(r.type) +
+            maybeOpMd(" ", r.md)
         );
     }
 
@@ -260,15 +233,15 @@ struct Pretty {
             if (ek == ConvertStmt::ExtKind::ZERO) { eks = "zero"; }
             else if (ek == ConvertStmt::ExtKind::SIGN) { eks = "sign"; }
             else { unreachable(); }
-            type = par(eks + " " + pretty(c.type));
-        } else { type = pretty(c.type); }
+            type = par(eks + " " + operator()(c.type));
+        } else { type = operator()(c.type); }
 
         return par(
             "convert " +
-            pretty(c.id) + " " +
-            pretty(c.val) + " " +
+            operator()(c.id) + " " +
+            operator()(c.val) + " " +
             type +
-            maybePrettyMd(c.md)
+            maybeOpMd(" ", c.md)
         );
     }
 
@@ -307,10 +280,10 @@ struct Pretty {
 
         return par(
             kind + " " +
-            pretty(b.id) + " " +
-            pretty(b.left) + " " +
-            pretty(b.right) +
-            maybePrettyMd(b.md)
+            operator()(b.id) + " " +
+            operator()(b.left) + " " +
+            operator()(b.right) +
+            maybeOpMd(" ", b.md)
         );
     }
 
@@ -323,18 +296,18 @@ struct Pretty {
 
         return par(
             kind + " " +
-            pretty(u.id) + " " +
-            pretty(u.val) +
-            maybePrettyMd(u.md)
+            operator()(u.id) + " " +
+            operator()(u.val) +
+            maybeOpMd(" ", u.md)
         );
     }
 
     std::string operator()(const VarargStmt &v) {
         return par(
             "vararg " +
-            pretty(v.tid) + " " +
-            pretty(v.index) +
-            maybePrettyMd(v.md)
+            operator()(v.tid) + " " +
+            operator()(v.index) +
+            maybeOpMd(" ", v.md)
         );
     }
 
@@ -342,15 +315,52 @@ struct Pretty {
         return par(
             "blackhole " +
             std::string(b.pure ? "pure" : "effectful") + " " +
-            (b.tid.has_value() ? pretty(b.tid.value()) : "void") +
-            maybePrettyMd(b.md)
+            (b.tid.has_value() ? operator()(b.tid.value()) : "void") +
+            maybeOpMd(" ", b.md)
         );
     }
 
     std::string operator()(const BasicBlock &b) {
-        std::string stmts = prettyVec(b.stmts, "\n");
-        return par(pretty(b.id) + " (\n" + indent(stmts) + ")");
+        std::string stmts = opVec(b.stmts, "\n");
+        return par(operator()(b.id) + " (\n" + indent(stmts) + ")");
     }
+
+private:
+    const std::string INDENTATION = "  ";
+
+    /// Add an INDENTATION to the start of every line.
+    std::string indent(const std::string &s) {
+        static std::regex lineEndRe("\n");
+
+        return std::regex_replace(
+            s.empty() ? s : INDENTATION + s,
+            lineEndRe,
+            "\n" + INDENTATION
+        );
+    }
+
+    /// Strings together each element of xs, calling operator() on each,
+    /// delimited by delim.
+    template <typename T>
+    std::string opVec(const std::vector<T> &xs, const std::string &delim) {
+        std::string s;
+        bool first = true;
+        for (auto x : xs) {
+            if (first) { first = false; }
+            else { s += delim; }
+            s += operator()(x);
+        }
+        return s;
+    }
+
+    /// If md has a value returns an operator() string of it preceded by
+    /// prefix (usually a space), otherwise returns an empty string.
+    std::string maybeOpMd(const std::string &prefix, const MaybeMetadata md) {
+        return md.has_value() ? prefix + operator()(md.value()) : "";
+    }
+
+    /// Wraps a string in parentheses.
+    std::string par(const std::string &s) { return "(" + s + ")"; }
 };
 
 }  // Anonymous namespace
