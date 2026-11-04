@@ -365,8 +365,8 @@ struct StmtLoc final {
 
     /// Does sl occur, strictly, after this location?
     bool after(const DominatorTree &dt, const StmtLoc &sl) const {
-        if (this->block == sl.block) { return sl.stmt > this->stmt; }
-        else { return dt.dominates(this->block, sl.block); }
+        if (this->block == sl.block) { return this->stmt > sl.stmt; }
+        else { return dt.dominates(sl.block, this->block); }
         unreachable();
     }
 };
@@ -425,8 +425,7 @@ std::optional<Err> _checkLocalDefBeforeUse(
                     ) {
                         return Err(
                             "Local variable '" + u.name + "' used "
-                            "before definition (use must always come "
-                            "strict after definition).",
+                            "before definition in '" + pretty(s) + "'.",
                             span(u)
                         );
                     }
