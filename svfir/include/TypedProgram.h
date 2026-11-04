@@ -17,30 +17,41 @@ struct FnSig {
 
     FnSig(const Function &fn);
 
-    /// Whether the types of some arguments match this signature. Importantly,
-    /// this accounts for varargs.
-    bool matches(const std::vector<Type> args) const;
+    /// Whether some expected return type and the types of some arguments
+    /// match this signature. Importantly, this accounts for varargs.
+    bool matches(const std::vector<Type> &args, const Type &expRet) const;
 };
 
-//using SymbolTable = std::unordered_map<Id, Type>;
-
 /// Types for names.
-class SymbolTable {
-    /// Function IDs to their signature (types).
-    std::unordered_map<Id, FnSig> fnSigs;
-    /// Global variable IDs to their type underneath the pointer.
-    std::unordered_map<Id, Type> varTypes;
-    /// Function IDs to a map of said function's local variable IDs to their
+struct SymbolTable {
+    /// Variables to types.
+    using TypeMap = std::unordered_map<Name, Type>;
+    /// Function to signatures.
+    using SigMap = std::unordered_map<Name, FnSig>;
+    /// Function to (variables to types).
+    using FnTables = std::unordered_map<Name, TypeMap>;
+
+    /// Function names to their signature (types).
+    const SigMap sigs;
+    /// Global variable (non-function) names to their type underneath the
+    /// pointer.
+    // std::unordered_map<Name, Type> varTypes;
+    /// Function names to a map of said function's local variable names to their
     /// type.
-    std::unordered_map<Id, std::unordered_map<Id, Type>> fnTables;
+    const FnTables fnTables;
+
+    SymbolTable(const SigMap &sigs, const FnTables fnTables)
+    : sigs(sigs), fnTables(fnTables) { }
 };
 
 class TypedProgram {
 public:
     const Program program;
+    const SymbolTable symbols;
 
 public:
-    TypedProgram(const Program program) : program(program) { }
+    TypedProgram(const Program &program, const SymbolTable &symbols)
+    : program(program), symbols(symbols) { }
 };
 
 }  // namespace SVFIR
