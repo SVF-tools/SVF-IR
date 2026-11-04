@@ -527,7 +527,13 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: buildSymbolTable
 /// DEPS: ALL OTHER PASSES
-/// ...
+/// Type checks the program, raising an error on any type error. Otherwise
+/// returns a symbol table for the program. Type checking involves:
+///  * That operands of statements (including types in convert/bitcast)
+///    are appropriately typed.
+///    * For calls, this involves checking that *some* function exists with
+///      a matching signature.
+///  * That typed constants carry appropriate types.
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Return an ordering of the blocks in fn such that for all i, there are no two
@@ -690,7 +696,7 @@ public:
         case BinaryOpStmt::Op::ULE:
         case BinaryOpStmt::Op::UGT:
         case BinaryOpStmt::Op::UGE:
-            if (!is<IntType>(lt)) { return expErr("int", lt, binop); }
+            if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
             assignType(binop.id.name, FabInt8Type);
             break;
 
@@ -700,7 +706,7 @@ public:
         case BinaryOpStmt::Op::SHIFTL:
         case BinaryOpStmt::Op::ASHIFTR:
         case BinaryOpStmt::Op::LSHIFTR:
-            if (!is<IntType>(lt)) { return expErr("int", lt, binop); }
+            if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
             assignType(binop.id.name, FabInt8Type);
             break;
 
