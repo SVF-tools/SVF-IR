@@ -161,6 +161,7 @@ TypedProgram unifyReturns(const TypedProgram &tp) {
     // a single new identifier. It does not have a type and we will now give it
     // a type. We'll iterate over the original program to see which functions
     // were actually unified.
+    // TODO: can avoid this if the only functions unified return void.
     SymbolTable::FnTables fnTables = tp.symbols.fnTables;
     for (Index i = 0; i < p.functions.size(); ++i) {
         if (needsUnification(p.functions[i])) {

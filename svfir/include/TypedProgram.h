@@ -47,12 +47,21 @@ struct SymbolTable {
     ) : fnSigs(fnSigs), globalVarTypes(globalVarTypes), fnTables(fnTables) { }
 };
 
+/// A valid program and type information about it.
+/// TODO: technically this type isn't actually guaranteeing anything as it can
+///       be constructed with any program and any symbol table, so it's doing
+///       more of a documentation and encapsulation thing than enforcing
+///       contracts. To do type checking in the constructor would make things
+///       more expensive and disallow us from e.g. making small changes to a
+///       symbol table after a transformation. Something to think about.
 class TypedProgram {
 public:
     const Program program;
     const SymbolTable symbols;
 
 public:
+    /// *Program must be a valid program and symbols must correctly represent
+    /// the type information of program.*
     TypedProgram(const Program &program, const SymbolTable &symbols)
     : program(program), symbols(symbols) { }
 };
