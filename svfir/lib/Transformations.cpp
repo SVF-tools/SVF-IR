@@ -1,10 +1,11 @@
 #include <unordered_set>
 
+#include "Analyses.h"
 #include "Ast.h"
 #include "Ops.h"
 #include "Span.h"
 #include "Statements.h"
-#include "UnifyReturns.h"
+#include "Transformations.h"
 #include "TypedProgram.h"
 #include "Variant.h"
 
@@ -125,7 +126,7 @@ Function unify(const Function &fn) {
 
 namespace SVFIR {
 
-Program unifyReturns(const TypedProgram &tp) {
+TypedProgram unifyReturns(const TypedProgram &tp) {
     const Program &p = tp.program;
     std::vector<Function> unifiedFunctions;
     for (const Function &fn : p.functions) {
@@ -136,7 +137,17 @@ Program unifyReturns(const TypedProgram &tp) {
         }
     }
 
-    return Program(p.preamble, p.globalVars, unifiedFunctions, p.md, p.span);
+    // We are confident that the transformations we have made result in a valid
+    // program. Thus we do not typeProgram which has many checks but jump to
+    // buildSymbolTable directly. If performance still does not suffice, we
+    // can consider manually updating the symbol table (basically types for
+    // the variables introduced in the new phi statements, if any).
+    const Program up =
+        Program(p.preamble, p.globalVars, unifiedFunctions, p.md, p.span);
+    const Result<SymbolTable, Err> usyms = buildSymbolTable(up);
+    insist(is<SymbolTable>(usyms));
+
+    return TypedProgram(up, get<SymbolTable>(usyms));
 }
 
 }  // namespace SVFIR

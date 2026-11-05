@@ -1,5 +1,8 @@
-#ifndef UNIFYRETURNS_H
-#define UNIFYRETURNS_H
+#ifndef TRANSFORMATIONS_H
+#define TRANSFORMATIONS_H
+
+#include "Ast.h"
+#include "TypedProgram.h"
 
 namespace SVFIR {
 
@@ -9,8 +12,8 @@ namespace SVFIR {
 /// that has a single return which previous return sites would unconditionally
 /// branch to. The return values, if any, will be gathered in a phi statement
 /// in this block.
-Program unifyReturns(const Program &p);
+TypedProgram unifyReturns(const TypedProgram &tp);
 
 }  // namespace SVFIR
 
-#endif  // UNIFYRETURNS_H
+#endif  // TRANSFORMATIONS_H
