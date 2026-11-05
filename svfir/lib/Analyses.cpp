@@ -33,7 +33,7 @@ std::optional<Err> _checkDuplicateGlobalDecs(
 ) {
     std::unordered_set<Name> names;
     for (const GlobalVar &v : vs) {
-        const Name name = v.id.name;
+        const Name &name = v.id.name;
         if (!names.insert(name).second) {
             return Err(
                 "Global variable name '" + name + "' declared twice", v.span
@@ -41,7 +41,7 @@ std::optional<Err> _checkDuplicateGlobalDecs(
         }
     }
     for (const Function &fn : fns) {
-        const Name name = fn.id.name;
+        const Name &name = fn.id.name;
         if (!names.insert(name).second) {
             return Err("Function name '" + name + "' declared twice", fn.span);
         }
@@ -52,18 +52,18 @@ std::optional<Err> _checkDuplicateGlobalDecs(
 std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     std::unordered_set<Name> names;
     for (const auto &p : fn.params) {
-        const Name name = p.id.name;
+        const Name &name = p.id.name;
         if (!names.insert(name).second) {
             return Err("Parameter '" + name + "' declared twice", fn.span);
         }
     }
 
     if (fn.body.has_value()) {
-        for (const auto &bb : fn.body.value()) {
-            for (const auto &s : bb.stmts) {
-                const std::optional<Id> id = introducedVar(s);
+        for (const BasicBlock &bb : fn.body.value()) {
+            for (const Statement &s : bb.stmts) {
+                const std::optional<Id> &id = introducedVar(s);
                 if (id.has_value()) {
-                    const Name name = id.value().name;
+                    const Name &name = id.value().name;
                     if (!names.insert(name).second) {
                         return Err(
                             "Variable '" + name + "' declared twice", span(s)
@@ -80,7 +80,7 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
 std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
     std::unordered_set<Name> names;
     if (fn.body.has_value()) {
-        for (const auto &bb : fn.body.value()) {
+        for (const BasicBlock &bb : fn.body.value()) {
             const Name &name = bb.id.name;
             if (names.find(name) != names.cend()) {
                 return Err("Block '" + name + "' declared twice", span(bb));
@@ -93,7 +93,7 @@ std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
 
 // checkPhiStmtArgs ////////////////////////////////////////////////////////////
 std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
-    const ControlFlowGraph cfg = ControlFlowGraph(bbs);
+    const ControlFlowGraph &cfg = ControlFlowGraph(bbs);
     for (Index i = 0; i < bbs.size(); ++i) {
         const BasicBlock &bb = bbs[i];
         for (const Statement &s : bb.stmts) {
@@ -177,7 +177,7 @@ std::unordered_map<Name, StmtLoc> _localDefSites(const FunctionBody &bbs) {
         const BasicBlock &bb = bbs[bbi];
         for (Index si = 0; si < bb.stmts.size(); ++si) {
             const Statement &s = bb.stmts[si];
-            const std::optional<Id> var = introducedVar(s);
+            const std::optional<Id> &var = introducedVar(s);
             if (var.has_value()) {
                 defs.insert({var.value().name, StmtLoc(bbi, si)});
             }
@@ -188,9 +188,9 @@ std::unordered_map<Name, StmtLoc> _localDefSites(const FunctionBody &bbs) {
 
 std::optional<Err> _checkLocalDefBeforeUse(
     const FunctionBody &bbs,
-    std::unordered_set<Name> params
+    const std::unordered_set<Name> &params
 ) {
-    const std::unordered_map<Name, StmtLoc> defs = _localDefSites(bbs);
+    const std::unordered_map<Name, StmtLoc> &defs = _localDefSites(bbs);
     const ControlFlowGraph &cfg = ControlFlowGraph(bbs);
     const DominatorTree &dt = DominatorTree(cfg, DominatorTree::Kind::DOM);
 
@@ -198,8 +198,8 @@ std::optional<Err> _checkLocalDefBeforeUse(
         const BasicBlock &bb = bbs[bbi];
         for (Index si = 0; si < bb.stmts.size(); ++si) {
             const Statement &s = bb.stmts[si];
-            const StmtLoc sl = StmtLoc(bbi, si);
-            const std::vector<Id> uses = directlyUsedVars(s);
+            const StmtLoc &sl = StmtLoc(bbi, si);
+            const std::vector<Id> &uses = directlyUsedVars(s);
 
             for (const Id &u : uses) {
                 if (
@@ -312,7 +312,7 @@ std::optional<Err> _checkConstantType(const TypedConstant &tc) {
 
         for (const Val &v : get<SeqConstant>(tc.constant).vals) {
             if (is<TypedConstant>(v)) {
-                const std::optional<Err> ce =
+                const std::optional<Err> &ce =
                     _checkConstantType(get<TypedConstant>(v));
                 if (ce.has_value()) { return ce.value(); }
             }
@@ -331,10 +331,10 @@ private:
     SymbolTable::TypeMap _types;
     /// Function we're typing.
     const Function &fn;
-    // TODO: this keeps getting copied, we need to measure performance.
-    const std::unordered_map<Name, FnSig> sigs;
+    const std::unordered_map<Name, FnSig> &sigs;
 
 public:
+    /// Lifetime must be within that of fn and sigs.
     Typer(const Function &fn, const std::unordered_map<Name, FnSig> &sigs)
     : fn(fn), sigs(sigs) {
         for (const Param &param : fn.params) {
@@ -815,16 +815,16 @@ std::vector<Index> _defUseBlockOrder(const Function &fn) {
 namespace SVFIR {
 
 std::optional<Err> checkDuplicateDecs(const Program &p) {
-    const std::optional<Err> gs = _checkDuplicateGlobalDecs(
+    const std::optional<Err> &gs = _checkDuplicateGlobalDecs(
         p.globalVars, p.functions
     );
     if (gs.has_value()) { return gs.value(); }
 
     for (const Function &fn : p.functions) {
-        const std::optional<Err> ls = _checkDuplicateLocalDecs(fn);
+        const std::optional<Err> &ls = _checkDuplicateLocalDecs(fn);
         if (ls.has_value()) { return ls.value(); }
 
-        const std::optional<Err> bs = _checkDuplicateBlockDecs(fn);
+        const std::optional<Err> &bs = _checkDuplicateBlockDecs(fn);
         if (bs.has_value()) { return bs.value(); }
     }
 
@@ -832,9 +832,9 @@ std::optional<Err> checkDuplicateDecs(const Program &p) {
 }
 
 std::optional<Err> checkTerminatingStmts(const Program &p) {
-    for (const auto &fn : p.functions) {
+    for (const Function &fn : p.functions) {
         if (fn.body.has_value()) {
-            for (const auto &bb : fn.body.value()) {
+            for (const BasicBlock &bb : fn.body.value()) {
                 for (auto it = bb.stmts.cbegin(); it != bb.stmts.cend(); ++it) {
                     if (it + 1 != bb.stmts.cend()) {
                         // Not at the end? Must not terminate.
@@ -899,10 +899,10 @@ std::optional<Err> checkEntryPredecessors(const Program &p) {
 }
 
 std::optional<Err> checkVarargStmts(const Program &p) {
-    for (const auto &fn : p.functions) {
+    for (const Function &fn : p.functions) {
         if (fn.vararg && fn.body.has_value()) {
-            for (const auto &bb : fn.body.value()) {
-                for (const auto &s : bb.stmts) {
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
                     if (is<VarargStmt>(s)) {
                         return Err(
                             "vararg statement '" +
@@ -922,7 +922,7 @@ std::optional<Err> checkVarargStmts(const Program &p) {
 }
 
 std::optional<Err> checkUndeclaredBlocks(const Program &p) {
-    for (const auto &fn : p.functions) {
+    for (const Function &fn : p.functions) {
         if (fn.body.has_value()) {
             std::unordered_set<Name> blocks;
             for (const BasicBlock &bb : fn.body.value()) {
@@ -950,7 +950,7 @@ std::optional<Err> checkUndeclaredBlocks(const Program &p) {
 std::optional<Err> checkPhiStmtArgs(const Program &p) {
     for (const Function &fn : p.functions) {
         if (!fn.isOpaque()) {
-            const std::optional<Err> pe = _checkPhiStmtArgs(fn.body.value());
+            const std::optional<Err> &pe = _checkPhiStmtArgs(fn.body.value());
             if (pe.has_value()) { return pe.value(); }
         }
     }
@@ -966,7 +966,7 @@ std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
                 params.insert(param.id.name);
             }
 
-            const std::optional<Err> e =
+            const std::optional<Err> &e =
                 _checkLocalDefBeforeUse(fn.body.value(), params);
             if (e.has_value()) { return e.value(); }
         }
@@ -1008,7 +1008,7 @@ std::optional<Err> checkConstantTypes(const Program &p) {
     for (const GlobalVar &gv : p.globalVars) {
         if (!gv.isOpaque() && is<TypedConstant>(gv.val.value())) {
             const TypedConstant &tc = get<TypedConstant>(gv.val.value());
-            const std::optional<Err> ce = _checkConstantType(tc);
+            const std::optional<Err> &ce = _checkConstantType(tc);
             if (ce.has_value()) { return ce.value(); }
         }
     }
@@ -1017,7 +1017,7 @@ std::optional<Err> checkConstantTypes(const Program &p) {
         if (!fn.isOpaque()) {
             for (const BasicBlock &bb : fn.body.value()) {
                 for (const Statement &s : bb.stmts) {
-                    const std::vector<Val> uvs = usedVals(s);
+                    const std::vector<Val> &uvs = usedVals(s);
                     for (const Val &uv : uvs) {
                         if (is<TypedConstant>(uv)) {
                             const std::optional<Err> &ce =
@@ -1041,8 +1041,7 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     }
 
     SymbolTable::FnTables fnTables;
-    for (Index fi = 0; fi < p.functions.size(); ++fi) {
-        const Function &fn = p.functions[fi];
+    for (const Function &fn : p.functions) {
         // If we follow the def-use order, we can type the entire program in a
         // single linear pass. Variables are defined once, so we never clash, no
         // need to worry about scope.
@@ -1051,7 +1050,7 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
         for (const Index bbi : order) {
             const BasicBlock &bb = fn.body.value()[bbi];
             for (const Statement &s : bb.stmts) {
-                const std::optional<Err> te = typer.type(s);
+                const std::optional<Err> &te = typer.type(s);
                 if (te.has_value()) { return te.value(); }
             }
         }
