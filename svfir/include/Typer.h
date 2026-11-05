@@ -105,7 +105,7 @@ std::optional<Err> checkConstantTypes(const Program &);
 ///      a matching signature.
 ///  * That typed constants carry appropriate types.
 ////////////////////////////////////////////////////////////////////////////////
-
+Result<SymbolTable, Err> buildSymbolTable(const Program &);
 }  // namespace SVFIR
 
 #endif  // TYPER_H
