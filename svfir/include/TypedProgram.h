@@ -53,7 +53,9 @@ struct SymbolTable {
 ///       more of a documentation and encapsulation thing than enforcing
 ///       contracts. To do type checking in the constructor would make things
 ///       more expensive and disallow us from e.g. making small changes to a
-///       symbol table after a transformation. Something to think about.
+///       symbol table after a transformation. Something to think about, maybe
+///       make the constructor private and give friend access? That's not
+///       extensible.
 class TypedProgram {
 public:
     const Program program;
