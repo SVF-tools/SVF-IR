@@ -10,6 +10,9 @@
 
 namespace SVFIR {
 
+/// An analysis that just checks things. Produces no result or tranformation.
+using CheckAnalysis = std::function<std::optional<Err>(const Program &)>;
+
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkDuplicateDecs
 /// DEPS: --
@@ -96,7 +99,6 @@ std::optional<Err> checkConstantTypes(const Program &);
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: buildSymbolTable
 /// DEPS: ALL OTHER PASSES
-/// A special pass in that it can return something rather than error/no error.
 /// Type checks the program, raising an error on any type error. Otherwise
 /// returns a symbol table for the program. Type checking involves:
 ///  * That operands of statements (including types in convert/bitcast)
@@ -106,6 +108,12 @@ std::optional<Err> checkConstantTypes(const Program &);
 ///  * That typed constants carry appropriate types.
 ////////////////////////////////////////////////////////////////////////////////
 Result<SymbolTable, Err> buildSymbolTable(const Program &);
+
+/// Runs the analyses provided, in the order provided, against the provided
+/// program. If an analysis fails, immediately returns the error (i.e., short
+/// circuits).
+std::optional<Err> analyse(const Program &, const std::vector<CheckAnalysis> &);
+
 }  // namespace SVFIR
 
 #endif  // TYPER_H

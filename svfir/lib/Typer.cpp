@@ -1076,38 +1076,38 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     return SymbolTable(sigs, globalVarTypes, fnTables);
 }
 
+std::optional<Err> analyse(
+    const Program &p,
+    const std::vector<CheckAnalysis> &analyses
+) {
+    for (const CheckAnalysis &analyse : analyses) {
+        const std::optional<Err> &e = analyse(p);
+        if (e.has_value()) { return e.value(); }
+    }
+
+    return std::nullopt;
+}
+
 Result<TypedProgram, Err> typeProgram(const Program &p) {
-    std::optional<Err> ce = checkConstantTypes(p);
-    if (ce.has_value()) { return ce.value(); }
-
-    std::optional<Err> de = checkDuplicateDecs(p);
-    if (de.has_value()) { return de.value(); }
-
-    std::optional<Err> te = checkTerminatingStmts(p);
-    if (te.has_value()) { return te.value(); }
-
-    std::optional<Err> epe = checkEntryPredecessors(p);
-    if (epe.has_value()) { return epe.value(); }
-
-    std::optional<Err> ve = checkVarargStmts(p);
-    if (ve.has_value()) { return ve.value(); }
-
-    std::optional<Err> be = checkUndeclaredBlocks(p);
-    if (be.has_value()) { return be.value(); }
-
-    std::optional<Err> pe = checkPhiStmtArgs(p);
-    if (pe.has_value()) { return pe.value(); }
-
-    std::optional<Err> gdbue = checkGlobalDefBeforeUse(p);
-    if (gdbue.has_value()) { return gdbue.value(); }
-
-    std::optional<Err> ldbue = checkLocalDefBeforeUse(p);
-    if (ldbue.has_value()) { return ldbue.value(); }
+    const std::optional<Err> &ae = analyse(
+        p,
+        {
+            checkConstantTypes,
+            checkTerminatingStmts,
+            checkDuplicateDecs,
+            checkVarargStmts,
+            checkUndeclaredBlocks,
+            checkGlobalDefBeforeUse,
+            checkEntryPredecessors,
+            checkPhiStmtArgs,
+            checkLocalDefBeforeUse
+        }
+    );
+    if (ae.has_value()) { return ae.value(); }
 
     const Result<SymbolTable, Err> &syms = buildSymbolTable(p);
     if (is<Err>(syms)) { return get<Err>(syms); }
     else { return TypedProgram(p, getVal(syms)); }
-
     unreachable();
 }
 
