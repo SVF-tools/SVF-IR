@@ -1,6 +1,7 @@
 #ifndef ANALYSES_H
 #define ANALYSES_H
 
+#include <functional>
 #include <optional>
 
 #include "Ast.h"
