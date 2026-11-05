@@ -4,6 +4,7 @@
 #include "Contracts.h"
 #include "Ast.h"
 #include "Ops.h"
+#include "TypedProgram.h"
 
 // TODO: there are many instances where you need to "just know" there is/isn't
 // whitespace.
@@ -12,7 +13,15 @@ namespace {
 
 using namespace SVFIR;
 
-struct Pretty {
+class Pretty {
+    /// If available, we'll print types alongside IDs.
+    const std::optional<SymbolTable> symbols;
+    /// Current function, if any, we are currently looking at.
+    std::optional<Name> curFn;
+
+public:
+    Pretty(const std::optional<SymbolTable> &symbols) : symbols(symbols) { }
+
     // Delete catch-all so compiler catches missing overloads.
     template<class T> void operator()(const T &) = delete;
 
@@ -51,10 +60,22 @@ struct Pretty {
         return "(agg " + std::to_string(st.slots) + ")";
     }
 
-    std::string operator()(const Id &id) { return id.name; }
+    /// type tells to include or exclude the type of id regardless of
+    /// the state. This is for e.g. typed IDs and parameters where a
+    /// type is already specified (which the typer must follow).
+    std::string operator()(const Id &id, const bool type = true) {
+        std::string maybeType;
+        if (type && symbols.has_value() && id.isLocal()) {
+            insist(curFn.has_value());
+            const Type &type =
+                symbols.value().fnTables.at(curFn.value()).at(id.name);
+            maybeType = " [" + operator()(type) + "]";
+        }
+        return id.name + maybeType;
+    }
 
     std::string operator()(const TypedId &tid) {
-        return "(" + operator()(tid.type) + " " + operator()(tid.id) + ")";
+        return par(operator()(tid.type) + " " + operator()(tid.id, false));
     }
 
     std::string operator()(const IntConstant &ic) { return ic.val; }
@@ -90,18 +111,22 @@ struct Pretty {
 
     std::string operator()(const Param &p) {
         return par(
-            operator()(p.type) + " " + operator()(p.id) + maybeOpMd(" ", p.md)
+            operator()(p.type) + " " +
+            operator()(p.id, false) +
+            maybeOpMd(" ", p.md)
         );
     }
 
     std::string operator()(const Function &f) {
+        curFn.emplace(f.id.name);
+
         std::string params = opVec(f.params, " ");
         if (f.vararg) {
             if (!f.params.empty()) { params += " "; }
             params += "...";
         }
 
-        return par(
+        const std::string fnstr = par(
             operator()(f.id) + " " +
             operator()(f.type) + " " +
             par(params) + " " +
@@ -111,6 +136,14 @@ struct Pretty {
             ) +
             maybeOpMd(" ", f.md)
         );
+
+        curFn = std::nullopt;
+
+        return fnstr;
+    }
+
+    std::string operator()(const TypedProgram &tp) {
+        return operator()(tp.program);
     }
 
     std::string operator()(const Program &p) {
@@ -367,8 +400,11 @@ private:
 
 namespace SVFIR {
 
-std::string pretty(const AnyNode &n) {
-    return std::visit(Pretty(), n);
+std::string pretty(const std::variant<AnyNode, TypedProgram> &n) {
+    Pretty pretty =
+        is<TypedProgram>(n) ?
+        Pretty(get<TypedProgram>(n).symbols) : Pretty(std::nullopt);
+    return std::visit(pretty, n);
 }
 
 }  // namespace SVFIR

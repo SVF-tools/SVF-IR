@@ -10,7 +10,7 @@
 namespace SVFIR {
 
     /// Return a formatted string version of the given AST node.
-    std::string pretty(const AnyNode &);
+    std::string pretty(const std::variant<AnyNode, TypedProgram> &);
 
     /// Return the Span associated with the given AST node.
     Span span(const AnyNode &);
