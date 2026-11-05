@@ -1099,14 +1099,6 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     return SymbolTable(sigs, globalVarTypes, fnTables);
 }
 
-bool isTerminatingStmt(const Statement &stmt) {
-    return (
-        is<BrStmt>(stmt) ||
-        is<BrifStmt>(stmt) ||
-        is<RetStmt>(stmt)
-    );
-}
-
 Result<TypedProgram, Err> typeProgram(const Program &p) {
     std::optional<Err> ce = checkConstantTypes(p);
     if (ce.has_value()) { return ce.value(); }

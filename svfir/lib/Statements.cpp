@@ -131,4 +131,12 @@ std::vector<Id> usedBlocks(const Statement &s) {
     return blocks;
 }
 
+bool isTerminatingStmt(const Statement &stmt) {
+    return (
+        is<BrStmt>(stmt) ||
+        is<BrifStmt>(stmt) ||
+        is<RetStmt>(stmt)
+    );
+}
+
 }  // namespace SVFIR

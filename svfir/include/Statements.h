@@ -25,6 +25,10 @@ std::vector<Val> usedVals(const Statement &);
 /// (phi %foo ((%x !1) (%y !x))) uses !1 and !x.
 std::vector<Id> usedBlocks(const Statement &);
 
+/// Whether a statement is one which can (and can only) terminate a basic
+/// block. These are 'ret', 'br', and 'brif'.
+bool isTerminatingStmt(const Statement &);
+
 }  // namespace SVFIR
 
 #endif // STATEMENTS_H
