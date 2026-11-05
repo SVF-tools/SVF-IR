@@ -15,6 +15,7 @@
 #include "Result.h"
 #include "Statements.h"
 #include "TypedProgram.h"
+#include "Typer.h"
 #include "Variant.h"
 
 namespace {
@@ -25,15 +26,7 @@ const PtrType FabPtrType = PtrType(FAB_SPAN);
 const IntType FabInt8Type = IntType(IntType::Kind::I8, FAB_SPAN);
 const VoidType FabVoidType = VoidType(FAB_SPAN);
 
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkDuplicateDecs
-/// DEPS: --
-/// Raise an error if duplicate IDs are declared. This comes down to:
-///  * Duplicately named functions and global variables (same namespace).
-///  * Duplicately named local variables within a function, including paramters.
-///  * Duplicately named blocks within a function.
-////////////////////////////////////////////////////////////////////////////////
-
+// checkDuplicateDecs //////////////////////////////////////////////////////////
 std::optional<Err> _checkDuplicateGlobalDecs(
     const std::vector<GlobalVar> &vs,
     const std::vector<Function> &fns
@@ -98,186 +91,7 @@ std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
     return std::nullopt;
 }
 
-std::optional<Err> checkDuplicateDecs(const Program &p) {
-    const std::optional<Err> gs = _checkDuplicateGlobalDecs(
-        p.globalVars, p.functions
-    );
-    if (gs.has_value()) { return gs.value(); }
-
-    for (const Function &fn : p.functions) {
-        const std::optional<Err> ls = _checkDuplicateLocalDecs(fn);
-        if (ls.has_value()) { return ls.value(); }
-
-        const std::optional<Err> bs = _checkDuplicateBlockDecs(fn);
-        if (bs.has_value()) { return bs.value(); }
-    }
-
-    return std::nullopt;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkTerminatingStmts
-/// DEPS: --
-/// Raise an error if either:
-///  * A basic block ends with a non-terminating statement.
-///  * A terminating statement appears anywhere but as the last statement of a
-///    basic block.
-///
-/// Terminating statements are br, brif, and ret.
-////////////////////////////////////////////////////////////////////////////////
-
-std::optional<Err> checkTerminatingStmts(const Program &p) {
-    for (const auto &fn : p.functions) {
-        if (fn.body.has_value()) {
-            for (const auto &bb : fn.body.value()) {
-                for (auto it = bb.stmts.cbegin(); it != bb.stmts.cend(); ++it) {
-                    if (it + 1 != bb.stmts.cend()) {
-                        // Not at the end? Must not terminate.
-                        if (isTerminatingStmt(*it)) {
-                            return Err(
-                                "Terminating statement '" +
-                                pretty(*it) +
-                                "' not final statement of basic block",
-                                span(*it)
-                            );
-                        }
-                    } else {
-                        // At the end? Must terminate.
-                        if (!isTerminatingStmt(*it)) {
-                            return Err(
-                                "Non-terminating statement '" +
-                                pretty(*it) +
-                                "' as final statement of basic block",
-                                span(*it)
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkEntryPredecessors
-/// DEPS: checkTerminatingStmts
-/// Raise an error if the entry block has a predecessor.
-////////////////////////////////////////////////////////////////////////////////
-
-std::optional<Err> checkEntryPredecessors(const Program &p) {
-    for (const Function &fn : p.functions) {
-        if (!fn.isOpaque()) {
-            const Name &entry = fn.body.value().front().id.name;
-            for (const BasicBlock &bb : fn.body.value()) {
-                const Statement &ts = bb.stmts.back();
-                insist(isTerminatingStmt(ts));
-                std::vector<Name> targets;
-                if (is<BrStmt>(ts)) {
-                    targets.push_back(get<BrStmt>(ts).target.name);
-                } else if (is<BrifStmt>(ts)) {
-                    const BrifStmt &brif = get<BrifStmt>(ts);
-                    targets.push_back(brif.ifTarget.name);
-                    targets.push_back(brif.elseTarget.name);
-                } else { insist(is<RetStmt>(ts)); }
-
-                for (const Name &target : targets) {
-                    if (target == entry) {
-                        return Err(
-                            "The entry block '" + entry + "' of function '" +
-                            fn.id.name + "' is targeted by '" + pretty(ts) +
-                            "'. Entry blocks cannot have predecessors.",
-                            span(ts)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkVarargStmts
-/// DEPS: --
-/// Raise an error if a vararg statement is used in a non-vararg function.
-////////////////////////////////////////////////////////////////////////////////
-
-std::optional<Err> checkVarargStmts(const Program &p) {
-    for (const auto &fn : p.functions) {
-        if (fn.vararg && fn.body.has_value()) {
-            for (const auto &bb : fn.body.value()) {
-                for (const auto &s : bb.stmts) {
-                    if (is<VarargStmt>(s)) {
-                        return Err(
-                            "vararg statement '" +
-                            pretty(s) +
-                            "' in non-vararg function '" +
-                            pretty(fn.id) +
-                            "'.",
-                            span(s)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkUndeclaredBlocks
-/// DEPS: --
-/// Raise an error if branches are used incorrectly. This comes down to:
-///  * br and brif instructions targeting non-existent branches.
-///  * phi instructions referring to non-existent blocks in args.
-////////////////////////////////////////////////////////////////////////////////
-
-Err _nonExistentBlock(const Name &name, const Span &span) {
-    return Err("Block '" + name + "' does not exist.", span);
-}
-
-std::optional<Err> _checkUndeclaredBlocks(const FunctionBody &bbs) {
-    std::unordered_set<Name> blocks;
-    for (const BasicBlock &bb : bbs) { blocks.insert(bb.id.name); }
-
-    for (size_t i = 0; i < bbs.size(); ++i) {
-        const BasicBlock &bb = bbs[i];
-        for (const Statement &s : bb.stmts) {
-            for (const Id &blk : usedBlocks(s)) {
-                if (blocks.find(blk.name) == blocks.cend()) {
-                    return _nonExistentBlock(blk.name, blk.span);
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-std::optional<Err> checkUndeclaredBlocks(const Program &p) {
-    for (const auto &fn : p.functions) {
-        if (fn.body.has_value()) {
-            const std::optional<Err> be =
-                _checkUndeclaredBlocks(fn.body.value());
-            if (be.has_value()) { return be.value(); }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkPhiStmtArgs
-/// DEPS: checkUndeclaredBlocks
-/// Raise an error if a phi statement is ill-formed. This comes down to having
-/// an argument for each predecessor block of the block the phi statement is in.
-////////////////////////////////////////////////////////////////////////////////
-
+// checkPhiStmtArgs ////////////////////////////////////////////////////////////
 std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
     const ControlFlowGraph cfg = ControlFlowGraph(bbs);
     for (Index i = 0; i < bbs.size(); ++i) {
@@ -337,36 +151,14 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
     return std::nullopt;
 }
 
-std::optional<Err> checkPhiStmtArgs(const Program &p) {
-    for (const Function &fn : p.functions) {
-        if (!fn.isOpaque()) {
-            const std::optional<Err> pe = _checkPhiStmtArgs(fn.body.value());
-            if (pe.has_value()) { return pe.value(); }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkLocalDefBeforeUse
-/// DEPS: checkPhiStmtArgs, checkDuplicateDecs
-/// Raises an error if any local variable is used before being appropriately
-/// defined. Our programs must be in SSA form, so this means:
-///  * For non-phi statements, any use of a local variable must be dominated by
-///    the definition of said variable.
-///  * For phi statements, given an argument like (%var, !pred), the definition
-///    of %var must dominate !pred.
-/// Dependencies allow us to assume we will not come across two definitions of
-/// the same variable, phi statements arguments refer to predecessors validly.
-////////////////////////////////////////////////////////////////////////////////
-
+// checkLocalDefBeforeUse //////////////////////////////////////////////////////
 /// Where a statement sits so we can check for use-before-def.
 struct StmtLoc final {
     /// Position within function.
     const Index block;
     /// Position within block.
     const Index stmt;
+
     StmtLoc(const Index block, const Index stmt) : block(block), stmt(stmt) { }
 
     /// Does sl occur, strictly, after this location?
@@ -476,66 +268,7 @@ std::optional<Err> _checkLocalDefBeforeUse(
     return std::nullopt;
 }
 
-std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
-    for (const Function &fn : p.functions) {
-        if (!fn.isOpaque()) {
-            std::unordered_set<Name> params;
-            for (const Param &param : fn.params) {
-                params.insert(param.id.name);
-            }
-
-            const std::optional<Err> e =
-                _checkLocalDefBeforeUse(fn.body.value(), params);
-            if (e.has_value()) { return e.value(); }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkGlobalDefBeforeUse
-/// DEPS: --
-/// Raises an error if any global variable is used without being defined.
-////////////////////////////////////////////////////////////////////////////////
-
-std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
-    std::unordered_set<Name> globals;
-    for (const GlobalVar &gv : p.globalVars) { globals.insert(gv.id.name); }
-    for (const Function &fn : p.functions) { globals.insert(fn.id.name); }
-
-    for (const Function &fn : p.functions) {
-        if (!fn.isOpaque()) {
-            for (const BasicBlock &bb : fn.body.value()) {
-                for (const Statement &s : bb.stmts) {
-                    for (const Id &u : directlyUsedVars(s)) {
-                        if (
-                            u.isGlobal() &&
-                            globals.find(u.name) == globals.cend()
-                        ) {
-                            return Err(
-                                "Global variable '" + u.name + "' used but "
-                                "not defined.",
-                                span(u)
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkConstantTypes
-/// DEPS: --
-/// Checks that the type of a typed constant matches its partner constant.
-/// TODO: this can be pushed to the grammar, consider that...
-/// TODO: consider semantics for int/float not fitting in width.
-////////////////////////////////////////////////////////////////////////////////
-
+// checkConstantTypes //////////////////////////////////////////////////////////
 Err _typedConstMismatchErr(const TypedConstant &tc) {
     std::string expType;
     if (is<IntConstant>(tc.constant)) { expType = "integer type"; }
@@ -589,47 +322,7 @@ std::optional<Err> _checkConstantType(const TypedConstant &tc) {
     return std::nullopt;
 }
 
-std::optional<Err> checkConstantTypes(const Program &p) {
-    for (const GlobalVar &gv : p.globalVars) {
-        if (!gv.isOpaque() && is<TypedConstant>(gv.val.value())) {
-            const TypedConstant &tc = get<TypedConstant>(gv.val.value());
-            const std::optional<Err> ce = _checkConstantType(tc);
-            if (ce.has_value()) { return ce.value(); }
-        }
-    }
-
-    for (const Function &fn : p.functions) {
-        if (!fn.isOpaque()) {
-            for (const BasicBlock &bb : fn.body.value()) {
-                for (const Statement &s : bb.stmts) {
-                    const std::vector<Val> uvs = usedVals(s);
-                    for (const Val &uv : uvs) {
-                        if (is<TypedConstant>(uv)) {
-                            const std::optional<Err> &ce =
-                                _checkConstantType(get<TypedConstant>(uv));
-                            if (ce.has_value()) { return ce.value(); }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: buildSymbolTable
-/// DEPS: ALL OTHER PASSES
-/// Type checks the program, raising an error on any type error. Otherwise
-/// returns a symbol table for the program. Type checking involves:
-///  * That operands of statements (including types in convert/bitcast)
-///    are appropriately typed.
-///    * For calls, this involves checking that *some* function exists with
-///      a matching signature.
-///  * That typed constants carry appropriate types.
-////////////////////////////////////////////////////////////////////////////////
-
+// buildSymbolTable ////////////////////////////////////////////////////////////
 /// To be used by the buildSymbolTable pass. (*this)() should be cotinually
 /// called on statements in def-use order. At the end of this, a mapping of
 /// local names to types can then be pulled out via types().
@@ -1117,6 +810,252 @@ std::vector<Index> _defUseBlockOrder(const Function &fn) {
     return order;
 }
 
+}  // Anonymous namespace
+
+namespace SVFIR {
+
+FnSig::FnSig(const Function &fn)
+: params(fn.paramTypes()), ret(fn.type), vararg(fn.vararg)
+{ }
+
+bool FnSig::matches(const std::vector<Type> &args, const Type &exp) const {
+    if (exp != ret) { return false; }
+    else if (args.size() < params.size()) { return false; }
+    else if (!vararg && args.size() != params.size()) { return false; }
+    else {
+        // The remaining cases are
+        //   1. args and params have the same size (regardless of varargs),
+        //   2. args > params and varargs
+        // In both instances, we only need to concern ourselves with the
+        // non-varargs part.
+        for (size_t i = 0; i < params.size(); ++i) {
+            if (params[i] != args[i]) { return false; }
+        }
+
+        return true;
+    }
+    unreachable();
+}
+
+std::optional<Err> checkDuplicateDecs(const Program &p) {
+    const std::optional<Err> gs = _checkDuplicateGlobalDecs(
+        p.globalVars, p.functions
+    );
+    if (gs.has_value()) { return gs.value(); }
+
+    for (const Function &fn : p.functions) {
+        const std::optional<Err> ls = _checkDuplicateLocalDecs(fn);
+        if (ls.has_value()) { return ls.value(); }
+
+        const std::optional<Err> bs = _checkDuplicateBlockDecs(fn);
+        if (bs.has_value()) { return bs.value(); }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkTerminatingStmts(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (fn.body.has_value()) {
+            for (const auto &bb : fn.body.value()) {
+                for (auto it = bb.stmts.cbegin(); it != bb.stmts.cend(); ++it) {
+                    if (it + 1 != bb.stmts.cend()) {
+                        // Not at the end? Must not terminate.
+                        if (isTerminatingStmt(*it)) {
+                            return Err(
+                                "Terminating statement '" +
+                                pretty(*it) +
+                                "' not final statement of basic block",
+                                span(*it)
+                            );
+                        }
+                    } else {
+                        // At the end? Must terminate.
+                        if (!isTerminatingStmt(*it)) {
+                            return Err(
+                                "Non-terminating statement '" +
+                                pretty(*it) +
+                                "' as final statement of basic block",
+                                span(*it)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkEntryPredecessors(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            const Name &entry = fn.body.value().front().id.name;
+            for (const BasicBlock &bb : fn.body.value()) {
+                const Statement &ts = bb.stmts.back();
+                insist(isTerminatingStmt(ts));
+                std::vector<Name> targets;
+                if (is<BrStmt>(ts)) {
+                    targets.push_back(get<BrStmt>(ts).target.name);
+                } else if (is<BrifStmt>(ts)) {
+                    const BrifStmt &brif = get<BrifStmt>(ts);
+                    targets.push_back(brif.ifTarget.name);
+                    targets.push_back(brif.elseTarget.name);
+                } else { insist(is<RetStmt>(ts)); }
+
+                for (const Name &target : targets) {
+                    if (target == entry) {
+                        return Err(
+                            "The entry block '" + entry + "' of function '" +
+                            fn.id.name + "' is targeted by '" + pretty(ts) +
+                            "'. Entry blocks cannot have predecessors.",
+                            span(ts)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkVarargStmts(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (fn.vararg && fn.body.has_value()) {
+            for (const auto &bb : fn.body.value()) {
+                for (const auto &s : bb.stmts) {
+                    if (is<VarargStmt>(s)) {
+                        return Err(
+                            "vararg statement '" +
+                            pretty(s) +
+                            "' in non-vararg function '" +
+                            pretty(fn.id) +
+                            "'.",
+                            span(s)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkUndeclaredBlocks(const Program &p) {
+    for (const auto &fn : p.functions) {
+        if (fn.body.has_value()) {
+            std::unordered_set<Name> blocks;
+            for (const BasicBlock &bb : fn.body.value()) {
+                blocks.insert(bb.id.name);
+            }
+
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
+                    for (const Id &blk : usedBlocks(s)) {
+                        if (blocks.find(blk.name) == blocks.cend()) {
+                            return Err(
+                                "Block '" + blk.name + "' does not exist.",
+                                span(blk)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkPhiStmtArgs(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            const std::optional<Err> pe = _checkPhiStmtArgs(fn.body.value());
+            if (pe.has_value()) { return pe.value(); }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            std::unordered_set<Name> params;
+            for (const Param &param : fn.params) {
+                params.insert(param.id.name);
+            }
+
+            const std::optional<Err> e =
+                _checkLocalDefBeforeUse(fn.body.value(), params);
+            if (e.has_value()) { return e.value(); }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
+    std::unordered_set<Name> globals;
+    for (const GlobalVar &gv : p.globalVars) { globals.insert(gv.id.name); }
+    for (const Function &fn : p.functions) { globals.insert(fn.id.name); }
+
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
+                    for (const Id &u : directlyUsedVars(s)) {
+                        if (
+                            u.isGlobal() &&
+                            globals.find(u.name) == globals.cend()
+                        ) {
+                            return Err(
+                                "Global variable '" + u.name + "' used but "
+                                "not defined.",
+                                span(u)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Err> checkConstantTypes(const Program &p) {
+    for (const GlobalVar &gv : p.globalVars) {
+        if (!gv.isOpaque() && is<TypedConstant>(gv.val.value())) {
+            const TypedConstant &tc = get<TypedConstant>(gv.val.value());
+            const std::optional<Err> ce = _checkConstantType(tc);
+            if (ce.has_value()) { return ce.value(); }
+        }
+    }
+
+    for (const Function &fn : p.functions) {
+        if (!fn.isOpaque()) {
+            for (const BasicBlock &bb : fn.body.value()) {
+                for (const Statement &s : bb.stmts) {
+                    const std::vector<Val> uvs = usedVals(s);
+                    for (const Val &uv : uvs) {
+                        if (is<TypedConstant>(uv)) {
+                            const std::optional<Err> &ce =
+                                _checkConstantType(get<TypedConstant>(uv));
+                            if (ce.has_value()) { return ce.value(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     SymbolTable::SigMap sigs;
     for (const Function &fn : p.functions) {
@@ -1158,33 +1097,6 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     }
 
     return SymbolTable(sigs, globalVarTypes, fnTables);
-}
-
-}  // Anonymous namespace
-
-namespace SVFIR {
-
-FnSig::FnSig(const Function &fn)
-: params(fn.paramTypes()), ret(fn.type), vararg(fn.vararg)
-{ }
-
-bool FnSig::matches(const std::vector<Type> &args, const Type &exp) const {
-    if (exp != ret) { return false; }
-    else if (args.size() < params.size()) { return false; }
-    else if (!vararg && args.size() != params.size()) { return false; }
-    else {
-        // The remaining cases are
-        //   1. args and params have the same size (regardless of varargs),
-        //   2. args > params and varargs
-        // In both instances, we only need to concern ourselves with the
-        // non-varargs part.
-        for (size_t i = 0; i < params.size(); ++i) {
-            if (params[i] != args[i]) { return false; }
-        }
-
-        return true;
-    }
-    unreachable();
 }
 
 bool isTerminatingStmt(const Statement &stmt) {
