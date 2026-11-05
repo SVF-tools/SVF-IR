@@ -15,7 +15,7 @@
 #include "Result.h"
 #include "Statements.h"
 #include "TypedProgram.h"
-#include "Typer.h"
+#include "Analyses.h"
 #include "Variant.h"
 
 namespace {

@@ -1,5 +1,5 @@
-#ifndef TYPER_H
-#define TYPER_H
+#ifndef ANALYSES_H
+#define ANALYSES_H
 
 #include <optional>
 
@@ -116,4 +116,4 @@ std::optional<Err> analyse(const Program &, const std::vector<CheckAnalysis> &);
 
 }  // namespace SVFIR
 
-#endif  // TYPER_H
+#endif  // ANALYSES_H

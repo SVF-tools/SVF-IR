@@ -1,4 +1,5 @@
 set(SVFIR_HEADERS
+  svfir/include/Analyses.h
   svfir/include/Contracts.h
   svfir/include/Ast.h
   svfir/include/ControlFlowGraph.h
@@ -14,13 +15,13 @@ set(SVFIR_HEADERS
   svfir/include/SVFIR.h
   svfir/include/Statements.h
   svfir/include/TypedProgram.h
-  svfir/include/Typer.h
   svfir/include/UnifyReturns.h
   svfir/include/Variant.h
   svfir/include/Version.h
 )
 
 set(SVFIR_SOURCES
+  svfir/lib/Analyses.cpp
   svfir/lib/Ast.cpp
   svfir/lib/ControlFlowGraph.cpp
   svfir/lib/Dominator.cpp
@@ -32,7 +33,6 @@ set(SVFIR_SOURCES
   svfir/lib/SExprs.cpp
   svfir/lib/Span.cpp
   svfir/lib/Statements.cpp
-  svfir/lib/Typer.cpp
   svfir/lib/TypedProgram.cpp
   svfir/lib/UnifyReturns.cpp
   svfir/lib/Version.cpp
