@@ -37,9 +37,7 @@ bool _isDelimiter(const char c) {
 /// to the start of a comment.
 void _skipComment(InputStream &stream) {
     insist(stream.peek() == _COMMENT);
-    while (!stream.atEof() && stream.peek() != _NEWLINE) {
-        stream.advance(1);
-    }
+    while (!stream.atEof() && stream.peek() != _NEWLINE) { stream.advance(1); }
 
     // Jump to next line.
     stream.advance(1);
@@ -49,9 +47,7 @@ void _skipComment(InputStream &stream) {
 /// whitespace.
 void _skipWhitespace(InputStream &stream) {
     insist(std::isspace(stream.peek()));
-    while (std::isspace(stream.peek())) {
-        stream.advance(1);
-    }
+    while (std::isspace(stream.peek())) { stream.advance(1); }
 }
 
 /// Skips whitespace and comments stream may be pointing at.
