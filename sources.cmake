@@ -33,6 +33,7 @@ set(SVFIR_SOURCES
   svfir/lib/Span.cpp
   svfir/lib/Statements.cpp
   svfir/lib/Typer.cpp
+  svfir/lib/TypedProgram.cpp
   svfir/lib/UnifyReturns.cpp
   svfir/lib/Version.cpp
 )
