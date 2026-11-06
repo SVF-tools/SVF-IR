@@ -41,5 +41,4 @@ SVFIR requires C++17.
 
 * Tests.
 * Spec (prose, to go alongside grammar).
-* Validation, typing.
 * Organise interface (Ops.h, unideal).
