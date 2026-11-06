@@ -50,7 +50,6 @@ std::optional<Id> introducedVar(const Statement &s) {
     return id;
 }
 
-// TODO: null pvals, ignore them?
 std::vector<Val> usedVals(const Statement &s) {
     std::vector<Val> vals;
     if (is<PhiStmt>(s)) {

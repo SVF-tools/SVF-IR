@@ -19,6 +19,7 @@ std::vector<Id> directlyUsedVars(const Statement &);
 /// Returns the values (variables, typed constants), if any, used by a
 /// statement. Defined variables are not considered used. For example,
 /// (add %x %y (i32 2)) uses %y and (i32 2).
+/// NOTE: integers where IVal occurs and nulls where PVal occurs are ignored.
 std::vector<Val> usedVals(const Statement &);
 
 /// Return the blocks referred to by a statement, if any. For example,
