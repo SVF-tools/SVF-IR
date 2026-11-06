@@ -6,9 +6,6 @@
 #include "Ops.h"
 #include "TypedProgram.h"
 
-// TODO: there are many instances where you need to "just know" there is/isn't
-// whitespace.
-
 namespace {
 
 using namespace SVFIR;
@@ -32,7 +29,7 @@ public:
     }
 
     std::string operator()(const Metadata &md) {
-        return "(md " + SExprs::toString(md.data) + ")";
+        return par("md " + SExprs::toString(md.data));
     }
 
     std::string operator()(const VoidType &) { return "void"; }
@@ -57,7 +54,7 @@ public:
     std::string operator()(const PtrType &) { return "ptr"; }
 
     std::string operator()(const AggType &st) {
-        return "(agg " + std::to_string(st.slots) + ")";
+        return par("agg " + std::to_string(st.slots));
     }
 
     /// type tells to include or exclude the type of id regardless of
@@ -91,14 +88,14 @@ public:
     }
 
     std::string operator()(const TypedConstant &tc) {
-        return "(" + operator()(tc.type) + " " + operator()(tc.constant) + ")";
+        return par(operator()(tc.type) + " " + operator()(tc.constant));
     }
 
     std::string operator()(const Preamble &p) {
-        return "(preamble\n" +
-            indent("(version " + p.version.toString() + ")") + "\n" +
-            indent("(source " + p.source + ")") +
-            ")";
+        return par("preamble\n" +
+            indent(par("version " + p.version.toString())) + "\n" +
+            indent(par("source " + p.source))
+        );
     }
 
     std::string operator()(const GlobalVar &v) {
@@ -131,7 +128,7 @@ public:
             operator()(f.type) + " " +
             par(params) + " " +
             (f.body.has_value() ?
-                "(\n" + indent(opVec(f.body.value(), "\n")) + ")" :
+                par("\n" + indent(opVec(f.body.value(), "\n"))) :
                 "opaque"
             ) +
             maybeOpMd(" ", f.md)
@@ -149,9 +146,9 @@ public:
     std::string operator()(const Program &p) {
         auto block = [this](const std::string &name, const std::string &block) {
             if (block.empty()) {
-                return "(" + name + ")";
+                return par(name);
             } else {
-                return "(" + name + "\n" + indent(block) + ")";
+                return par(name + "\n" + indent(block));
             }
         };
 
@@ -355,13 +352,13 @@ public:
 
     std::string operator()(const BasicBlock &b) {
         std::string stmts = opVec(b.stmts, "\n");
-        return par(operator()(b.id) + " (\n" + indent(stmts) + ")");
+        return par(operator()(b.id) + " " + par("\n" + indent(stmts)));
     }
 
 private:
     const std::string INDENTATION = "  ";
 
-    /// Add an INDENTATION to the start of every line.
+    /// Add an INDENTATION to the start of every line in s.
     std::string indent(const std::string &s) {
         static std::regex lineEndRe("\n");
 
