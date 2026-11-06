@@ -380,11 +380,6 @@ public:
         const Type &lt = valType(binop.left);
         const Type &rt = valType(binop.right);
 
-        // TODO: it is easier that this check is first (only ever deal with
-        //       one type elsewhere) but unideal from the perspective of error
-        //       messages. Consider an add instruction with an agg and a ptr
-        //       operand, we'd get an inequality error first but really they're
-        //       just bad operands, equal or not.
         if (lt != rt) {
             return Err(
                 "Expected operands to be of the same type, not "
