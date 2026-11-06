@@ -1,3 +1,4 @@
+#include "timequick.h"
 #include <algorithm>
 #include <cerrno>
 #include <cctype>
@@ -100,6 +101,25 @@ Result<Metadata, Err> parseMetadata(const SExpr &s) {
     if (it == end) { return listCutShort("metadata", "sexpr data", span(s)); }
     if (it + 1 != end) { return listTooLong("metadata", span(s)); }
     return Metadata(*it, span(*it));
+}
+
+/// If pos is not end, try to parse metadata, otherwise return an error.
+/// It is an error if there is anything after any parsed metadata. l is
+/// the list we are parsing the suffix of and desc describes it.
+/// More concisely, this function is to parse the (... <md>?) pattern.
+Result<MaybeMetadata, Err> parseMaybeMdSuffix(
+    const SExprSeq::const_iterator &pos,
+    const SExprSeq::const_iterator &end,
+    const List &l,
+    const std::string &desc
+) {
+    if (pos != end) {
+        Result<Metadata, Err> md = parseMetadata(*pos);
+        if (is<Err>(md)) { return get<Err>(md); }
+        if (pos + 1 != end) { return listTooLong(desc, span(l)); }
+        return getVal(md);
+    } else { return std::nullopt; }
+    unreachable();
 }
 
 /// <type>
@@ -257,15 +277,11 @@ Result<Param, Err> parseParam(const SExpr &s) {
     if (is<Err>(id)) { return get<Err>(id); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-        if (it + 1 != end) { return listTooLong("aggregate type", sp); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, list, "aggregate type");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-    return Param(getVal(id), getVal(type), md, span(s));
+    return Param(getVal(id), getVal(type), getVal(md), span(s));
 }
 
 Result<TypedConstant, Err> parseTypedConst(const SExpr &s);
@@ -392,15 +408,11 @@ Result<TypedConstant, Err> parseTypedConst(const SExpr &s) {
     if (is<Err>(constant)) { return get<Err>(constant); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-        if (it + 1 != end) { return listTooLong("typed constant", span(s)); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, list, "typed constant");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-    return TypedConstant(getVal(constant), getVal(type), md, span(s));
+    return TypedConstant(getVal(constant), getVal(type), getVal(md), span(s));
 }
 
 /// Version in preamble.
@@ -651,16 +663,11 @@ Result<GlobalVar, Err> parseGlobalVar(const SExpr &s) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, list, "variable");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("variable", sp); }
-    }
-
-    return GlobalVar(getVal(gid), gval, md, span(s));
+    return GlobalVar(getVal(gid), gval, getVal(md), span(s));
 }
 
 /// <variables>
@@ -727,16 +734,11 @@ Result<Statement, Err> parsePhiStmt(const List &l) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "phi statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("phi statement", span(l)); }
-    }
-
-    return Statement(PhiStmt(getVal(lid), args, md, span(l)));
+    return Statement(PhiStmt(getVal(lid), args, getVal(md), span(l)));
 }
 
 /// To be called on (call ...) only.
@@ -788,16 +790,11 @@ Result<Statement, Err> parseCallStmt(const List &l) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "call statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("call statement", sp); }
-    }
-
-    return Statement(CallStmt(tlid, getVal(callee), args, md, span(l)));
+    return Statement(CallStmt(tlid, getVal(callee), args, getVal(md), span(l)));
 }
 
 /// To be called on (br ...) only.
@@ -813,16 +810,11 @@ Result<Statement, Err> parseBrStmt(const List &l) {
     if (is<Err>(target)) { return get<Err>(target); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "branch statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("br statement", span(l)); }
-    }
-
-    return Statement(BrStmt(getVal(target), md, span(l)));
+    return Statement(BrStmt(getVal(target), getVal(md), span(l)));
 }
 
 /// To be called on (brif ...) only.
@@ -849,20 +841,13 @@ Result<Statement, Err> parseBrifStmt(const List &l) {
     if (is<Err>(elseTarget)) { return get<Err>(elseTarget); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "conditional branch statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) {
-            return listTooLong("conditional branch statement", sp);
-        }
-    }
-
-    return Statement(
-        BrifStmt(getVal(val), getVal(ifTarget), getVal(elseTarget), md, span(l))
-    );
+    return Statement(BrifStmt(
+        getVal(val), getVal(ifTarget), getVal(elseTarget), getVal(md), span(l)
+    ));
 }
 
 /// To be called on (ret ...) only.
@@ -889,16 +874,11 @@ Result<Statement, Err> parseRet(const List &l) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "return statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("return statement", span(l)); }
-    }
-
-    return RetStmt(val, md, span(l));
+    return RetStmt(val, getVal(md), span(l));
 }
 
 Result <BinaryOpStmt::Op, Err> parseCmpOp(const SExpr &s) {
@@ -1015,23 +995,16 @@ Result<Statement, Err> parseCmpStmt(const List &l) {
     if (is<Err>(right)) { return get<Err>(right); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) {
-            return listTooLong("comparison statement", span(l));
-        }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "comparison statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BinaryOpStmt(
         getVal(op),
         getVal(lid),
         getVal(left),
         getVal(right),
-        md,
+        getVal(md),
         span(l)
     ));
 }
@@ -1066,16 +1039,11 @@ Result<Statement, Err> parseAllocStmt(const List &l) {
     if (is<Err>(lid)) { return get<Err>(lid); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "allocation statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("allocation statement", sp); }
-    }
-
-    return Statement(AllocStmt(kind, getVal(lid), md, span(l)));
+    return Statement(AllocStmt(kind, getVal(lid), getVal(md), span(l)));
 }
 
 /// To be called on (store ...) only.
@@ -1096,16 +1064,11 @@ Result<Statement, Err> parseStoreStmt(const List &l) {
     if (is<Err>(dst)) { return get<Err>(dst); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "store statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("store statement", span(l)); }
-    }
-
-    return Statement(StoreStmt(getVal(val), getVal(dst), md, span(l)));
+    return Statement(StoreStmt(getVal(val), getVal(dst), getVal(md), span(l)));
 }
 
 /// To be called on (load ...) only.
@@ -1128,16 +1091,11 @@ Result<Statement, Err> parseLoadStmt(const List &l) {
     if (is<Err>(src)) { return get<Err>(src); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "load statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("load statement", span(l)); }
-    }
-
-    return Statement(LoadStmt(getVal(tlid), getVal(src), md, span(l)));
+    return Statement(LoadStmt(getVal(tlid), getVal(src), getVal(md), span(l)));
 }
 
 /// To be called on (field ...) only.
@@ -1166,17 +1124,12 @@ Result<Statement, Err> parseFieldStmt(const List &l) {
     if (is<Err>(index)) { return get<Err>(index); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("field statement", sp); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "field statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(
-        FieldStmt(getVal(lid), getVal(src), getVal(index), md, span(l))
+        FieldStmt(getVal(lid), getVal(src), getVal(index), getVal(md), span(l))
     );
 }
 
@@ -1203,17 +1156,12 @@ Result<Statement, Err> parseBitCastStmt(const List &l) {
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, stmtDesc);
+    if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BitCastStmt(
-        getVal(lid), getVal(val), getVal(type), md, span(l)
+        getVal(lid), getVal(val), getVal(type), getVal(md), span(l)
     ));
 }
 
@@ -1291,17 +1239,12 @@ Result<Statement, Err> parseConvertStmt(const List &l) {
     if (is<Err>(type)) { return get<Err>(type); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("convert statement", sp); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "convert statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(ConvertStmt(
-        getVal(lid), getVal(val), getVal(type), extKind, md, span(l)
+        getVal(lid), getVal(val), getVal(type), extKind, getVal(md), span(l)
     ));
 }
 
@@ -1332,14 +1275,9 @@ Result<Statement, Err> parseAddMulSubStmt(const List &l) {
     if (is<Err>(right)) { return get<Err>(right); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, stmtDesc);
+    if (is<Err>(md)) { return get<Err>(md); }
 
     BinaryOpStmt::Op op;
     if (kind == "add") { op = BinaryOpStmt::Op::ADD; }
@@ -1347,9 +1285,9 @@ Result<Statement, Err> parseAddMulSubStmt(const List &l) {
     else if (kind == "mul") { op = BinaryOpStmt::Op::MUL; }
     else { unreachable(); }
 
-    return Statement(
-        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
-    );
+    return Statement(BinaryOpStmt(
+        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+    ));
 }
 
 /// To be called on (div/rem ...) only.
@@ -1396,14 +1334,9 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
     const Val right = getVal(rightr);
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong(stmtDesc, sp); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, stmtDesc);
+    if (is<Err>(md)) { return get<Err>(md); }
 
     BinaryOpStmt::Op op;
     if (kind == "div") {
@@ -1412,7 +1345,7 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
         op = isSigned ? BinaryOpStmt::Op::SREM : BinaryOpStmt::Op::UREM;
     } else { unreachable(); }
 
-    return Statement(BinaryOpStmt(op, lid, left, right, md, span(l)));
+    return Statement(BinaryOpStmt(op, lid, left, right, getVal(md), span(l)));
 }
 
 /// To be called on (not ...) only.
@@ -1432,17 +1365,12 @@ Result<Statement, Err> parseNotStmt(const List &l) {
     if (is<Err>(val)) { return get<Err>(val); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong("not statement", sp); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "not statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(UnaryOpStmt(
-        UnaryOpStmt::Op::NOT, getVal(lid), getVal(val), md, span(l)
+        UnaryOpStmt::Op::NOT, getVal(lid), getVal(val), getVal(md), span(l)
     ));
 }
 
@@ -1478,14 +1406,9 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(const List &l) {
     if (is<Err>(right)) { return get<Err>(right); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
-
-        if (it + 1 != end) { return listTooLong(stmtDesc, span(l)); }
-    }
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, stmtDesc);
+    if (is<Err>(md)) { return get<Err>(md); }
 
     BinaryOpStmt::Op op;
     if (kind == "and") { op = BinaryOpStmt::Op::AND; }
@@ -1494,9 +1417,9 @@ Result<Statement, Err> parseAndOrXorShiftlStmt(const List &l) {
     else if (kind == "shiftl") { op = BinaryOpStmt::Op::SHIFTL; }
     else { unreachable(); }
 
-    return Statement(
-        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
-    );
+    return Statement(BinaryOpStmt(
+        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+    ));
 }
 
 /// To be called on (shiftr ...) only.
@@ -1543,18 +1466,13 @@ Result<Statement, Err> parseShiftrStmt(const List &l) {
     if (is<Err>(right)) { return get<Err>(right); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "shiftr statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("shiftr statement", sp); }
-    }
-
-    return Statement(
-        BinaryOpStmt(op, getVal(lid), getVal(left), getVal(right), md, span(l))
-    );
+    return Statement(BinaryOpStmt(
+        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+    ));
 }
 
 /// To be called on (vararg ...) only.
@@ -1576,16 +1494,13 @@ Result<Statement, Err> parseVarargStmt(const List &l) {
     if (is<Err>(val)) { return get<Err>(val); }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "vararg statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("vararg statement", sp); }
-    }
-
-    return Statement(VarargStmt(getVal(tlid), getVal(val), md, span(l)));
+    return Statement(
+        VarargStmt(getVal(tlid), getVal(val), getVal(md), span(l))
+    );
 }
 
 /// To be called on (blackhole ...) only.
@@ -1638,18 +1553,11 @@ Result<Statement, Err> parseBlackholeStmt(const List &l) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "blackhole statement");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) {
-            return listTooLong("blackhole statement", span(l));
-        }
-    }
-
-    return Statement(BlackholeStmt(pure, tlid, md, span(l)));
+    return Statement(BlackholeStmt(pure, tlid, getVal(md), span(l)));
 }
 
 /// <stmt>
@@ -1717,16 +1625,11 @@ Result<BasicBlock, Err> parseBasicBlock(const SExpr &s) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "basic block");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("basic block", span(s)); }
-    }
-
-    return BasicBlock(getVal(bid), stmts, md, span(s));
+    return BasicBlock(getVal(bid), stmts, getVal(md), span(s));
 }
 
 Result<std::vector<BasicBlock>, Err> parseFunctionBlocks(const SExpr &s) {
@@ -1831,16 +1734,11 @@ Result<Function, Err> parseFunction(const SExpr &s) {
     }
 
     ++it;
-    MaybeMetadata md = std::nullopt;
-    if (it != end) {
-        const Result<Metadata, Err> mdr = parseMetadata(*it);
-        if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+    const Result<MaybeMetadata, Err> &md =
+        parseMaybeMdSuffix(it, end, l, "function");
+    if (is<Err>(md)) { return get<Err>(md); }
 
-        if (it + 1 != end) { return listTooLong("function", span(s)); }
-    }
-
-    return Function(gid, params, vararg, type, bbs, md, span(s));
+    return Function(gid, params, vararg, type, bbs, getVal(md), span(s));
 }
 
 /// <functions>
@@ -1911,11 +1809,16 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
 namespace SVFIR {
 
 Result<Program, Err> parse(InputStream &stream) {
+    tq_start("sexpr");
     const Result<SExprs::SExprSeq, Err> &ssr = SExprs::parseSeq(stream);
     if (is<Err>(ssr)) { return get<Err>(ssr); }
+    tq_stop("sexpr");
 
+    tq_start("actual");
     const SExprs::SExprSeq &ss = get<SExprs::SExprSeq>(ssr);
-    return parseProgram(ss);
+    const auto &p = parseProgram(ss);
+    tq_stop("actual");
+    return p;
 }
 
 Result<Program, Err> parseFile(const std::string &filename) {
