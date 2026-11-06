@@ -48,7 +48,7 @@
 <function> : '(' <gid> <type> '(' <param>* '...'? ')' ('(' <basic-block>+ ')'|'opaque') <md>? ')'
 <functions> : '(' 'functions' <function>* ')'
 
-<gvariable> : '(' <gid> (<gval>|'opaque') <md>? ')'  ; TODO: limit gval id to fns?
+<gvariable> : '(' <gid> (<gval>|'opaque') <md>? ')'
 <variables> : '(' 'variables' <gvariable>* ')'
 
 <basic-block> : '(' <bid> '(' <instruction>+ ')' <md>? ')'
