@@ -42,3 +42,8 @@ SVFIR requires C++17.
 * Tests.
 * Spec (prose, to go alongside grammar).
 * Organise interface (Ops.h, unideal).
+* Reorganise TypedProgram.
+  * Should it include graphs? Should it be closed to the outside?
+* Serialised/binary format.
+* LLVM->SVFIR translator.
+* SVFIR->SVF translator (SVF repo).
