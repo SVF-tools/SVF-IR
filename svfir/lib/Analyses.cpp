@@ -24,6 +24,7 @@ using namespace SVFIR;
 
 const PtrType FabPtrType = PtrType(FAB_SPAN);
 const IntType FabInt8Type = IntType(IntType::Kind::I8, FAB_SPAN);
+const FloatType FabFloat64Type = FloatType(FloatType::Kind::F64, FAB_SPAN);
 const VoidType FabVoidType = VoidType(FAB_SPAN);
 
 // checkDuplicateDecs //////////////////////////////////////////////////////////
@@ -414,7 +415,7 @@ public:
         case BinaryOpStmt::Op::DIV:
         case BinaryOpStmt::Op::REM:
             if (!is<FloatType>(lt)) { return expErr("float", lt, binop); }
-            assignType(binop.id.name, lt); // TODO WRONG
+            assignType(binop.id.name, lt);
             break;
 
         case BinaryOpStmt::Op::UDIV:
@@ -422,7 +423,7 @@ public:
         case BinaryOpStmt::Op::UREM:
         case BinaryOpStmt::Op::SREM:
             if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
-            assignType(binop.id.name, lt); // TODO WRONG
+            assignType(binop.id.name, FabFloat64Type);
             break;
 
         case BinaryOpStmt::Op::EQ:
