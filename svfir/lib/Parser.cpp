@@ -1,4 +1,3 @@
-#include "timequick.h"
 #include <algorithm>
 #include <cerrno>
 #include <cctype>
@@ -1809,15 +1808,12 @@ Result<Program, Err> parseProgram(SExprSeq ss) {
 namespace SVFIR {
 
 Result<Program, Err> parse(InputStream &stream) {
-    tq_start("sexpr");
     const Result<SExprs::SExprSeq, Err> &ssr = SExprs::parseSeq(stream);
     if (is<Err>(ssr)) { return get<Err>(ssr); }
-    tq_stop("sexpr");
 
-    tq_start("actual");
     const SExprs::SExprSeq &ss = get<SExprs::SExprSeq>(ssr);
     const auto &p = parseProgram(ss);
-    tq_stop("actual");
+
     return p;
 }
 
