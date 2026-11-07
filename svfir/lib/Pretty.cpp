@@ -281,8 +281,10 @@ public:
         case BinaryOpStmt::Op::ADD: kind = "add"; break;
         case BinaryOpStmt::Op::SUB: kind = "sub"; break;
         case BinaryOpStmt::Op::MUL: kind = "mul"; break;
+        case BinaryOpStmt::Op::DIV: kind = "div"; break;
         case BinaryOpStmt::Op::UDIV: kind = "div unsigned"; break;
         case BinaryOpStmt::Op::SDIV: kind = "div signed"; break;
+        case BinaryOpStmt::Op::REM: kind = "rem"; break;
         case BinaryOpStmt::Op::UREM: kind = "rem unsigned"; break;
         case BinaryOpStmt::Op::SREM: kind = "rem signed"; break;
         case BinaryOpStmt::Op::AND: kind = "and"; break;

@@ -495,16 +495,17 @@ struct ConvertStmt final {
 /// <cmp-inst> with <cmp-op> through op.
 struct BinaryOpStmt final {
     enum class Op {
-        ADD, SUB, MUL, UDIV, SDIV, UREM, SREM,
+        ADD, SUB, MUL,
+        DIV, REM, // For non-integers.
+        SDIV, SREM, // For signed integers.
+        UDIV, UREM, // For unsigned integers.
+
         AND, OR, XOR, SHIFTL, LSHIFTR, ASHIFTR,
-        // For non-integers.
-        LT, LE, GT, GE,
-        // For signed integers.
-        SLT, SLE, SGT, SGE,
-        // For unsigned integers.
-        ULT, ULE, UGT, UGE,
-        // For all types.
-        EQ, NEQ
+
+        LT, LE, GT, GE, // For non-integers.
+        SLT, SLE, SGT, SGE, // For signed integers.
+        ULT, ULE, UGT, UGE, // For unsigned integers.
+        EQ, NEQ // For all types.
     };
 
     const Op op;

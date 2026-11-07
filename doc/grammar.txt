@@ -87,8 +87,8 @@
 <arith-stmt> : '(' 'add' <lid> <val> <val> <md>? ')'
              | '(' 'sub' <lid> <val> <val> <md>? ')'
              | '(' 'mul' <lid> <val> <val> <md>? ')'
-             | '(' 'div' ('unsigned'|'signed') <lid> <val> <val> <md>? ')'
-             | '(' 'rem' ('unsigned'|'signed') <lid> <val> <val> <md>? ')'
+             | '(' 'div' ('unsigned'|'signed')? <lid> <val> <val> <md>? ')'
+             | '(' 'rem' ('unsigned'|'signed')? <lid> <val> <val> <md>? ')'
 
 <bit-stmt> : '(' 'not' <lid> <val> <md>? ')'
            | '(' 'and' <lid> <val> <val> <md>? ')'

@@ -411,13 +411,17 @@ public:
             assignType(binop.id.name, lt);
             break;
 
+        case BinaryOpStmt::Op::DIV:
+        case BinaryOpStmt::Op::REM:
+            if (!is<FloatType>(lt)) { return expErr("float", lt, binop); }
+            assignType(binop.id.name, lt); // TODO WRONG
+            break;
+
         case BinaryOpStmt::Op::UDIV:
         case BinaryOpStmt::Op::SDIV:
         case BinaryOpStmt::Op::UREM:
         case BinaryOpStmt::Op::SREM:
-            if (!is<IntType>(lt) && !is<FloatType>(lt)) {
-                return expErr("integer or float", lt, binop);
-            }
+            if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
             assignType(binop.id.name, lt); // TODO WRONG
             break;
 

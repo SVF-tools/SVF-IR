@@ -1299,25 +1299,44 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
     const std::string &stmtDesc = kind + " statement";
 
     ++it;
-    if (it == end) { return listCutShort(stmtDesc, "'signed'/'unsigned'", sp); }
-    if (!is<Atom>(*it)) { return notAnAtom("'signed'/'unsigned'", span(*it)); }
-    const std::string &kw = get<Atom>(*it).val;
-    bool isSigned;
-    if (kw == "unsigned") { isSigned = false; }
-    else if (kw == "signed") { isSigned = true; }
-    else {
-        return badKw(
-            stmtDesc + " (sign)",
-            "'signed'/'unsigned'",
-            kw,
-            span(*it)
-        );
+    if (it == end) {
+        return listCutShort(stmtDesc, "'signed'/'unsigned' or local ID", sp);
+    }
+    if (!is<Atom>(*it)) {
+        return notAnAtom("'signed'/'unsigned' or local ID", span(*it));
     }
 
-    ++it;
-    if (it == end) { return listCutShort(stmtDesc, "local ID", sp); }
+    // We will check for 'signed'/'unsigned'. If we find it, good, we'll move
+    // on to the next element. If not, we will look at the same element again
+    // as a local ID. To achieve this, it is conditionally incremented.
+    const std::string &kw = get<Atom>(*it).val;
+    std::optional<bool> isSigned = std::nullopt;
+    if (kw == "unsigned") {
+        isSigned.emplace(false);
+        ++it;
+    } else if (kw == "signed") {
+        isSigned.emplace(true);
+        ++it;
+    }
+
+    if (it == end) {
+        const std::string expectSignedness =
+            isSigned.has_value() ? "'signed'/'unsigned' or ": "";
+        return listCutShort(stmtDesc, expectSignedness + "local ID", sp);
+    }
     const Result<Id, Err> lidr = parseLocalId(*it);
-    if (is<Err>(lidr)) { return get<Err>(lidr); }
+    if (is<Err>(lidr)) {
+        if (isSigned.has_value()) {
+            return get<Err>(lidr);
+        } else {
+            Err(
+                "Expected 'signed'/'unsigned' or a local ID. "
+                "If you intended a local ID here, note:\n  " +
+                get<Err>(lidr).toString(),
+                span(*it)
+            );
+        }
+    }
     const Id lid = getVal(lidr);
 
     ++it;
@@ -1339,9 +1358,19 @@ Result<Statement, Err> parseDivRemStmt(const List &l) {
 
     BinaryOpStmt::Op op;
     if (kind == "div") {
-        op = isSigned ? BinaryOpStmt::Op::SDIV : BinaryOpStmt::Op::UDIV;
+        if (isSigned.has_value()) {
+            if (isSigned.value()) { op = BinaryOpStmt::Op::SDIV; }
+            else { op = BinaryOpStmt::Op::UDIV; }
+        } else {
+            op = BinaryOpStmt::Op::DIV;
+        }
     } else if (kind == "rem") {
-        op = isSigned ? BinaryOpStmt::Op::SREM : BinaryOpStmt::Op::UREM;
+        if (isSigned.has_value()) {
+            if (isSigned.value()) { op = BinaryOpStmt::Op::SREM; }
+            else { op = BinaryOpStmt::Op::UREM; }
+        } else {
+            op = BinaryOpStmt::Op::REM;
+        }
     } else { unreachable(); }
 
     return Statement(BinaryOpStmt(op, lid, left, right, getVal(md), span(l)));
