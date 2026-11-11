@@ -21,6 +21,8 @@ struct Err {
     : msg(msg), span(span) { }
     Err(const std::string &msg) : msg(msg), span(std::nullopt) { }
 
+    bool operator==(const Err &e) const;
+
     std::string toString(void) const;
 };
 

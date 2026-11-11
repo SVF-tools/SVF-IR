@@ -304,7 +304,7 @@ std::optional<Err> _checkConstantType(const TypedConstant &tc) {
         if (sc.vals.size() != at.slots) {
             return Err(
                 "Declared sequence constant to have " +
-                std::to_string(at.slots) + "slots but in actuality has " +
+                std::to_string(at.slots) + " slots but in actuality has " +
                 std::to_string(sc.vals.size()) + " slots in '" +
                 pretty(tc) + "'.",
                 span(tc)

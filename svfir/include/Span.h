@@ -44,6 +44,9 @@ struct Span {
     Span(const Loc start, const Loc end, const bool gen)
     : start(start), end(end), gen(gen) { }
 
+    bool operator==(const Span &s) const;
+    bool operator!=(const Span &s) const;
+
     /// Formatted as [<line1, col1>, <line2, col2>).
     std::string toString(void) const;
 };

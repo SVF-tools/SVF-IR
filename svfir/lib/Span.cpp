@@ -18,4 +18,14 @@ namespace SVFIR {
     bool Loc::operator!=(const Loc &y) const {
         return !(*this == y);
     }
+
+    bool Span::operator==(const Span &s) const {
+        return
+            this->start == s.start &&
+            this->end == s.end &&
+            this->gen == s.gen;
+    }
+
+    bool Span::operator!=(const Span &s) const { return !(*this == s); }
+
 }  // namespace SVFIR

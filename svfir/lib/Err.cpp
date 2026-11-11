@@ -14,4 +14,8 @@ std::string Err::toString(void) const {
     unreachable();
 }
 
+bool Err::operator==(const Err &e) const {
+    return this->msg == e.msg && this->span == e.span;
+}
+
 };  // namespace SVFIR

@@ -19,3 +19,6 @@ target_include_directories(svfir PUBLIC svfir/include/)
 
 add_executable(svfirtest test/svfir.cpp)
 target_link_libraries(svfirtest PRIVATE svfir)
+
+add_executable(testtypes test/types.cpp)
+target_link_libraries(testtypes PRIVATE svfir)
