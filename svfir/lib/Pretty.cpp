@@ -168,7 +168,7 @@ public:
         }
 
         return par(
-            "phi " + operator()(p.id) + " " + args + maybeOpMd(" ", p.md)
+            "phi " + operator()(p.id) + " " + par(args) + maybeOpMd(" ", p.md)
         );
     }
 
