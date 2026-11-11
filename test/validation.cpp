@@ -131,6 +131,6 @@ int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
 
-    if (success) { std::cout << "All type tests passed." << std::endl; }
-    else { std::cout << "Some type tests failed." << std::endl; }
+    if (success) { std::cout << "All validation tests passed." << std::endl; }
+    else { std::cout << "Some validation tests failed." << std::endl; }
 }
