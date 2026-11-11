@@ -20,5 +20,5 @@ target_include_directories(svfir PUBLIC svfir/include/)
 add_executable(svfirtest test/svfir.cpp)
 target_link_libraries(svfirtest PRIVATE svfir)
 
-add_executable(testvalidation test/validations.cpp)
+add_executable(testvalidation test/validation.cpp)
 target_link_libraries(testvalidation PRIVATE svfir)
