@@ -121,9 +121,129 @@ bool testCheckConstantTypes(void) {
     return true;
 }
 
+bool testCheckTerminatingStmts(void) {
+    static const auto nonTerminatorErr =
+    [](const std::string &stmt, const std::string &bb, const Span &span) {
+        return Err(
+            "Non-terminating statement '" + stmt + "' cannot be final "
+            "statement of basic block '" + bb + "'.",
+            span
+        );
+    };
+
+    static const auto terminatorErr =
+    [](const std::string &stmt, const std::string &bb, const Span &span) {
+        return Err(
+            "Terminating statement '" + stmt + "' not final statement of "
+            "basic block '" + bb + "'.",
+            span
+        );
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x ((ret void)))
+              (!y ((add %x %y %z) (add %a %b %c))))))
+    )";
+    const std::optional<Err> &e1 = checkTerminatingStmts(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(
+        e1.value() ==
+        nonTerminatorErr("(add %a %b %c)", "!y", Span(Loc(7, 35), Loc(7, 49)))
+    );
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x ((alloc stack %1)))
+              (!y ((add %x %y %z) (add %a %b %c))))))
+    )";
+    const std::optional<Err> &e2 = checkTerminatingStmts(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(
+        e2.value() ==
+        nonTerminatorErr("(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36)))
+    );
+
+    const std::string &src3 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x1 ((br !y)))
+              (!x2 ((brif (i8 1) !y !z)))
+              (!y ((phi %p ((%x !x1) (%x !x2)))))
+              (!z ((ret void))))))
+    )";
+    const std::optional<Err> &e3 = checkTerminatingStmts(insistParse(src3));
+    TEST(e3.has_value());
+    TEST(
+        e3.value() ==
+        nonTerminatorErr(
+            "(phi %p ((%x !x1) (%x !x2)))", "!y", Span(Loc(8, 20), Loc(8, 48))
+        )
+    );
+
+    const std::string &src4 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x ((ret void) (alloc stack %1)))
+              (!y ((add %x %y %z) (add %a %b %c))))))
+    )";
+    const std::optional<Err> &e4 = checkTerminatingStmts(insistParse(src4));
+    TEST(e4.has_value());
+    TEST(
+        e4.value() ==
+        terminatorErr("(ret void)", "!x", Span(Loc(6, 20), Loc(6, 30)))
+    );
+
+    const std::string &src5 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x ((br !y)))
+              (!y ((br !x) (add %a %b %c))))))
+    )";
+    const std::optional<Err> &e5 = checkTerminatingStmts(insistParse(src5));
+    TEST(e5.has_value());
+    TEST(
+        e5.value() ==
+        terminatorErr("(br !x)", "!y", Span(Loc(7, 20), Loc(7, 27)))
+    );
+
+    const std::string &src6 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@foo void ((ptr %x)) (
+              (!x ((br !y)))
+              (!y ((add %a %b %c) (br !z)))
+              (!z ((or %o (i8 1) (i8 2)) (brif %o !y !z) (ret void))))))
+    )";
+    const std::optional<Err> &e6 = checkTerminatingStmts(insistParse(src6));
+    TEST(e6.has_value());
+    TEST(
+        e6.value() ==
+        terminatorErr("(brif %o !y !z)", "!z", Span(Loc(8, 42), Loc(8, 57)))
+    );
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
+    success &= testCheckTerminatingStmts();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }

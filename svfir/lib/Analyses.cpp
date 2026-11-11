@@ -842,7 +842,8 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
                             return Err(
                                 "Terminating statement '" +
                                 pretty(*it) +
-                                "' not final statement of basic block",
+                                "' not final statement of basic block '" +
+                                bb.id.name + "'.",
                                 span(*it)
                             );
                         }
@@ -852,7 +853,8 @@ std::optional<Err> checkTerminatingStmts(const Program &p) {
                             return Err(
                                 "Non-terminating statement '" +
                                 pretty(*it) +
-                                "' as final statement of basic block",
+                                "' cannot be final statement of basic block '" +
+                                bb.id.name + "'.",
                                 span(*it)
                             );
                         }
