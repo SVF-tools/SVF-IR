@@ -9,7 +9,6 @@
 
 #include "test.h"
 
-
 using namespace SVFIR;
 
 bool testCheckConstantTypes(void) {
@@ -18,10 +17,7 @@ bool testCheckConstantTypes(void) {
             "(preamble (version 0.0) (source test))\n"
             "(variables (@FOO " + c +  "))\n"
             "(functions)\n";
-        const Result<Program, Err> &p = parseString(ps);
-        // insist, not TEST, because parsing is not this test's responsibility.
-        insist(!is<Err>(p));
-        return get<Program>(p);
+        return insistParse(ps);
     };
 
     static const auto span1 = [](const std::string &c) {
@@ -34,9 +30,7 @@ bool testCheckConstantTypes(void) {
             "(preamble (version 0.0) (source test))\n"
             "(variables)\n"
             "(functions (@foo void () ((!x ((store " + c + " null))))))\n";
-        const Result<Program, Err> &p = parseString(ps);
-        insist(!is<Err>(p));
-        return get<Program>(p);
+        return insistParse(ps);
     };
 
     static const auto span2 = [](const std::string &c) {
