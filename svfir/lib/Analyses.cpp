@@ -911,7 +911,7 @@ std::optional<Err> checkEntryPredecessors(const Program &p) {
 
 std::optional<Err> checkVarargStmts(const Program &p) {
     for (const Function &fn : p.functions) {
-        if (fn.vararg && fn.body.has_value()) {
+        if (!fn.vararg && fn.body.has_value()) {
             for (const BasicBlock &bb : fn.body.value()) {
                 for (const Statement &s : bb.stmts) {
                     if (is<VarargStmt>(s)) {

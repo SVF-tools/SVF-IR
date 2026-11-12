@@ -418,11 +418,55 @@ bool testCheckDuplicateDecs(void) {
     return true;
 }
 
+bool testCheckVarargStmts(void) {
+    static const auto varargErr =
+    [](const std::string &stmt, const std::string &fn, const Span &span) {
+        return Err(
+            "vararg statement '" + stmt +
+            "' in non-vararg function '" + fn + "'.",
+            span
+        );
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (@fn void () ((!1 ((vararg (i32 %x) 1))))))
+    )";
+    const std::optional<Err> &e1 = checkVarargStmts(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(
+        e1.value() ==
+        varargErr("(vararg (i32 %x) 1)", "@fn", Span(Loc(4, 39), Loc(4, 58)))
+    );
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@o void () opaque)
+          (@fn (agg 0) ((i32 %p) (ptr %1)) (
+            (!1 ((load (ptr %1) null)))
+            (!2 ((vararg (ptr %1) 0))))))
+    )";
+    const std::optional<Err> &e2 = checkVarargStmts(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(
+        e2.value() ==
+        varargErr("(vararg (ptr %1) 0)", "@fn", Span(Loc(8, 18), Loc(8, 37)))
+    );
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
     success &= testCheckTerminatingStmts();
     success &= testCheckDuplicateDecs();
+    success &= testCheckVarargStmts();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }
