@@ -123,7 +123,7 @@ public:
             params += "...";
         }
 
-        const std::string fnstr = par(
+        const std::string &fnstr = par(
             operator()(f.id) + " " +
             operator()(f.type) + " " +
             par(params) + " " +
@@ -201,9 +201,9 @@ public:
     }
 
     std::string operator()(const RetStmt &ret) {
-        const std::string val =
+        const std::string &val =
             ret.val.has_value() ? operator()(ret.val.value()) : "void";
-        const std::string maybeMd = maybeOpMd(" ", ret.md);
+        const std::string &maybeMd = maybeOpMd(" ", ret.md);
         return par("ret " + val + maybeMd);
     }
 
@@ -258,7 +258,7 @@ public:
     std::string operator()(const ConvertStmt &c) {
         std::string type;
         if (c.extKind.has_value()) {
-            const ConvertStmt::ExtKind ek = c.extKind.value();
+            const ConvertStmt::ExtKind &ek = c.extKind.value();
             std::string eks;
             if (ek == ConvertStmt::ExtKind::ZERO) { eks = "zero"; }
             else if (ek == ConvertStmt::ExtKind::SIGN) { eks = "sign"; }

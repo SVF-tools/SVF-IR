@@ -22,7 +22,7 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
     if (is<BrStmt>(lastStmt)) {
         targets.push_back(get<BrStmt>(lastStmt).target);
     } else if (is<BrifStmt>(lastStmt)) {
-        const BrifStmt brif = get<BrifStmt>(lastStmt);
+        const BrifStmt &brif = get<BrifStmt>(lastStmt);
         targets.push_back(brif.ifTarget);
         targets.push_back(brif.elseTarget);
     } else {
@@ -42,7 +42,7 @@ std::vector<Node> build(const FunctionBody &body) {
     // All nodes which have an outgoing edge to the key (the dst).
     std::unordered_map<Index, std::vector<Index>> sources;
     for (size_t dst = 0; dst < body.size(); ++dst) {
-        const Name dstName = body[dst].id.name;
+        const Name &dstName = body[dst].id.name;
         for (size_t src = 0; src < body.size(); ++src) {
             for (const Id &id : getTargets(body[src])) {
                 if (id.name == dstName) { sources[dst].push_back(src); }

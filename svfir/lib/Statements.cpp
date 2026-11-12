@@ -16,7 +16,7 @@ std::optional<Id> introducedVar(const Statement &s) {
     if (is<PhiStmt>(s)) {
         id.emplace(get<PhiStmt>(s).id);
     } else if (is<CallStmt>(s)) {
-        const CallStmt c = get<CallStmt>(s);
+        const CallStmt &c = get<CallStmt>(s);
         if (c.tid.has_value()) { id.emplace(c.tid.value().id); }
     } else if (is<AllocStmt>(s)) {
         id.emplace(get<AllocStmt>(s).id);
@@ -35,7 +35,7 @@ std::optional<Id> introducedVar(const Statement &s) {
     } else if (is<VarargStmt>(s)) {
         id.emplace(get<VarargStmt>(s).tid.id);
     } else if (is<BlackholeStmt>(s)) {
-        const BlackholeStmt b = get<BlackholeStmt>(s);
+        const BlackholeStmt &b = get<BlackholeStmt>(s);
         if (b.tid.has_value()) { id.emplace(b.tid.value().id); }
     } else {
         // Nothing introduced.

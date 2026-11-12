@@ -154,7 +154,7 @@ TypedProgram unifyReturns(const TypedProgram &tp) {
         unifiedFunctions.push_back(unify(fn));
     }
 
-    const Program up =
+    const Program &up =
         Program(p.preamble, p.globalVars, unifiedFunctions, p.md, p.span);
 
     // For any function where unification took place, we *may* have introduced

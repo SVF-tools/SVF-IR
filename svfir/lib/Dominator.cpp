@@ -67,7 +67,7 @@ std::vector<Index> postOrder(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    const std::vector<ControlFlowGraph::Node> nodes = cfg.nodes();
+    const std::vector<ControlFlowGraph::Node> &nodes = cfg.nodes();
     insist(!nodes.empty());
 
     std::vector<Index> order;
@@ -97,7 +97,7 @@ std::vector<Index> calculateIDoms(
     insist(!cfg.nodes().empty());
 
     // We do *everything* with the nodes labelled with the post-order traversal.
-    const std::vector<Index> po2id = postOrder(cfg, ci);
+    const std::vector<Index> &po2id = postOrder(cfg, ci);
     // This is not a vector because unreachable nodes are not represented in po.
     std::unordered_map<Index, Index> id2po;
     for (size_t i = 0; i < po2id.size(); ++i) { id2po[po2id[i]] = i; }
@@ -107,7 +107,7 @@ std::vector<Index> calculateIDoms(
     const Index poentry = id2po[ci.entry(cfg)];
     podoms[poentry] = id2po[poentry];
 
-    const auto intersect = [&podoms](const Index b1, const Index b2) {
+    const auto &intersect = [&podoms](const Index b1, const Index b2) {
         Index finger1 = b1;
         Index finger2 = b2;
         while (finger1 != finger2) {
@@ -123,7 +123,7 @@ std::vector<Index> calculateIDoms(
         // -1-1 drops the entry node, which in a postorder must be the last.
         for (Index b = (po2id.size() - 1) - 1; b != Index(-1); --b) {
             const ControlFlowGraph::Node &bn = cfg.nodes()[po2id[b]];
-            const std::vector<Index> preds = ci.inEdges(bn);
+            const std::vector<Index> &preds = ci.inEdges(bn);
 
             // Pick a processed/calculated predecessor.
             Index newIDom = NO_DOM;
@@ -172,7 +172,7 @@ DominatorTree::Node build(
 ) {
     insist(!cfg.nodes().empty());
 
-    const std::vector<Index> idoms = calculateIDoms(cfg, ci);
+    const std::vector<Index> &idoms = calculateIDoms(cfg, ci);
     std::vector<std::vector<Index>> childrenIndices(idoms.size());
     for (Index i = 0; i < idoms.size(); ++i) {
         if (idoms[i] != NO_DOM) {
@@ -217,7 +217,7 @@ std::set<Node> unreachableNodes(
         const Index y = reachables[i + 1];
         // Nodes in interval (x, y) are unreachable (may be empty).
         for (Index g = x + 1; g < y; ++g) {
-            const Node gn = Node(g, cfg.nodes()[g].name, std::vector<Node>());
+            const Node &gn = Node(g, cfg.nodes()[g].name, std::vector<Node>());
             unreachables.insert(gn);
         }
     }
