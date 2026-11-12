@@ -501,6 +501,47 @@ bool testCheckUndeclaredBlocks(void) {
     return true;
 }
 
+bool testCheckUndeclaredGlobals(void) {
+    static const auto undecErr =
+    [](const std::string &name, const Span &span) {
+        return Err("Global '" + name + "' undeclared.", span);
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables (@foo @bar))
+        (functions)
+    )";
+    const std::optional<Err> &e1 = checkUndeclaredGlobals(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(e1.value() == undecErr("@bar", Span(Loc(3, 26), Loc(3, 30))));
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables (@foo opaque))
+        (functions
+          (@fn void () ( (!1 ((store (ptr null) @foo) (load (i32 %a) @foo2))))))
+    )";
+    const std::optional<Err> &e2 = checkUndeclaredGlobals(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(e2.value() == undecErr("@foo2", Span(Loc(5, 70), Loc(5, 75))));
+
+    const std::string &src3 = R"(
+        (preamble (version 0.0) (source test))
+        (variables (@foo @foo))
+        (functions
+          (@fn ptr () ( (!1 ((store (ptr null) @foo) (ret @fn)))))
+          (@fnn void () ( (!2 ((call void @void ((i32 2))))))))
+    )";
+    const std::optional<Err> &e3 = checkUndeclaredGlobals(insistParse(src3));
+    TEST(e3.has_value());
+    TEST(e3.value() == undecErr("@void", Span(Loc(6, 43), Loc(6, 48))));
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
@@ -508,6 +549,7 @@ int main(void) {
     success &= testCheckDuplicateDecs();
     success &= testCheckVarargStmts();
     success &= testCheckUndeclaredBlocks();
+    success &= testCheckUndeclaredGlobals();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }

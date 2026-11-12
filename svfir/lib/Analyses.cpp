@@ -986,10 +986,24 @@ std::optional<Err> checkLocalDefBeforeUse(const Program &p) {
     return std::nullopt;
 }
 
-std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
+std::optional<Err> checkUndeclaredGlobals(const Program &p) {
     std::unordered_set<Name> globals;
     for (const GlobalVar &gv : p.globalVars) { globals.insert(gv.id.name); }
     for (const Function &fn : p.functions) { globals.insert(fn.id.name); }
+
+    for (const GlobalVar &gv : p.globalVars) {
+        if (!gv.isOpaque()) {
+            if (is<Id>(gv.val.value())) {
+                const Id &vi = get<Id>(gv.val.value());
+                // Global-ness encoded in grammar.
+                if (globals.find(vi.name) == globals.cend()) {
+                    return Err(
+                        "Global '" + vi.name + "' undeclared.", span(vi)
+                    );
+                }
+            }
+        }
+    }
 
     for (const Function &fn : p.functions) {
         if (!fn.isOpaque()) {
@@ -1001,9 +1015,7 @@ std::optional<Err> checkGlobalDefBeforeUse(const Program &p) {
                             globals.find(u.name) == globals.cend()
                         ) {
                             return Err(
-                                "Global variable '" + u.name + "' used but "
-                                "not defined.",
-                                span(u)
+                                "Global '" + u.name + "' undeclared.", span(u)
                             );
                         }
                     }
@@ -1107,7 +1119,7 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
             checkDuplicateDecs,
             checkVarargStmts,
             checkUndeclaredBlocks,
-            checkGlobalDefBeforeUse,
+            checkUndeclaredGlobals,
             checkEntryPredecessors,
             checkPhiStmtArgs,
             checkLocalDefBeforeUse

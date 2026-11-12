@@ -82,11 +82,11 @@ std::optional<Err> checkPhiStmtArgs(const Program &);
 std::optional<Err> checkLocalDefBeforeUse(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkGlobalDefBeforeUse
+/// PASS: checkUndeclaredGlobals
 /// DEPS: --
-/// Raises an error if any global variable is used without being defined.
+/// Raises an error if any global variable is used without being declared.
 ////////////////////////////////////////////////////////////////////////////////
-std::optional<Err> checkGlobalDefBeforeUse(const Program &);
+std::optional<Err> checkUndeclaredGlobals(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkConstantTypes
