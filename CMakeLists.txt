@@ -17,8 +17,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(svfir STATIC ${SVFIR_HEADERS} ${SVFIR_SOURCES})
 target_include_directories(svfir PUBLIC svfir/include/)
 
-add_executable(svfirtest test/svfir.cpp)
-target_link_libraries(svfirtest PRIVATE svfir)
+add_executable(testsvfir test/svfir.cpp)
+target_link_libraries(testsvfir PRIVATE svfir)
 
 add_executable(testvalidation test/validation.cpp)
 target_link_libraries(testvalidation PRIVATE svfir)

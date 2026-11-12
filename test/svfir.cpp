@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "Err.h"
 #include "Parser.h"
 #include "Ops.h"
@@ -131,5 +133,5 @@ int main(void) {
     if (success) { std::cout << "All tests passed." << std::endl; }
     else { std::cout << "Some tests failed." << std::endl; }
 
-    return success ? 1 : 0;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

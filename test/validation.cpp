@@ -1,4 +1,5 @@
 #include <optional>
+#include <cstdlib>
 
 #include "Analyses.h"
 #include "Err.h"
@@ -626,4 +627,6 @@ int main(void) {
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }
+
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
