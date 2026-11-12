@@ -945,7 +945,7 @@ std::optional<Err> checkUndeclaredBlocks(const Program &p) {
                     for (const Id &blk : usedBlocks(s)) {
                         if (blocks.find(blk.name) == blocks.cend()) {
                             return Err(
-                                "Block '" + blk.name + "' does not exist.",
+                                "Block '" + blk.name + "' undeclared.",
                                 span(blk)
                             );
                         }

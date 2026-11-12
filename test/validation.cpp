@@ -461,12 +461,53 @@ bool testCheckVarargStmts(void) {
     return true;
 }
 
+bool testCheckUndeclaredBlocks(void) {
+    static const auto undecErr =
+    [](const std::string &name, const Span &span) {
+        return Err("Block '" + name + "' undeclared.", span);
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (@fn void () ((!1 ((br !2))))))
+    )";
+    const std::optional<Err> &e1 = checkUndeclaredBlocks(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(e1.value() == undecErr("!2", Span(Loc(4, 43), Loc(4, 45))));
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (@fn void () ((!1 ((brif (i8 0) !1 !2))))))
+    )";
+    const std::optional<Err> &e2 = checkUndeclaredBlocks(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(e2.value() == undecErr("!2", Span(Loc(4, 55), Loc(4, 57))));
+
+    const std::string &src3 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn void () ((!x ((ret void)))))
+          (@fn void () ((!y ((phi %x (((i32 5) !y) ((i32 4) !x))))))))
+    )";
+    const std::optional<Err> &e3 = checkUndeclaredBlocks(insistParse(src3));
+    TEST(e3.has_value());
+    TEST(e3.value() == undecErr("!x", Span(Loc(6, 61), Loc(6, 63))));
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
     success &= testCheckTerminatingStmts();
     success &= testCheckDuplicateDecs();
     success &= testCheckVarargStmts();
+    success &= testCheckUndeclaredBlocks();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }
