@@ -37,14 +37,17 @@ std::optional<Err> _checkDuplicateGlobalDecs(
         const Name &name = v.id.name;
         if (!names.insert(name).second) {
             return Err(
-                "Global variable name '" + name + "' declared twice", v.span
+                "Global variable name '" + name + "' previously declared",
+                span(v.id)
             );
         }
     }
     for (const Function &fn : fns) {
         const Name &name = fn.id.name;
         if (!names.insert(name).second) {
-            return Err("Function name '" + name + "' declared twice", fn.span);
+            return Err(
+                "Function name '" + name + "' previously declared", span(fn.id)
+            );
         }
     }
     return std::nullopt;
@@ -55,7 +58,9 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
     for (const auto &p : fn.params) {
         const Name &name = p.id.name;
         if (!names.insert(name).second) {
-            return Err("Parameter '" + name + "' declared twice", fn.span);
+            return Err(
+                "Parameter '" + name + "' previously declared.", span(p.id)
+            );
         }
     }
 
@@ -67,7 +72,8 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                     const Name &name = id.value().name;
                     if (!names.insert(name).second) {
                         return Err(
-                            "Variable '" + name + "' declared twice", span(s)
+                            "Variable '" + name + "' preivously declared.",
+                            span(id.value())
                         );
                     }
                 }
@@ -84,7 +90,10 @@ std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
         for (const BasicBlock &bb : fn.body.value()) {
             const Name &name = bb.id.name;
             if (names.find(name) != names.cend()) {
-                return Err("Block '" + name + "' declared twice", span(bb));
+                return Err(
+                    "Block '" + name + "' previously declared.",
+                    span(bb.id)
+                );
             } else { names.insert(name); }
         }
     }
