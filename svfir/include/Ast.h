@@ -306,8 +306,9 @@ struct PhiStmt final {
     struct Arg {
         const Val val;
         const Id pred;
-        const Span &span;
-        Arg(const Val &val, const Id &pred, const Span span)
+        const Span span;
+
+        Arg(const Val &val, const Id &pred, const Span &span)
         : val(val), pred(pred), span(span) { }
     };
 
