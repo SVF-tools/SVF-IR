@@ -147,13 +147,13 @@ bool testCheckTerminatingStmts(void) {
         (functions
           (@foo void ((ptr %x)) (
               (!x ((ret void)))
-              (!y ((add %x %y %z) (add %a %b %c))))))
+              (!y ((add %y (i8 1) (i8 2)) (not %z (i8 1)))))))
     )";
     const std::optional<Err> &e1 = checkTerminatingStmts(insistParse(src1));
     TEST(e1.has_value());
     TEST(
         e1.value() ==
-        nonTerminatorErr("(add %a %b %c)", "!y", Span(Loc(7, 35), Loc(7, 49)))
+        nonTerminatorErr("(not %z (i8 1))", "!y", Span(Loc(7, 43), Loc(7, 58)))
     );
 
     const std::string &src2 = R"(
@@ -162,7 +162,7 @@ bool testCheckTerminatingStmts(void) {
         (functions
           (@foo void ((ptr %x)) (
               (!x ((alloc stack %1)))
-              (!y ((add %x %y %z) (add %a %b %c))))))
+              (!y ((add %a (f16 1.0) (f16 2.2)))))))
     )";
     const std::optional<Err> &e2 = checkTerminatingStmts(insistParse(src2));
     TEST(e2.has_value());
@@ -194,9 +194,9 @@ bool testCheckTerminatingStmts(void) {
         (preamble (version 0.0) (source test))
         (variables)
         (functions
-          (@foo void ((ptr %x)) (
-              (!x ((ret void) (alloc stack %1)))
-              (!y ((add %x %y %z) (add %a %b %c))))))
+          (@foo void ((i32 %x)) (
+              (!x ((ret void) (alloc stack %1) (ret void)))
+              (!y ((add %a %x %x) (add %a %x %x) (ret void))))))
     )";
     const std::optional<Err> &e4 = checkTerminatingStmts(insistParse(src4));
     TEST(e4.has_value());
