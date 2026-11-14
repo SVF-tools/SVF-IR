@@ -155,7 +155,7 @@ std::vector<Index> calculateIDoms(
     }
 
     // Back from the post-order labelling to the real labels.
-    std::vector<Index> doms(podoms.size(), NO_DOM);
+    std::vector<Index> doms(cfg.nodes().size(), NO_DOM);
     for (Index i = 0; i < podoms.size(); ++i) {
         doms[po2id[i]] = po2id[podoms[i]];
     }
