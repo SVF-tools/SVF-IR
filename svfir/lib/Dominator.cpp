@@ -101,9 +101,10 @@ std::vector<Index> calculateIDoms(
     // This is not a vector because unreachable nodes are not represented in po.
     std::unordered_map<Index, Index> id2po;
     for (size_t i = 0; i < po2id.size(); ++i) { id2po[po2id[i]] = i; }
+    insist(id2po.size() == po2id.size());
 
 
-    std::vector<Index> podoms(cfg.nodes().size(), NO_DOM);
+    std::vector<Index> podoms(po2id.size(), NO_DOM);
     const Index poentry = id2po[ci.entry(cfg)];
     podoms[poentry] = id2po[poentry];
 
