@@ -7,6 +7,7 @@
 #include "Span.h"
 #include "Result.h"
 #include "Variant.h"
+#include "Ops.h"
 
 #include "test.h"
 
@@ -615,6 +616,166 @@ bool testCheckEntryPredecessors(void) {
     return true;
 }
 
+bool testCheckPhiStmtArgs(void) {
+    static const auto dupPredErr =
+    [](const std::string &block, const std::string &phi, const Span &span) {
+        return Err(
+            "Duplicate argument for predecessor block '" + block +
+            "' in phi statement '" + phi + "'.",
+            span
+        );
+    };
+
+    static const auto notPredErr =
+    [](const std::string &block, const std::string &phi, const Span &span) {
+        return Err(
+            "Argument block '" + block + "' is not a predecessor block "
+            "in phi statement '" + phi + "'.",
+            span
+        );
+    };
+
+    static const auto incomprehensiveErr =
+    [](
+        const std::string &uncovered,
+        // Whether uncovered refers to many or just one.
+        const bool plural,
+        const std::string &phi,
+        const Span &span
+    ) {
+        return Err(
+            "No corresponding argument for predecessor block" +
+            (plural ? "s " + uncovered : " " + uncovered) +
+            " in phi statement '" + phi + "'.",
+            span
+        );
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn void () (
+            (!1 ((br !2)))
+            (!2 ((phi %x (((i8 1) !1) ((i8 2) !1))) (ret void))))))
+    )";
+    const std::optional<Err> &e1 = checkPhiStmtArgs(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(
+        e1.value() ==
+        dupPredErr(
+            "!1",
+            "(phi %x (((i8 1) !1) ((i8 2) !1)))",
+            Span(Loc(7, 39), Loc(7, 50))
+        )
+    );
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn void () (
+            (!1 ((br !2)))
+            (!2 ((phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1))) (br !2))))))
+    )";
+    const std::optional<Err> &e2 = checkPhiStmtArgs(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(
+        e2.value() ==
+        dupPredErr(
+            "!1",
+            "(phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1)))",
+            Span(Loc(7, 51), Loc(7, 62))
+        )
+    );
+
+    const std::string &src3 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn void () (
+            (!1 ((phi %a (((ptr null) !1))) (ret void))))))
+    )";
+    const std::optional<Err> &e3 = checkPhiStmtArgs(insistParse(src3));
+    TEST(e3.has_value());
+    TEST(
+        e3.value() ==
+        notPredErr(
+            "!1",
+            "(phi %a (((ptr null) !1)))",
+            Span(Loc(6, 27), Loc(6, 42))
+        )
+    );
+
+    const std::string &src4 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn ptr ((ptr %x)) (
+            (!1 ((br !2)))
+            (!2 ((br !3)))
+            (!3 ((phi %y ((%x !2) (%x !1))) (ret %y))))))
+    )";
+    const std::optional<Err> &e4 = checkPhiStmtArgs(insistParse(src4));
+    TEST(e4.has_value());
+    TEST(
+        e4.value() ==
+        notPredErr(
+            "!1",
+            "(phi %y ((%x !2) (%x !1)))",
+            Span(Loc(8, 35), Loc(8, 42))
+        )
+    );
+
+    const std::string &src5 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn ptr ((ptr %x)) (
+            (!1 ((br !3)))
+            (!2 ((br !3)))
+            (!3 ((phi %y ((%x !2))) (ret %y))))))
+    )";
+    const std::optional<Err> &e5 = checkPhiStmtArgs(insistParse(src5));
+    TEST(e5.has_value());
+    TEST(
+        e5.value() ==
+        incomprehensiveErr(
+            "'!1'",
+            false,
+            "(phi %y ((%x !2)))",
+            Span(Loc(8, 18), Loc(8, 36))
+        )
+    );
+
+    const std::string &src6 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn ptr ((ptr %x)) (
+            (!1 ((brif (i8 1) !a !2)))
+            (!a ((brif (i8 1) !b !2)))
+            (!b ((br !2)))
+            (!c ((brif (i8 1) !2 !2)))
+            (!2 ((phi %y ((%x !1))) (ret %y))))))
+    )";
+    const std::optional<Err> &e6 = checkPhiStmtArgs(insistParse(src6));
+    TEST(e6.has_value());
+    TEST(
+        e6.value() ==
+        incomprehensiveErr(
+            "'!c', '!b', '!a'",
+            true,
+            "(phi %y ((%x !1)))",
+            Span(Loc(10, 18), Loc(10, 36))
+        )
+    );
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
@@ -624,6 +785,7 @@ int main(void) {
     success &= testCheckUndeclaredBlocks();
     success &= testCheckUndeclaredGlobals();
     success &= testCheckEntryPredecessors();
+    success &= testCheckPhiStmtArgs();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }

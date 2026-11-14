@@ -61,15 +61,16 @@ std::optional<Err> checkUndeclaredBlocks(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkPhiStmtArgs
-/// DEPS: checkUndeclaredBlocks
+/// DEPS: checkDupicateDecs, checkUndeclaredBlocks
 /// Raise an error if a phi statement is ill-formed. This comes down to having
-/// an argument for each predecessor block of the block the phi statement is in.
+/// (and only having) an argument for each predecessor block of the block the
+/// phi statement is in.
 ////////////////////////////////////////////////////////////////////////////////
 std::optional<Err> checkPhiStmtArgs(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkLocalDefBeforeUse
-/// DEPS: checkPhiStmtArgs, checkDuplicateDecs
+/// DEPS: checkPhiStmtArgs, checkUndeclaredBlocks, checkDuplicateDecs
 /// Raises an error if any local variable is used before being appropriately
 /// defined. Our programs must be in SSA form, so this means:
 ///  * For non-phi statements, any use of a local variable must be dominated by

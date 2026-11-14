@@ -129,14 +129,16 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
                     if (seen.find(argName) != seen.cend()) {
                         return Err(
                             "Duplicate argument for predecessor block '" +
-                            argName + "' in phi statement",
+                            argName + "' in phi statement '" + pretty(phi) +
+                            "'.",
                             arg.span
                         );
                     } else { seen.insert(argName); }
                     if (!preds.erase(argName)) {
                         return Err(
-                            "Phi argument block '" + argName + "' is not a "
-                            "predecessor block",
+                            "Argument block '" + argName + "' is not a "
+                            "predecessor block in phi statement '" +
+                            pretty(phi) + "'.",
                             arg.span
                         );
                     }
@@ -148,10 +150,10 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
                         uncovered += "'" + pred + "'";
                     }
                     return Err(
-                        "Phi statement arguments are not comprehensive. There "
-                        "is no corresponding argument for predecessor block" +
-                        (preds.size() == 1 ? " " + uncovered : "s " + uncovered),
-                        phi.span
+                        "No corresponding argument for predecessor block" +
+                        (preds.size() == 1 ? " " + uncovered : "s " + uncovered)
+                        + " in phi statement '" + pretty(phi) + "'.",
+                        span(phi)
                     );
                 }
             }
