@@ -68,55 +68,51 @@ bool testCheckConstantTypes(void) {
     };
 
     const std::string &c1 = "(i32 1.1)";
-    const std::optional<Err> &e1 = checkConstantTypes(source1(c1));
-    TEST(e1.has_value());
-    TEST(e1.value() == decErr("i32", "float", "1.1", c1, span1(c1)));
+    const Err &ee1 = decErr("i32", "float", "1.1", c1, span1(c1));
+    const std::optional<Err> &ae1 = checkConstantTypes(source1(c1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &c2 = "(void 1)";
-    const std::optional<Err> &e2 = checkConstantTypes(source2(c2));
-    TEST(e2.has_value());
-    TEST(e2.value() == decErr("void", "integer", "1", c2, span2(c2)));
+    const Err &ee2 = decErr("void", "integer", "1", c2, span2(c2));
+    const std::optional<Err> &ae2 = checkConstantTypes(source2(c2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &c3 = "(i8 null)";
-    const std::optional<Err> &e3 = checkConstantTypes(source1(c3));
-    TEST(e3.has_value());
-    TEST(e3.value() == decErr("i8", "pointer", "null", c3, span1(c3)));
+    const Err &ee3 = decErr("i8", "pointer", "null", c3, span1(c3));
+    const std::optional<Err> &ae3 = checkConstantTypes(source1(c3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     const std::string &c4 = "(ptr (seq (i32 5)))";
-    const std::optional<Err> &e4 = checkConstantTypes(source2(c4));
-    TEST(e4.has_value());
-    TEST(
-        e4.value() ==
-        decErr("ptr", "aggregation", "(seq (i32 5))", c4, span2(c4))
-    );
+    const Err &ee4 =
+        decErr("ptr", "aggregation", "(seq (i32 5))", c4, span2(c4));
+    const std::optional<Err> &ae4 = checkConstantTypes(source2(c4));
+    TEST(ae4.has_value() && ae4.value() == ee4);
 
     const std::string &c5 = "((agg 3) 5.5)";
-    const std::optional<Err> &e5 = checkConstantTypes(source1(c5));
-    TEST(e5.has_value());
-    TEST(e5.value() == decErr("(agg 3)", "float", "5.5", c5, span1(c5)));
+    const Err &ee5 = decErr("(agg 3)", "float", "5.5", c5, span1(c5));
+    const std::optional<Err> &ae5 = checkConstantTypes(source1(c5));
+    TEST(ae5.has_value() && ae5.value() == ee5);
 
     const std::string &c6 = "((agg 0) (seq (i8 0) (i32 6)))";
-    const std::optional<Err> &e6 = checkConstantTypes(source2(c6));
-    TEST(e6.has_value());
-    TEST(e6.value() == aggErr(0, 2, c6, span2(c6)));
+    const Err &ee6 = aggErr(0, 2, c6, span2(c6));
+    const std::optional<Err> &ae6 = checkConstantTypes(source2(c6));
+    TEST(ae6.has_value() && ae6.value() == ee6);
 
     const std::string &c7 = "((agg 50) (seq))";
-    const std::optional<Err> &e7 = checkConstantTypes(source1(c7));
-    TEST(e7.has_value());
-    TEST(e7.value() == aggErr(50, 0, c7, span1(c7)));
+    const Err &ee7 = aggErr(50, 0, c7, span1(c7));
+    const std::optional<Err> &ae7 = checkConstantTypes(source1(c7));
+    TEST(ae7.has_value() && ae7.value() == ee7);
 
     const std::string &c8 = "((agg 2) (seq (i32 1)))";
-    const std::optional<Err> &e8 = checkConstantTypes(source2(c8));
-    TEST(e8.has_value());
-    TEST(e8.value() == aggErr(2, 1, c8, span2(c8)));
+    const Err &ee8 = aggErr(2, 1, c8, span2(c8));
+    const std::optional<Err> &ae8 = checkConstantTypes(source2(c8));
+    TEST(ae8.has_value() && ae8.value() == ee8);
 
     const std::string &c9 = "((agg 1) (seq (f64 5)))";
-    const std::optional<Err> &e9 = checkConstantTypes(source1(c9));
-    TEST(e9.has_value());
-    TEST(
-        e9.value() ==
-        decErr("f64", "integer", "5", "(f64 5)", Span(Loc(2, 32), Loc(2, 39)))
-    );
+    const Err &ee9 =
+        decErr("f64", "integer", "5", "(f64 5)", Span(Loc(2, 32), Loc(2, 39)));
+    const std::optional<Err> &ae9 = checkConstantTypes(source1(c9));
+    TEST(ae9.has_value() && ae9.value() == ee9);
 
     // TODO: correct programs.
 
@@ -150,12 +146,10 @@ bool testCheckTerminatingStmts(void) {
               (!x ((ret void)))
               (!y ((add %y (i8 1) (i8 2)) (not %z (i8 1)))))))
     )";
-    const std::optional<Err> &e1 = checkTerminatingStmts(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(
-        e1.value() ==
-        nonTerminatorErr("(not %z (i8 1))", "!y", Span(Loc(7, 43), Loc(7, 58)))
-    );
+    const Err &ee1 =
+        nonTerminatorErr("(not %z (i8 1))", "!y", Span(Loc(7, 43), Loc(7, 58)));
+    const std::optional<Err> &ae1 = checkTerminatingStmts(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -165,12 +159,11 @@ bool testCheckTerminatingStmts(void) {
               (!x ((alloc stack %1)))
               (!y ((add %a (f16 1.0) (f16 2.2)))))))
     )";
-    const std::optional<Err> &e2 = checkTerminatingStmts(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(
-        e2.value() ==
-        nonTerminatorErr("(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36)))
-    );
+    const Err &ee2 = nonTerminatorErr(
+            "(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36))
+        );
+    const std::optional<Err> &ae2 = checkTerminatingStmts(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -182,14 +175,11 @@ bool testCheckTerminatingStmts(void) {
               (!y ((phi %p ((%x !x1) (%x !x2)))))
               (!z ((ret void))))))
     )";
-    const std::optional<Err> &e3 = checkTerminatingStmts(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(
-        e3.value() ==
-        nonTerminatorErr(
+    const Err &ee3 = nonTerminatorErr(
             "(phi %p ((%x !x1) (%x !x2)))", "!y", Span(Loc(8, 20), Loc(8, 48))
-        )
-    );
+        );
+    const std::optional<Err> &ae3 = checkTerminatingStmts(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -199,12 +189,10 @@ bool testCheckTerminatingStmts(void) {
               (!x ((ret void) (alloc stack %1) (ret void)))
               (!y ((add %a %x %x) (add %a %x %x) (ret void))))))
     )";
-    const std::optional<Err> &e4 = checkTerminatingStmts(insistParse(src4));
-    TEST(e4.has_value());
-    TEST(
-        e4.value() ==
-        terminatorErr("(ret void)", "!x", Span(Loc(6, 20), Loc(6, 30)))
-    );
+    const Err &ee4 =
+        terminatorErr("(ret void)", "!x", Span(Loc(6, 20), Loc(6, 30)));
+    const std::optional<Err> &ae4 = checkTerminatingStmts(insistParse(src4));
+    TEST(ae4.has_value() && ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -214,12 +202,10 @@ bool testCheckTerminatingStmts(void) {
               (!x ((br !y)))
               (!y ((br !x) (add %a %b %c))))))
     )";
-    const std::optional<Err> &e5 = checkTerminatingStmts(insistParse(src5));
-    TEST(e5.has_value());
-    TEST(
-        e5.value() ==
-        terminatorErr("(br !x)", "!y", Span(Loc(7, 20), Loc(7, 27)))
-    );
+    const Err &ee5 =
+        terminatorErr("(br !x)", "!y", Span(Loc(7, 20), Loc(7, 27)));
+    const std::optional<Err> &ae5 = checkTerminatingStmts(insistParse(src5));
+    TEST(ae5.has_value() && ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -230,12 +216,10 @@ bool testCheckTerminatingStmts(void) {
               (!y ((add %a %b %c) (br !z)))
               (!z ((or %o (i8 1) (i8 2)) (brif %o !y !z) (ret void))))))
     )";
-    const std::optional<Err> &e6 = checkTerminatingStmts(insistParse(src6));
-    TEST(e6.has_value());
-    TEST(
-        e6.value() ==
-        terminatorErr("(brif %o !y !z)", "!z", Span(Loc(8, 42), Loc(8, 57)))
-    );
+    const Err &ee6 =
+        terminatorErr("(brif %o !y !z)", "!z", Span(Loc(8, 42), Loc(8, 57)));
+    const std::optional<Err> &ae6 = checkTerminatingStmts(insistParse(src6));
+    TEST(ae6.has_value() && ae6.value() == ee6);
 
     // TODO: correct programs.
 
@@ -277,18 +261,18 @@ bool testCheckDuplicateDecs(void) {
         (variables (@foo opaque) (@foo (i32 2)))
         (functions)
     )";
-    const std::optional<Err> &e1 = checkDuplicateDecs(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(e1.value() == globalVarErr("@foo", Span(Loc(3, 35), Loc(3, 39))));
+    const Err &ee1 = globalVarErr("@foo", Span(Loc(3, 35), Loc(3, 39)));
+    const std::optional<Err> &ae1 = checkDuplicateDecs(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque) (@bar (i32 2)))
         (functions (@baz void () opaque) (@bar void () ((!x ((ret void))))))
     )";
-    const std::optional<Err> &e2 = checkDuplicateDecs(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(e2.value() == fnErr("@bar", Span(Loc(4, 43), Loc(4, 47))));
+    const Err &ee2 = fnErr("@bar", Span(Loc(4, 43), Loc(4, 47)));
+    const std::optional<Err> &ae2 = checkDuplicateDecs(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -297,9 +281,9 @@ bool testCheckDuplicateDecs(void) {
           (@bar void () ((!x ((ret void)))))
           (@bar void () ((!x ((ret void))))))
     )";
-    const std::optional<Err> &e3 = checkDuplicateDecs(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(e3.value() == fnErr("@bar", Span(Loc(6, 12), Loc(6, 16))));
+    const Err &ee3 = fnErr("@bar", Span(Loc(6, 12), Loc(6, 16)));
+    const std::optional<Err> &ae3 = checkDuplicateDecs(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     // Locals
 
@@ -309,9 +293,9 @@ bool testCheckDuplicateDecs(void) {
         (functions
           (@bar void ((i32 %foo) (i64 %bar) (i16 %bar)) ((!x ((ret void))))))
     )";
-    const std::optional<Err> &e4 = checkDuplicateDecs(insistParse(src4));
-    TEST(e4.has_value());
-    TEST(e4.value() == paramErr("%bar", Span(Loc(5, 50), Loc(5, 54))));
+    const Err &ee4 = paramErr("%bar", Span(Loc(5, 50), Loc(5, 54)));
+    const std::optional<Err> &ae4 = checkDuplicateDecs(insistParse(src4));
+    TEST(ae4.has_value() && ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -319,9 +303,9 @@ bool testCheckDuplicateDecs(void) {
         (functions
           (@bar void ((i32 %foo)) ((!foo ((alloc stack %foo))))))
     )";
-    const std::optional<Err> &e5 = checkDuplicateDecs(insistParse(src5));
-    TEST(e5.has_value());
-    TEST(e5.value() == localVarErr("%foo", Span(Loc(5, 56), Loc(5, 60))));
+    const Err &ee5 = localVarErr("%foo", Span(Loc(5, 56), Loc(5, 60)));
+    const std::optional<Err> &ae5 = checkDuplicateDecs(insistParse(src5));
+    TEST(ae5.has_value() && ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -329,9 +313,9 @@ bool testCheckDuplicateDecs(void) {
         (functions
           (@fn i32 () ((!foo ((alloc stack %foo) (not %foo (i32 550)))))))
     )";
-    const std::optional<Err> &e6 = checkDuplicateDecs(insistParse(src6));
-    TEST(e6.has_value());
-    TEST(e6.value() == localVarErr("%foo", Span(Loc(5, 55), Loc(5, 59))));
+    const Err &ee6 = localVarErr("%foo", Span(Loc(5, 55), Loc(5, 59)));
+    const std::optional<Err> &ae6 = checkDuplicateDecs(insistParse(src6));
+    TEST(ae6.has_value() && ae6.value() == ee6);
 
     const std::string &src7 = R"(
         (preamble (version 0.0) (source test))
@@ -341,9 +325,9 @@ bool testCheckDuplicateDecs(void) {
             (!foo ((alloc stack %foo) (not %bar (i32 550))))
             (!bar ((blackhole pure (f16 %foo)))))))
     )";
-    const std::optional<Err> &e7 = checkDuplicateDecs(insistParse(src7));
-    TEST(e7.has_value());
-    TEST(e7.value() == localVarErr("%foo", Span(Loc(7, 41), Loc(7, 45))));
+    const Err &ee7 = localVarErr("%foo", Span(Loc(7, 41), Loc(7, 45)));
+    const std::optional<Err> &ae7 = checkDuplicateDecs(insistParse(src7));
+    TEST(ae7.has_value() && ae7.value() == ee7);
 
     const std::string &src8 = R"(
         (preamble (version 0.0) (source test))
@@ -356,9 +340,9 @@ bool testCheckDuplicateDecs(void) {
             (!foo ((ret %foo)))
             (!bar ((load (f16 %foo) null))))))
     )";
-    const std::optional<Err> &e8 = checkDuplicateDecs(insistParse(src8));
-    TEST(e8.has_value());
-    TEST(e8.value() == localVarErr("%foo", Span(Loc(10, 31), Loc(10, 35))));
+    const Err &ee8 = localVarErr("%foo", Span(Loc(10, 31), Loc(10, 35)));
+    const std::optional<Err> &ae8 = checkDuplicateDecs(insistParse(src8));
+    TEST(ae8.has_value() && ae8.value() == ee8);
 
     const std::string &src9 = R"(
         (preamble (version 0.0) (source test))
@@ -371,9 +355,9 @@ bool testCheckDuplicateDecs(void) {
             (!foo ((brif %foo !bar !bar)))
             (!bar ((field %fld null 0) (convert %fld %fld i64))))))
     )";
-    const std::optional<Err> &e9 = checkDuplicateDecs(insistParse(src9));
-    TEST(e9.has_value());
-    TEST(e9.value() == localVarErr("%fld", Span(Loc(10, 49), Loc(10, 53))));
+    const Err &ee9 = localVarErr("%fld", Span(Loc(10, 49), Loc(10, 53)));
+    const std::optional<Err> &ae9 = checkDuplicateDecs(insistParse(src9));
+    TEST(ae9.has_value() && ae9.value() == ee9);
 
     const std::string &src10 = R"(
         (preamble (version 0.0) (source test))
@@ -386,9 +370,9 @@ bool testCheckDuplicateDecs(void) {
             (!foo ((brif %foo !bar !bar)))
             (!bar ((field %fld null 0) (ret %fld))))))
     )";
-    const std::optional<Err> &e10 = checkDuplicateDecs(insistParse(src10));
-    TEST(e10.has_value());
-    TEST(e10.value() == paramErr("%x", Span(Loc(8, 48), Loc(8, 50))));
+    const Err &ee10 = paramErr("%x", Span(Loc(8, 48), Loc(8, 50)));
+    const std::optional<Err> &ae10 = checkDuplicateDecs(insistParse(src10));
+    TEST(ae10.has_value() && ae10.value() == ee10);
 
     // Blocks.
 
@@ -397,9 +381,9 @@ bool testCheckDuplicateDecs(void) {
         (variables)
         (functions
           (@fn void () ((!1 ((ret void))) (!1 ((ret void)))))))";
-    const std::optional<Err> &e11 = checkDuplicateDecs(insistParse(src11));
-    TEST(e11.has_value());
-    TEST(e11.value() == blockErr("!1", Span(Loc(5, 44), Loc(5, 46))));
+    const Err &ee11 = blockErr("!1", Span(Loc(5, 44), Loc(5, 46)));
+    const std::optional<Err> &ae11 = checkDuplicateDecs(insistParse(src11));
+    TEST(ae11.has_value() && ae11.value() == ee11);
 
     const std::string &src12 = R"(
         (preamble (version 0.0) (source test))
@@ -411,9 +395,9 @@ bool testCheckDuplicateDecs(void) {
             (!x ((ret void)))
             (!2 ((ret void)))
             (!x ((ret void)))))))";
-    const std::optional<Err> &e12 = checkDuplicateDecs(insistParse(src12));
-    TEST(e12.has_value());
-    TEST(e12.value() == blockErr("!x", Span(Loc(10, 14), Loc(10, 16))));
+    const Err &ee12 = blockErr("!x", Span(Loc(10, 14), Loc(10, 16)));
+    const std::optional<Err> &ae12 = checkDuplicateDecs(insistParse(src12));
+    TEST(ae12.has_value() && ae12.value() == ee12);
 
     // TODO: correct programs.
 
@@ -435,12 +419,9 @@ bool testCheckVarargStmts(void) {
         (variables)
         (functions (@fn void () ((!1 ((vararg (i32 %x) 1))))))
     )";
-    const std::optional<Err> &e1 = checkVarargStmts(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(
-        e1.value() ==
-        varargErr("(vararg (i32 %x) 1)", "@fn", Span(Loc(4, 39), Loc(4, 58)))
-    );
+    const Err &ee1 = varargErr("(vararg (i32 %x) 1)", "@fn", Span(Loc(4, 39), Loc(4, 58)));
+    const std::optional<Err> &ae1 = checkVarargStmts(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -451,12 +432,9 @@ bool testCheckVarargStmts(void) {
             (!1 ((load (ptr %1) null)))
             (!2 ((vararg (ptr %1) 0))))))
     )";
-    const std::optional<Err> &e2 = checkVarargStmts(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(
-        e2.value() ==
-        varargErr("(vararg (ptr %1) 0)", "@fn", Span(Loc(8, 18), Loc(8, 37)))
-    );
+    const Err &ee2 = varargErr("(vararg (ptr %1) 0)", "@fn", Span(Loc(8, 18), Loc(8, 37)));
+    const std::optional<Err> &ae2 = checkVarargStmts(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     // TODO: correct programs.
 
@@ -474,18 +452,18 @@ bool testCheckUndeclaredBlocks(void) {
         (variables)
         (functions (@fn void () ((!1 ((br !2))))))
     )";
-    const std::optional<Err> &e1 = checkUndeclaredBlocks(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(e1.value() == undecErr("!2", Span(Loc(4, 43), Loc(4, 45))));
+    const Err &ee1 = undecErr("!2", Span(Loc(4, 43), Loc(4, 45)));
+    const std::optional<Err> &ae1 = checkUndeclaredBlocks(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (@fn void () ((!1 ((brif (i8 0) !1 !2))))))
     )";
-    const std::optional<Err> &e2 = checkUndeclaredBlocks(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(e2.value() == undecErr("!2", Span(Loc(4, 55), Loc(4, 57))));
+    const Err &ee2 = undecErr("!2", Span(Loc(4, 55), Loc(4, 57)));
+    const std::optional<Err> &ae2 = checkUndeclaredBlocks(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -494,9 +472,9 @@ bool testCheckUndeclaredBlocks(void) {
           (@fn void () ((!x ((ret void)))))
           (@fn void () ((!y ((phi %x (((i32 5) !y) ((i32 4) !x))))))))
     )";
-    const std::optional<Err> &e3 = checkUndeclaredBlocks(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(e3.value() == undecErr("!x", Span(Loc(6, 61), Loc(6, 63))));
+    const Err &ee3 = undecErr("!x", Span(Loc(6, 61), Loc(6, 63)));
+    const std::optional<Err> &ae3 = checkUndeclaredBlocks(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     // TODO: correct programs.
 
@@ -514,9 +492,9 @@ bool testCheckUndeclaredGlobals(void) {
         (variables (@foo @bar))
         (functions)
     )";
-    const std::optional<Err> &e1 = checkUndeclaredGlobals(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(e1.value() == undecErr("@bar", Span(Loc(3, 26), Loc(3, 30))));
+    const Err &ee1 = undecErr("@bar", Span(Loc(3, 26), Loc(3, 30)));
+    const std::optional<Err> &ae1 = checkUndeclaredGlobals(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -524,9 +502,9 @@ bool testCheckUndeclaredGlobals(void) {
         (functions
           (@fn void () ( (!1 ((store (ptr null) @foo) (load (i32 %a) @foo2))))))
     )";
-    const std::optional<Err> &e2 = checkUndeclaredGlobals(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(e2.value() == undecErr("@foo2", Span(Loc(5, 70), Loc(5, 75))));
+    const Err &ee2 = undecErr("@foo2", Span(Loc(5, 70), Loc(5, 75)));
+    const std::optional<Err> &ae2 = checkUndeclaredGlobals(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -535,9 +513,9 @@ bool testCheckUndeclaredGlobals(void) {
           (@fn ptr () ( (!1 ((store (ptr null) @foo) (ret @fn)))))
           (@fnn void () ( (!2 ((call void @void ((i32 2))))))))
     )";
-    const std::optional<Err> &e3 = checkUndeclaredGlobals(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(e3.value() == undecErr("@void", Span(Loc(6, 43), Loc(6, 48))));
+    const Err &ee3 = undecErr("@void", Span(Loc(6, 43), Loc(6, 48)));
+    const std::optional<Err> &ae3 = checkUndeclaredGlobals(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     // TODO: correct programs.
 
@@ -566,12 +544,10 @@ bool testCheckEntryPredecessors(void) {
         (functions
           (@f void () ((!1 ((br !1))))))
     )";
-    const std::optional<Err> &e1 = checkEntryPredecessors(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(
-        e1.value() ==
-        predErr("!1", "@f", "(br !1)", Span(Loc(5, 29), Loc(5, 36)))
-    );
+    const Err &ee1 =
+        predErr("!1", "@f", "(br !1)", Span(Loc(5, 29), Loc(5, 36)));
+    const std::optional<Err> &ae1 = checkEntryPredecessors(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -580,12 +556,11 @@ bool testCheckEntryPredecessors(void) {
           (@f void () ((!1 ((ret void)))))
           (@g void () ((!x ((ret void))) (!y ((brif (i8 1) !y !x))))))
     )";
-    const std::optional<Err> &e2 = checkEntryPredecessors(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(
-        e2.value() ==
-        predErr("!x", "@g", "(brif (i8 1) !y !x)", Span(Loc(6, 47), Loc(6, 66)))
-    );
+    const Err &ee2 = predErr(
+            "!x", "@g", "(brif (i8 1) !y !x)", Span(Loc(6, 47), Loc(6, 66))
+        );
+    const std::optional<Err> &ae2 = checkEntryPredecessors(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -594,12 +569,11 @@ bool testCheckEntryPredecessors(void) {
           (@f void () ((!1 ((ret void)))))
           (@g void () ((!x ((ret void))) (!y ((brif (i8 1) !x !y))))))
     )";
-    const std::optional<Err> &e3 = checkEntryPredecessors(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(
-        e3.value() ==
-        predErr("!x", "@g", "(brif (i8 1) !x !y)", Span(Loc(6, 47), Loc(6, 66)))
+    const Err &ee3 = predErr(
+        "!x", "@g", "(brif (i8 1) !x !y)", Span(Loc(6, 47), Loc(6, 66))
     );
+    const std::optional<Err> &ae3 = checkEntryPredecessors(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -608,8 +582,8 @@ bool testCheckEntryPredecessors(void) {
           (@f void () ((!1 ((br !2))) (!2 ((ret void)))))
           (@g void () ((!2 ((ret void))))))
     )";
-    const std::optional<Err> &e4 = checkEntryPredecessors(insistParse(src4));
-    TEST(!e4.has_value());
+    const std::optional<Err> &ae4 = checkEntryPredecessors(insistParse(src4));
+    TEST(!ae4.has_value());
 
     // TODO: correct programs.
 
@@ -659,16 +633,11 @@ bool testCheckPhiStmtArgs(void) {
             (!1 ((br !2)))
             (!2 ((phi %x (((i8 1) !1) ((i8 2) !1))) (ret void))))))
     )";
-    const std::optional<Err> &e1 = checkPhiStmtArgs(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(
-        e1.value() ==
-        dupPredErr(
-            "!1",
-            "(phi %x (((i8 1) !1) ((i8 2) !1)))",
-            Span(Loc(7, 39), Loc(7, 50))
-        )
+    const Err &ee1 = dupPredErr(
+        "!1", "(phi %x (((i8 1) !1) ((i8 2) !1)))", Span(Loc(7, 39), Loc(7, 50))
     );
+    const std::optional<Err> &ae1 = checkPhiStmtArgs(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -678,16 +647,13 @@ bool testCheckPhiStmtArgs(void) {
             (!1 ((br !2)))
             (!2 ((phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1))) (br !2))))))
     )";
-    const std::optional<Err> &e2 = checkPhiStmtArgs(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(
-        e2.value() ==
-        dupPredErr(
-            "!1",
-            "(phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1)))",
-            Span(Loc(7, 51), Loc(7, 62))
-        )
+    const Err &ee2 = dupPredErr(
+        "!1",
+        "(phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1)))",
+        Span(Loc(7, 51), Loc(7, 62))
     );
+    const std::optional<Err> &ae2 = checkPhiStmtArgs(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -696,16 +662,11 @@ bool testCheckPhiStmtArgs(void) {
           (@fn void () (
             (!1 ((phi %a (((ptr null) !1))) (ret void))))))
     )";
-    const std::optional<Err> &e3 = checkPhiStmtArgs(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(
-        e3.value() ==
-        notPredErr(
-            "!1",
-            "(phi %a (((ptr null) !1)))",
-            Span(Loc(6, 27), Loc(6, 42))
-        )
+    const Err &ee3 = notPredErr(
+        "!1", "(phi %a (((ptr null) !1)))", Span(Loc(6, 27), Loc(6, 42))
     );
+    const std::optional<Err> &ae3 = checkPhiStmtArgs(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -716,16 +677,11 @@ bool testCheckPhiStmtArgs(void) {
             (!2 ((br !3)))
             (!3 ((phi %y ((%x !2) (%x !1))) (ret %y))))))
     )";
-    const std::optional<Err> &e4 = checkPhiStmtArgs(insistParse(src4));
-    TEST(e4.has_value());
-    TEST(
-        e4.value() ==
-        notPredErr(
-            "!1",
-            "(phi %y ((%x !2) (%x !1)))",
-            Span(Loc(8, 35), Loc(8, 42))
-        )
+    const Err &ee4 = notPredErr(
+        "!1", "(phi %y ((%x !2) (%x !1)))", Span(Loc(8, 35), Loc(8, 42))
     );
+    const std::optional<Err> &ae4 = checkPhiStmtArgs(insistParse(src4));
+    TEST(ae4.has_value() && ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -736,17 +692,11 @@ bool testCheckPhiStmtArgs(void) {
             (!2 ((br !3)))
             (!3 ((phi %y ((%x !2))) (ret %y))))))
     )";
-    const std::optional<Err> &e5 = checkPhiStmtArgs(insistParse(src5));
-    TEST(e5.has_value());
-    TEST(
-        e5.value() ==
-        incomprehensiveErr(
-            "'!1'",
-            false,
-            "(phi %y ((%x !2)))",
-            Span(Loc(8, 18), Loc(8, 36))
-        )
+    const Err &ee5 = incomprehensiveErr(
+        "'!1'", false, "(phi %y ((%x !2)))", Span(Loc(8, 18), Loc(8, 36))
     );
+    const std::optional<Err> &ae5 = checkPhiStmtArgs(insistParse(src5));
+    TEST(ae5.has_value() && ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -759,17 +709,14 @@ bool testCheckPhiStmtArgs(void) {
             (!c ((brif (i8 1) !2 !2)))
             (!2 ((phi %y ((%x !1))) (ret %y))))))
     )";
-    const std::optional<Err> &e6 = checkPhiStmtArgs(insistParse(src6));
-    TEST(e6.has_value());
-    TEST(
-        e6.value() ==
-        incomprehensiveErr(
-            "'!c', '!b', '!a'",
-            true,
-            "(phi %y ((%x !1)))",
-            Span(Loc(10, 18), Loc(10, 36))
-        )
+    const Err &ee6 = incomprehensiveErr(
+        "'!c', '!b', '!a'",
+        true,
+        "(phi %y ((%x !1)))",
+        Span(Loc(10, 18), Loc(10, 36))
     );
+    const std::optional<Err> &ae6 = checkPhiStmtArgs(insistParse(src6));
+    TEST(ae6.has_value() && ae6.value() == ee6);
 
     // TODO: correct programs.
 
@@ -800,9 +747,9 @@ bool testCheckLocalDefBeforeUse(void) {
         (variables)
         (functions (@f i32 () ((!1 ((ret %x))))))
     )";
-    const std::optional<Err> &e1 = checkLocalDefBeforeUse(insistParse(src1));
-    TEST(e1.has_value());
-    TEST(e1.value() == useErr("%x", "(ret %x)", Span(Loc(4, 42), Loc(4, 44))));
+    const Err &ee1 = useErr("%x", "(ret %x)", Span(Loc(4, 42), Loc(4, 44)));
+    const std::optional<Err> &ae1 = checkLocalDefBeforeUse(insistParse(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -812,12 +759,10 @@ bool testCheckLocalDefBeforeUse(void) {
             (!1 ((load (i32 %1) %x) (br !2)))
             (!2 ((alloc stack %x) (ret %x))))))
     )";
-    const std::optional<Err> &e2 = checkLocalDefBeforeUse(insistParse(src2));
-    TEST(e2.has_value());
-    TEST(
-        e2.value() ==
-        useErr("%x", "(load (i32 %1) %x)", Span(Loc(6, 33), Loc(6, 35)))
-    );
+    const Err &ee2 =
+        useErr("%x", "(load (i32 %1) %x)", Span(Loc(6, 33), Loc(6, 35)));
+    const std::optional<Err> &ae2 = checkLocalDefBeforeUse(insistParse(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -828,9 +773,9 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %a %1) (br !3)))
             (!3 ((ret %a))))))
     )";
-    const std::optional<Err> &e3 = checkLocalDefBeforeUse(insistParse(src3));
-    TEST(e3.has_value());
-    TEST(e3.value() == useErr("%a", "(ret %a)", Span(Loc(8, 23), Loc(8, 25))));
+    const Err &ee3 = useErr("%a", "(ret %a)", Span(Loc(8, 23), Loc(8, 25)));
+    const std::optional<Err> &ae3 = checkLocalDefBeforeUse(insistParse(src3));
+    TEST(ae3.has_value() && ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -841,8 +786,8 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %a %1) (br !3)))
             (!3 ((ret %1))))))
     )";
-    const std::optional<Err> &e4 = checkLocalDefBeforeUse(insistParse(src4));
-    TEST(!e4.has_value());
+    const std::optional<Err> &ae4 = checkLocalDefBeforeUse(insistParse(src4));
+    TEST(!ae4.has_value());
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -853,8 +798,8 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %a %1) (br !3)))
             (!3 ((phi %z ((%1 !2) (%1 !1))) (ret (i32 2)))))))
     )";
-    const std::optional<Err> &e5 = checkLocalDefBeforeUse(insistParse(src5));
-    TEST(!e5.has_value());
+    const std::optional<Err> &ae5 = checkLocalDefBeforeUse(insistParse(src5));
+    TEST(!ae5.has_value());
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -865,9 +810,9 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %a %1) (br !3)))
             (!3 ((phi %z ((%a !2) (%a !1))) (ret (i32 2)))))))
     )";
-    const std::optional<Err> &e6 = checkLocalDefBeforeUse(insistParse(src6));
-    TEST(e6.has_value());
-    TEST(e6.value() == phiErr("%a", "!1", Span(Loc(8, 35), Loc(8, 42))));
+    const Err &ee6 = phiErr("%a", "!1", Span(Loc(8, 35), Loc(8, 42)));
+    const std::optional<Err> &ae6 = checkLocalDefBeforeUse(insistParse(src6));
+    TEST(ae6.has_value() && ae6.value() == ee6);
 
     const std::string &src7 = R"(
         (preamble (version 0.0) (source test))
@@ -879,9 +824,9 @@ bool testCheckLocalDefBeforeUse(void) {
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%2 !3))) (ret %y))))))
     )";
-    const std::optional<Err> &e7 = checkLocalDefBeforeUse(insistParse(src7));
-    TEST(e7.has_value());
-    TEST(e7.value() == phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34))));
+    const Err &ee7 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
+    const std::optional<Err> &ae7 = checkLocalDefBeforeUse(insistParse(src7));
+    TEST(ae7.has_value() && ae7.value() == ee7);
 
     const std::string &src8 = R"(
         (preamble (version 0.0) (source test))
@@ -893,9 +838,9 @@ bool testCheckLocalDefBeforeUse(void) {
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%2 !3))) (ret %y))))))
     )";
-    const std::optional<Err> &e8 = checkLocalDefBeforeUse(insistParse(src8));
-    TEST(e8.has_value());
-    TEST(e8.value() == phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34))));
+    const Err &ee8 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
+    const std::optional<Err> &ae8 = checkLocalDefBeforeUse(insistParse(src8));
+    TEST(ae8.has_value() && ae8.value() == ee8);
 
     const std::string &src9 = R"(
         (preamble (version 0.0) (source test))
@@ -907,8 +852,8 @@ bool testCheckLocalDefBeforeUse(void) {
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%1 !3))) (ret %y))))))
     )";
-    const std::optional<Err> &e9 = checkLocalDefBeforeUse(insistParse(src9));
-    TEST(!e9.has_value());
+    const std::optional<Err> &ae9 = checkLocalDefBeforeUse(insistParse(src9));
+    TEST(!ae9.has_value());
 
     // TODO: correct programs.
 
