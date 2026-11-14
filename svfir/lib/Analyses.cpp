@@ -213,25 +213,15 @@ std::optional<Err> _checkLocalDefBeforeUse(
             const StmtLoc &sl = StmtLoc(bbi, si);
             const std::vector<Id> &uses = directlyUsedVars(s);
 
-            for (const Id &u : uses) {
-                if (
-                    u.isLocal() &&
-                    params.find(u.name) == params.cend() &&
-                    defs.find(u.name) == defs.cend()
-                ) {
-                    return Err(
-                        "Local variable '" + u.name + "' not defined.",
-                        span(u)
-                    );
-                }
-            }
-
             if (!is<PhiStmt>(s)) {
-                for (const Id &u : directlyUsedVars(s)) {
+                for (const Id &u : uses) {
                     if (
                         u.isLocal() &&
                         params.find(u.name) == params.cend() &&
-                        !sl.after(dt, defs.at(u.name))
+                        (
+                            defs.find(u.name) == defs.cend() ||
+                            !sl.after(dt, defs.at(u.name))
+                        )
                     ) {
                         return Err(
                             "Local variable '" + u.name + "' used "

@@ -776,6 +776,145 @@ bool testCheckPhiStmtArgs(void) {
     return true;
 }
 
+bool testCheckLocalDefBeforeUse(void) {
+    static const auto useErr =
+    [](const std::string &name, const std::string &stmt, const Span &span) {
+        return Err(
+            "Local variable '" + name + "' used "
+            "before definition in '" + stmt + "'.",
+            span
+        );
+    };
+
+    static const auto phiErr =
+    [](const std::string &name, const std::string &pred, const Span &span) {
+        return Err(
+            "Local variable '" + name + "' in phi argument was not defined "
+            "in or strictly before predecessor '" + pred + "'.",
+            span
+        );
+    };
+
+    const std::string &src1 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (@f i32 () ((!1 ((ret %x))))))
+    )";
+    const std::optional<Err> &e1 = checkLocalDefBeforeUse(insistParse(src1));
+    TEST(e1.has_value());
+    TEST(e1.value() == useErr("%x", "(ret %x)", Span(Loc(4, 42), Loc(4, 44))));
+
+    const std::string &src2 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f ptr () (
+            (!1 ((load (i32 %1) %x) (br !2)))
+            (!2 ((alloc stack %x) (ret %x))))))
+    )";
+    const std::optional<Err> &e2 = checkLocalDefBeforeUse(insistParse(src2));
+    TEST(e2.has_value());
+    TEST(
+        e2.value() ==
+        useErr("%x", "(load (i32 %1) %x)", Span(Loc(6, 33), Loc(6, 35)))
+    );
+
+    const std::string &src3 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %a %1) (br !3)))
+            (!3 ((ret %a))))))
+    )";
+    const std::optional<Err> &e3 = checkLocalDefBeforeUse(insistParse(src3));
+    TEST(e3.has_value());
+    TEST(e3.value() == useErr("%a", "(ret %a)", Span(Loc(8, 23), Loc(8, 25))));
+
+    const std::string &src4 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %a %1) (br !3)))
+            (!3 ((ret %1))))))
+    )";
+    const std::optional<Err> &e4 = checkLocalDefBeforeUse(insistParse(src4));
+    TEST(!e4.has_value());
+
+    const std::string &src5 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %a %1) (br !3)))
+            (!3 ((phi %z ((%1 !2) (%1 !1))) (ret (i32 2)))))))
+    )";
+    const std::optional<Err> &e5 = checkLocalDefBeforeUse(insistParse(src5));
+    TEST(!e5.has_value());
+
+    const std::string &src6 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %a %1) (br !3)))
+            (!3 ((phi %z ((%a !2) (%a !1))) (ret (i32 2)))))))
+    )";
+    const std::optional<Err> &e6 = checkLocalDefBeforeUse(insistParse(src6));
+    TEST(e6.has_value());
+    TEST(e6.value() == phiErr("%a", "!1", Span(Loc(8, 35), Loc(8, 42))));
+
+    const std::string &src7 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (br !3)))
+            (!2 ((not %2 (i32 3)) (br !3)))
+            (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
+            (!4 ((phi %y ((%2 !3))) (ret %y))))))
+    )";
+    const std::optional<Err> &e7 = checkLocalDefBeforeUse(insistParse(src7));
+    TEST(e7.has_value());
+    TEST(e7.value() == phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34))));
+
+    const std::string &src8 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %2 (i32 3)) (br !3)))
+            (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
+            (!4 ((phi %y ((%2 !3))) (ret %y))))))
+    )";
+    const std::optional<Err> &e8 = checkLocalDefBeforeUse(insistParse(src8));
+    TEST(e8.has_value());
+    TEST(e8.value() == phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34))));
+
+    const std::string &src9 = R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions (
+          @f i32 () (
+            (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
+            (!2 ((not %2 (i32 3)) (br !3)))
+            (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
+            (!4 ((phi %y ((%1 !3))) (ret %y))))))
+    )";
+    const std::optional<Err> &e9 = checkLocalDefBeforeUse(insistParse(src9));
+    TEST(!e9.has_value());
+
+    // TODO: correct programs.
+
+    return true;
+}
+
 int main(void) {
     bool success = true;
     success &= testCheckConstantTypes();
@@ -786,6 +925,7 @@ int main(void) {
     success &= testCheckUndeclaredGlobals();
     success &= testCheckEntryPredecessors();
     success &= testCheckPhiStmtArgs();
+    success &= testCheckLocalDefBeforeUse();
 
     if (success) { std::cout << "All validation tests passed." << std::endl; }
     else { std::cout << "Some validation tests failed." << std::endl; }

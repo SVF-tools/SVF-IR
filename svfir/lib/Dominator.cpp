@@ -90,6 +90,7 @@ std::vector<Index> postOrder(
 
 /// Returns a vector mapping nodes to their immediate dominator node.
 /// "A Simple, Fast Dominance Algorithm" -- Cooper, Harvey, Kennedy (p. 7).
+/// TODO: this function is a mess. Needs a rewrite.
 std::vector<Index> calculateIDoms(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
