@@ -53,9 +53,9 @@
 <gvariable> : '(' <gid> (<gval>|'opaque') <md>? ')'
 <variables> : '(' 'variables' <gvariable>* ')'
 
-<basic-block> : '(' <bid> '(' <instruction>+ ')' <md>? ')'
-
 <param> : '(' <type> <lid> <md>? ')'
+
+<basic-block> : '(' <bid> '(' <stmt>+ ')' <md>? ')'
 
 <cmp-op> : '<' | '<=' | '>' | '>=' | '=' | '!='
          | '(signed <)' | '(signed <=)' | '(signed >)' | '(signed >=)'
