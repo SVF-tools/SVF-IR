@@ -1,6 +1,7 @@
 # Style
 
 * 4-space indentation.
+  * Namespaces blocks do not induce indentation.
 * `camelCase` names, except `GLOBALS_WHICH_ARE_LIKE_THIS`.
 * `PascalCase` for file names.
 * Camel or Pascal case names with acronyms capitalise the first letter or none.

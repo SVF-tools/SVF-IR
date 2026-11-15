@@ -9,14 +9,14 @@
 
 namespace SVFIR {
 
-    /// Return a formatted string version of the given AST node.
-    std::string pretty(const std::variant<AnyNode, TypedProgram> &);
+/// Return a formatted string version of the given AST node.
+std::string pretty(const std::variant<AnyNode, TypedProgram> &);
 
-    /// Return the Span associated with the given AST node.
-    Span span(const AnyNode &);
+/// Return the Span associated with the given AST node.
+Span span(const AnyNode &);
 
-    /// Check program for errors and maintain queriable type information.
-    Result<TypedProgram, Err> typeProgram(const Program &);
+/// Check program for errors and maintain queriable type information.
+Result<TypedProgram, Err> typeProgram(const Program &);
 
 }  // namespace SVFIR
 
