@@ -100,4 +100,4 @@
            | '(' 'shiftr' ('logical'|'arithmetic') <lid> <val> <val> <md>? ')'
 
 <misc-stmt> : '(' 'vararg' <typed-lid> <ival> <md>? ')'
-            | '(' 'blackhole' ('pure'|'effectful') (<typed-lid>|void) <md>? ')'
+            | '(' 'blackhole' ('pure'|'effectful') (<typed-lid>|'void') <md>? ')'
