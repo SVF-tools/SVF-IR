@@ -46,7 +46,6 @@ public:
         /// children: ...
         std::string toString(void) const;
 
-        // TODO: should children be a key at all?
         bool operator==(const Node &) const;
         bool operator<(const Node &) const;
     };
