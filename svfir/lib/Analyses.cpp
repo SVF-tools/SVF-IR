@@ -1074,20 +1074,7 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
         fnTables.insert({fn.id.name, typer.types()});
     }
 
-    SymbolTable::TypeMap globalVarTypes;
-    for (const GlobalVar &gv : p.globalVars) {
-        insist(globalVarTypes.count(gv.id.name) == 0);
-        if (gv.isOpaque()) { globalVarTypes.insert({gv.id.name, FabVoidType}); }
-        else if (is<TypedConstant>(gv.val.value())) {
-            const TypedConstant &tc = get<TypedConstant>(gv.val.value());
-            globalVarTypes.insert({gv.id.name, tc.type});
-        } else {
-            insist(is<Id>(gv.val.value()));
-            globalVarTypes.insert({gv.id.name, FabPtrType});
-        }
-    }
-
-    return SymbolTable(sigs, globalVarTypes, fnTables);
+    return SymbolTable(sigs, fnTables);
 }
 
 std::optional<Err> analyse(

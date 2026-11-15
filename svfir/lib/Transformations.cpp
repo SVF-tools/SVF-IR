@@ -186,10 +186,7 @@ TypedProgram unifyReturns(const TypedProgram &tp) {
         }
     }
 
-    return TypedProgram(
-        up,
-        SymbolTable(tp.symbols.fnSigs, tp.symbols.globalVarTypes, fnTables)
-    );
+    return TypedProgram(up, SymbolTable(tp.symbols.fnSigs, fnTables));
 }
 
 }  // namespace SVFIR

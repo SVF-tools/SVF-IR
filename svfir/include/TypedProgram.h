@@ -33,18 +33,12 @@ struct SymbolTable {
 
     /// Function names to their signature (types).
     const SigMap fnSigs;
-    /// Global variable (non-function) names to their type underneath the
-    /// pointer. Opaque global variables are given void types here.
-    TypeMap globalVarTypes;
     /// Function names to a map of said function's local variable names to their
     /// type.
     const FnTables fnTables;
 
-    SymbolTable(
-        const SigMap &fnSigs,
-        const TypeMap &globalVarTypes,
-        const FnTables fnTables
-    ) : fnSigs(fnSigs), globalVarTypes(globalVarTypes), fnTables(fnTables) { }
+    SymbolTable(const SigMap &fnSigs, const FnTables fnTables)
+    : fnSigs(fnSigs), fnTables(fnTables) { }
 };
 
 /// A valid program and type information about it.
