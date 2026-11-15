@@ -306,7 +306,7 @@ bool DominatorTree::Node::operator==(const Node &n) const {
 
 bool DominatorTree::Node::operator<(const Node &n) const {
     // Ignore name, it is not a key.
-    return this->id < n.id || this->children < n.children;
+    return this->id < n.id || (this->id == n.id && this->children < n.children);
 }
 
 std::string DominatorTree::Node::toString(void) const {
