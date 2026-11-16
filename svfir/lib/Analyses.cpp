@@ -641,7 +641,8 @@ public:
             (is<IntType>(fromt) && is<PtrType>(tot)) ||
             (is<PtrType>(fromt) && is<IntType>(tot)) ||
             (is<IntType>(fromt) && is<FloatType>(tot)) ||
-            (is<FloatType>(fromt) && is<IntType>(tot))
+            (is<FloatType>(fromt) && is<IntType>(tot)) ||
+            (fromt == tot)
         ) {
             if (convert.extKind.has_value()) {
                 return Err(
