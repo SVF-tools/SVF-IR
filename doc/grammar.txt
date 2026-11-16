@@ -5,7 +5,7 @@
 <list> : '(' <s-expr>* ')'
 <s-expr> : <list> | <atom>
 
-<name> : ...
+<name> : TODO
 <lid> : '%'<name>
 <gid> : '@'<name>
 <bid> : '!'<name>
