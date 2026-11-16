@@ -11,7 +11,7 @@ does not understand, and 2) SVF understands.)
 Along with the core parser and similar tools and the SVF-IR definition, this
 repository will host multiple translators to SVF-IR.
 
-The syntax of the textual format is defined in `doc/grammar.txt`.
+The language is described in `doc/language.txt`.
 
 ## Building
 
@@ -35,7 +35,7 @@ SVFIR requires C++17.
 ## Making changes
 
 * Adding or removing source files requires updating `sources.cmake`.
-* Making changes to the definition requires updating `doc/grammar.txt`.
+* Making changes to the definition requires updating `doc/language.txt`.
 
 ## TODO
 
