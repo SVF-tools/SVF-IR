@@ -45,7 +45,6 @@ pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
 ## TODO
 
 * Tests.
-* Spec (prose, to go alongside grammar).
 * Reorganise TypedProgram.
   * Should it include graphs? Should it be closed to the outside?
 * Serialised/binary format.
