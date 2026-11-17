@@ -103,6 +103,8 @@ mandatory metadata about the program, an unordered list of global variables
 (`<variables>`), an unordered list of functions (`<functions>`), and optionally
 extra metadata.
 
+Anything concerning entry points or how a program begins execution is CD.
+
 Preamble
 --------
 `<preamble>`
