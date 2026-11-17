@@ -24,7 +24,6 @@ using namespace SVFIR;
 
 const PtrType FabPtrType = PtrType(FAB_SPAN);
 const IntType FabInt8Type = IntType(IntType::Kind::I8, FAB_SPAN);
-const FloatType FabFloat64Type = FloatType(FloatType::Kind::F64, FAB_SPAN);
 const VoidType FabVoidType = VoidType(FAB_SPAN);
 
 // checkDuplicateDecs //////////////////////////////////////////////////////////
