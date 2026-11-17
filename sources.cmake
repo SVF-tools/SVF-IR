@@ -19,7 +19,6 @@ set(SVFIR_HEADERS
 )
 
 set(SVFIR_SOURCES
-  svfir/lib/Analyses.cpp
   svfir/lib/Ast.cpp
   svfir/lib/ControlFlowGraph.cpp
   svfir/lib/Dominator.cpp
@@ -30,7 +29,9 @@ set(SVFIR_SOURCES
   svfir/lib/SExprs.cpp
   svfir/lib/Span.cpp
   svfir/lib/Statements.cpp
-  svfir/lib/Transformations.cpp
   svfir/lib/TypedProgram.cpp
+  svfir/lib/Typer.cpp
+  svfir/lib/UnifyRets.cpp
+  svfir/lib/Validation.cpp
   svfir/lib/Version.cpp
 )

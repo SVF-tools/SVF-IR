@@ -1,6 +1,5 @@
 #include <unordered_set>
 #include <algorithm>
-#include "timequick.h"
 
 #include "Analyses.h"
 #include "Ast.h"

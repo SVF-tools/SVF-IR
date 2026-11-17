@@ -6,6 +6,7 @@
 #include <set>
 
 #include "Ast.h"
+#include "Index.h"
 #include "ControlFlowGraph.h"
 
 namespace SVFIR {
