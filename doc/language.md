@@ -535,6 +535,9 @@ Grammar
            | '(' 'and' <lid> <val> <val> <md>? ')'
            | '(' 'or' <lid> <val> <val> <md>? ')'
            | '(' 'xor' <lid> <val> <val> <md>? ')'
+           ; TODO: shiftl and shiftr should probably take an <ival> for the
+           ;       second argument but that will force a separation of these
+           ;       operations from BinOp in the AST. Needs thought.
            | '(' 'shiftl' <lid> <val> <val> <md>? ')'
            | '(' 'shiftr' ('logical'|'arithmetic') <lid> <val> <val> <md>? ')'
 
