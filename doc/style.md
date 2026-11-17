@@ -12,7 +12,7 @@ Style
 * All blocks must have braces.
   * A for-loop or an if-statement on a single line looks like
     `if (foo) { bar; }`
-* No exceptions thrown.
+* No exceptions thrown or caught.
 * C++17.
 * *Very* generous use of `const`.
 * *Very* generous use of references, `const` of course.
