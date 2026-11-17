@@ -6,7 +6,7 @@
 #include "Variant.h"
 
 #include "ControlFlowGraph.h"
-#include "Dominator.h"
+#include "DominatorTree.h"
 
 #include "test.h"
 

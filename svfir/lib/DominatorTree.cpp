@@ -5,7 +5,7 @@
 
 #include "Ast.h"
 #include "Contracts.h"
-#include "Dominator.h"
+#include "DominatorTree.h"
 
 namespace {
 

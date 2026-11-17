@@ -9,7 +9,7 @@
 #include "Analyses.h"
 #include "Contracts.h"
 #include "ControlFlowGraph.h"
-#include "Dominator.h"
+#include "DominatorTree.h"
 #include "Err.h"
 #include "Index.h"
 #include "Result.h"

@@ -3,7 +3,7 @@ set(SVFIR_HEADERS
   svfir/include/Contracts.h
   svfir/include/Ast.h
   svfir/include/ControlFlowGraph.h
-  svfir/include/Dominator.h
+  svfir/include/DominatorTree.h
   svfir/include/Err.h
   svfir/include/Index.h
   svfir/include/InputStream.h
@@ -21,7 +21,7 @@ set(SVFIR_HEADERS
 set(SVFIR_SOURCES
   svfir/lib/Ast.cpp
   svfir/lib/ControlFlowGraph.cpp
-  svfir/lib/Dominator.cpp
+  svfir/lib/DominatorTree.cpp
   svfir/lib/Err.cpp
   svfir/lib/InputStream.cpp
   svfir/lib/Parser.cpp
