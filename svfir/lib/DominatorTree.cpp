@@ -67,7 +67,7 @@ std::vector<Index> postOrder(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    const std::vector<ControlFlowGraph::Node> &nodes = cfg.nodes();
+    const std::vector<ControlFlowGraph::Node> &nodes = cfg.nodes;
     insist(!nodes.empty());
 
     std::vector<Index> order;
@@ -95,7 +95,7 @@ std::vector<Index> calculateIDoms(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    insist(!cfg.nodes().empty());
+    insist(!cfg.nodes.empty());
 
     // We do *everything* with the nodes labelled with the post-order traversal.
     const std::vector<Index> &po2id = postOrder(cfg, ci);
@@ -124,7 +124,7 @@ std::vector<Index> calculateIDoms(
         changed = false;
         // -1-1 drops the entry node, which in a postorder must be the last.
         for (Index b = (po2id.size() - 1) - 1; b != Index(-1); --b) {
-            const ControlFlowGraph::Node &bn = cfg.nodes()[po2id[b]];
+            const ControlFlowGraph::Node &bn = cfg.nodes[po2id[b]];
             const std::vector<Index> &preds = ci.inEdges(bn);
 
             // Pick a processed/calculated predecessor.
@@ -156,7 +156,7 @@ std::vector<Index> calculateIDoms(
     }
 
     // Back from the post-order labelling to the real labels.
-    std::vector<Index> doms(cfg.nodes().size(), NO_DOM);
+    std::vector<Index> doms(cfg.nodes.size(), NO_DOM);
     for (Index i = 0; i < podoms.size(); ++i) {
         doms[po2id[i]] = po2id[podoms[i]];
     }
@@ -172,7 +172,7 @@ DominatorTree::Node build(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    insist(!cfg.nodes().empty());
+    insist(!cfg.nodes.empty());
 
     const std::vector<Index> &idoms = calculateIDoms(cfg, ci);
     std::vector<std::vector<Index>> childrenIndices(idoms.size());
@@ -190,7 +190,7 @@ DominatorTree::Node build(
         for (const Index ci : childrenIndices[ni]) {
             children.push_back(mkNode(ci));
         }
-        return Node(ni, cfg.nodes()[ni].name, children);
+        return Node(ni, cfg.nodes[ni].name, children);
     };
 
     return mkNode(ci.entry(cfg));
@@ -201,7 +201,7 @@ std::set<Node> unreachableNodes(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
-    insist(!cfg.nodes().empty());
+    insist(!cfg.nodes.empty());
 
     std::set<Node> unreachables;
 
@@ -211,7 +211,7 @@ std::set<Node> unreachableNodes(
     // To avoid special casing the end, we (potentially) induce a gap.
     // There is no need to special case at the start because the entry node is
     // 1) always there, and 2) always 0.
-    reachables.push_back(cfg.nodes().size());
+    reachables.push_back(cfg.nodes.size());
 
     // Minimum of size = 2, the entry node and the artifical size "node".
     for (Index i = 0; i < reachables.size() - 1; ++i) {
@@ -219,7 +219,7 @@ std::set<Node> unreachableNodes(
         const Index y = reachables[i + 1];
         // Nodes in interval (x, y) are unreachable (may be empty).
         for (Index g = x + 1; g < y; ++g) {
-            const Node &gn = Node(g, cfg.nodes()[g].name, std::vector<Node>());
+            const Node &gn = Node(g, cfg.nodes[g].name, std::vector<Node>());
             unreachables.insert(gn);
         }
     }
@@ -260,10 +260,10 @@ DominatorTree::DominatorTree(const ControlFlowGraph &cfg, const Kind kind)
     kind(kind),
     root(build(cfg, CFGInterpreter(kind))),
     unreachables(unreachableNodes(cfg, CFGInterpreter(kind))),
-    tour(mkTour(root, cfg.nodes().size()))
+    tour(mkTour(root, cfg.nodes.size()))
 {
     // It'll be checked in helpers, but it's nice to document.
-    insist(!cfg.nodes().empty());
+    insist(!cfg.nodes.empty());
     insist(kind != Kind::POSTDOM || cfg.uniqueExit().has_value());
 }
 

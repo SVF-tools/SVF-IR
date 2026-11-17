@@ -10,18 +10,21 @@
 namespace SVFIR {
 
 /// Intra-procedural control flow graph. A CFG is an ordered vector of nodes.
-/// The first node is the unique entry node. Node IDs correspond to their index
-/// in said vector which correspond to the position of the basic block in the
-/// function they are constructed from (i.e., the 0th (first) node has ID 0 and
-/// correspond to the 0th (first) basic block, repeat for n).
-/// That a node n has an incoming edge from node m means node m has an outgoing
-/// edge to node n. A node with no outgoing edges is an exit node.
-/// A CFG can only be constructed from a non-empty function body. Thus there is
-/// no CFG for an opaque function.
-class ControlFlowGraph {
-public:
+/// Node IDs correspond to their index in this vector which correspond to the
+/// position of the basic block in the function they are constructed from (i.e.,
+/// the 0th (first) node has ID 0 and correspond to the 0th (first) basic block,
+/// repeat for n). That a node n has an incoming edge from node m means node m
+/// has an outgoing edge to node n. A node with no outgoing edges is an exit
+/// node. The first node is the unique entry node. A CFG can only be constructed
+/// from a non-empty function body. Thus there is no CFG for an opaque function.
+struct ControlFlowGraph {
+    struct Node;
+
+    /// Described in class comment.
+    std::vector<Node> nodes;
+
     /// Note specifically that inEdges/outEdges are Indexes, not Nodes.
-    /// They can be accessed through the containing CFG's nodes(). Unideal...
+    /// They can be accessed through the containing CFG's nodes. Unideal...
     /// but it avoids the need for pointers.
     struct Node {
         const Index id;
@@ -48,9 +51,8 @@ public:
         std::string toAbbrString(void) const;
     };
 
-public:
-    /// The given FunctionBody must be non-empty. (An empty body is not part of
-    /// a valid program in either case.)
+    /// The given FunctionBody must be non-empty. (Aside, an empty body is not
+    /// part of a valid program.)
     ControlFlowGraph(const FunctionBody &);
 
     /// The unique entry node.
@@ -59,16 +61,10 @@ public:
     /// Return this CFG's only exit node, if it has an only exit node.
     std::optional<Index> uniqueExit(void) const;
 
-    /// The i-th node, i.e., nodes()[i].
+    /// The i-th node, i.e., nodes[i].
     const Node &node(const Index i) const;
 
-    const std::vector<Node> &nodes(void) const { return _nodes; }
-
     std::string toString(void) const;
-
-private:
-    /// Described in class comment.
-    std::vector<Node> _nodes;
 };
 
 }  // namespace SVFIR

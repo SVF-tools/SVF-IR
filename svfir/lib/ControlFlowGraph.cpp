@@ -34,7 +34,7 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
 }
 
 /// Return full list of built out nodes for CFG of body. Respects constraints
-/// on _nodes in ControlFlowGraph.
+/// on nodes in ControlFlowGraph. body must not be empty.
 std::vector<Node> build(const FunctionBody &body) {
     std::unordered_map<Name, Index> names;
     for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
@@ -71,12 +71,12 @@ std::vector<Node> build(const FunctionBody &body) {
 namespace SVFIR {
 
 Index ControlFlowGraph::entry(void) const {
-    return nodes().front().id;
+    return nodes.front().id;
 }
 
 std::optional<Index> ControlFlowGraph::uniqueExit(void) const {
     std::optional<Index> exit = std::nullopt;
-    for (const Node &n : nodes()) {
+    for (const Node &n : nodes) {
         if (n.isExitNode()) {
             // First exit node we come across.
             if (!exit.has_value()) { exit.emplace(n.id); }
@@ -88,8 +88,8 @@ std::optional<Index> ControlFlowGraph::uniqueExit(void) const {
 }
 
 const Node &ControlFlowGraph::node(const Index i) const {
-    insist(i < nodes().size());
-    return nodes()[i];
+    insist(i < nodes.size());
+    return nodes[i];
 }
 
 std::string ControlFlowGraph::Node::toString(void) const {
@@ -115,26 +115,25 @@ bool ControlFlowGraph::Node::isExitNode(void) const {
     return outEdges.empty();
 }
 
-ControlFlowGraph::ControlFlowGraph(const FunctionBody &body) {
-    _nodes = build(body);
-}
+ControlFlowGraph::ControlFlowGraph(const FunctionBody &body)
+: nodes(build(body)) { insist(!body.empty()); }
 
 std::string ControlFlowGraph::toString(void) const {
     std::string s;
-    for (const Node &node : _nodes) {
+    for (const Node &node : nodes) {
         s += node.toAbbrString() + "\n";
 
         if (node.outEdges.empty()) { s += "  --\n"; }
         else {
             for (const Index &dst : node.outEdges) {
-                s += "  -> " + _nodes[dst].toAbbrString() + "\n";
+                s += "  -> " + nodes[dst].toAbbrString() + "\n";
             }
         }
 
         if (node.inEdges.empty()) { s += "  --\n"; }
         else {
             for (const Index &src : node.inEdges) {
-                s += "  <- " + _nodes[src].toAbbrString() + "\n";
+                s += "  <- " + nodes[src].toAbbrString() + "\n";
             }
         }
     }
