@@ -7,8 +7,6 @@ set(SVFIR_HEADERS
   svfir/include/Err.h
   svfir/include/Index.h
   svfir/include/InputStream.h
-  svfir/include/Parser.h
-  svfir/include/Ops.h
   svfir/include/Result.h
   svfir/include/SExprs.h
   svfir/include/Span.h
@@ -26,7 +24,6 @@ set(SVFIR_SOURCES
   svfir/lib/ControlFlowGraph.cpp
   svfir/lib/Dominator.cpp
   svfir/lib/Err.cpp
-  svfir/lib/GetSpan.cpp
   svfir/lib/InputStream.cpp
   svfir/lib/Parser.cpp
   svfir/lib/Pretty.cpp

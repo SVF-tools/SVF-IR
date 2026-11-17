@@ -6,16 +6,16 @@
 #include <unordered_set>
 #include <variant>
 
+#include "Analyses.h"
 #include "Contracts.h"
 #include "ControlFlowGraph.h"
 #include "Dominator.h"
-#include "Ops.h"
 #include "Err.h"
 #include "Index.h"
 #include "Result.h"
 #include "Statements.h"
+#include "SVFIR.h"
 #include "TypedProgram.h"
-#include "Analyses.h"
 #include "Variant.h"
 
 namespace {

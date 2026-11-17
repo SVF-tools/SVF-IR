@@ -1,9 +1,9 @@
 #include <regex>
 #include <iostream>
 
-#include "Contracts.h"
 #include "Ast.h"
-#include "Ops.h"
+#include "Contracts.h"
+#include "SVFIR.h"
 #include "TypedProgram.h"
 
 namespace {

@@ -10,9 +10,9 @@
 #include "Contracts.h"
 #include "Ast.h"
 #include "Err.h"
-#include "Parser.h"
 #include "Result.h"
 #include "Span.h"
+#include "SVFIR.h"
 #include "Variant.h"
 
 namespace {

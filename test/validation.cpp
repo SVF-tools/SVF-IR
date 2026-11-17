@@ -3,11 +3,10 @@
 
 #include "Analyses.h"
 #include "Err.h"
-#include "Parser.h"
 #include "Span.h"
+#include "SVFIR.h"
 #include "Result.h"
 #include "Variant.h"
-#include "Ops.h"
 
 #include "test.h"
 

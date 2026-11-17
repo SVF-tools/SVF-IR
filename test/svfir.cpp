@@ -1,9 +1,8 @@
 #include <cstdlib>
 
 #include "Err.h"
-#include "Parser.h"
-#include "Ops.h"
 #include "Result.h"
+#include "SVFIR.h"
 #include "Variant.h"
 
 #include "ControlFlowGraph.h"
