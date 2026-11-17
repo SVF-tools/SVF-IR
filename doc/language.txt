@@ -446,7 +446,7 @@ Grammar
 <typed-lid> : '(' <type> <lid> ')'
 
 <int-type> : 'i'('8'|'16'|'32'|'64')    ; TODO
-<float-type> : 'f'('16'|'32'|'64'|'128')  ; TODO
+<float-type> : 'f'('16'|'32'|'64'|'128')
 <scalar-type> : 'void' | 'ptr' | <int-type> | <float-type>
 
 <agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
