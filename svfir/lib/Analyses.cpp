@@ -424,7 +424,7 @@ public:
         case BinaryOpStmt::Op::UREM:
         case BinaryOpStmt::Op::SREM:
             if (!is<IntType>(lt)) { return expErr("integer", lt, binop); }
-            assignType(binop.id.name, FabFloat64Type);
+            assignType(binop.id.name, lt);
             break;
 
         case BinaryOpStmt::Op::EQ:
