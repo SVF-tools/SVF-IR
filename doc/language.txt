@@ -10,8 +10,11 @@ features. Where this is too restrictive, metadata, which can be attached to
 most language constructs, can fill the gap.
 
 SVFIR features a human-readable s-expression based syntax which is described in
-doc/grammar.txt and referred to in this document.
+the Grammar section and referred to throughout this document.
 TODO: SVFIR will feature a binary format ...
+
+Some semantics are described as consumer defined (CD). A consumer may interpret
+anything CD as desired but this should be documented by the consumer.
 
 This document first describes some basic building blocks then explains what
 a program is then explains the major components of a program.
