@@ -1,4 +1,5 @@
-# Style
+Style
+=====
 
 * 4-space indentation.
   * Namespaces blocks do not induce indentation.
@@ -7,6 +8,7 @@
 * Camel or Pascal case names with acronyms capitalise the first letter or none.
   * Examples: `Ast.h`, `TypedId`, `cfg`.
 * Line length of 80.
+  * Including in doc/language.md (some leeway with the grammar bits).
 * All blocks must have braces.
   * A for-loop or an if-statement on a single line looks like
     `if (foo) { bar; }`

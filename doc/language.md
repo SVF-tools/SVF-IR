@@ -10,7 +10,7 @@ features. Where this is too restrictive, metadata, which can be attached to
 most language constructs, can fill the gap.
 
 SVFIR features a human-readable s-expression based syntax which is described in
-the Grammar section and referred to throughout this document.
+the Grammar section and implicitly referred to throughout this document.
 TODO: SVFIR will feature a binary format ...
 
 Some semantics are described as consumer defined (CD). A consumer may interpret
@@ -42,6 +42,7 @@ All values have a type. This type may either be a scalar type (`<scalar-type>`)
 or an aggregate type (`<agg-type>`).
 
 Scalar types are:
+
 * Integers. Two's complement integers. TODO: unclear on widths
 * Floating point numbers. IEEE 754 floats of width 8, 16, 32, 64, and 128.
 * Pointers. All pointers are opaque.
@@ -57,6 +58,7 @@ Constants
 `<const>`, `<scalar-const>`, `<seq-const>`, `<typed-const>`
 
 Constants for all the aforementioned types except void are available:
+
 * Integers. Positive or negative integers.
 * Floating point numbers. Positive or negative numbers with a decimal point
   and optionally a positive or negative exponent, negative or positive
@@ -106,6 +108,7 @@ Preamble
 `<preamble>`
 
 The preamble is an ordered list specifying:
+
 * Version. Of SVFIR. SVFIR versions have a major and a minor component.
   TODO: this is vague, versioning has not been really specified yet.
 * Source. An atom specifying how this SVFIR program came to be, for example,
@@ -255,6 +258,7 @@ The statements are:
   the value 1 if the statement is true and 0 otherwise. v1 and v2 must have
   the same type and r is an 8-bit integer. The following comparisons are
   valid given the type of the operands and all others are invalid:
+
   * Integer. =/!=/(un/signed </<=/>/>=). That is, for less/greater than
     comparison, the signed-ness of the operands must be specified.
   * Float. =/!=/</<=/>/>=.
@@ -303,6 +307,7 @@ The statements are:
 
   Converts a value v to a value of type t or that in t' into introduced
   variable r. The possible conversions for v to t/the type in t' are:
+
   * Any integer type → pointer.
   * pointer → any integer type.
   * Any integer type → any float type.
@@ -480,13 +485,14 @@ Grammar
   '(' 'source' <atom> ')'
   ')'
 
-<function> : '(' <gid> <type> '(' <param>* '...'? ')' ('(' <basic-block>+ ')'|'opaque') <md>? ')'
+<function> : '(' <gid> <type> <params> ('(' <basic-block>+ ')'|'opaque') <md>? ')'
 <functions> : '(' 'functions' <function>* ')'
 
 <gvariable> : '(' <gid> (<gval>|'opaque') <md>? ')'
 <variables> : '(' 'variables' <gvariable>* ')'
 
 <param> : '(' <type> <lid> <md>? ')'
+<params> : '(' <param>* '...'? ')'
 
 <basic-block> : '(' <bid> '(' <stmt>+ ')' <md>? ')'
 

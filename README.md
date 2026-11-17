@@ -32,6 +32,11 @@ The build directory will now contain:
 
 SVFIR requires C++17.
 
+A PDF version of the specification can be built with Pandoc.
+```
+pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
+```
+
 ## Making changes
 
 * Adding or removing source files requires updating `sources.cmake`.
