@@ -98,16 +98,18 @@ std::vector<Index> calculateIDoms(
     insist(!cfg.nodes.empty());
 
     // We do *everything* with the nodes labelled with the post-order traversal.
+    // When dealing with post-order numbers, we are only dealing with reachable
+    // nodes.
     const std::vector<Index> &po2id = postOrder(cfg, ci);
     // This is not a vector because unreachable nodes are not represented in po.
     std::unordered_map<Index, Index> id2po;
     for (size_t i = 0; i < po2id.size(); ++i) { id2po[po2id[i]] = i; }
     insist(id2po.size() == po2id.size());
 
-
+    // Indices are POs too.
     std::vector<Index> podoms(po2id.size(), NO_DOM);
     const Index poentry = id2po[ci.entry(cfg)];
-    podoms[poentry] = id2po[poentry];
+    podoms[poentry] = poentry;
 
     const auto &intersect = [&podoms](const Index b1, const Index b2) {
         Index finger1 = b1;
@@ -130,20 +132,21 @@ std::vector<Index> calculateIDoms(
             // Pick a processed/calculated predecessor.
             Index newIDom = NO_DOM;
             Index pickedPred = NO_DOM;
-            // b must have incoming edge because it is reachable (in po2id).
             for (const Index pred : preds) {
                 const Index popred = id2po[pred];
                 if (podoms[popred] != NO_DOM) {
                     pickedPred = pred;
                     newIDom = popred;
+                    break;
                 }
             }
+            // b must have incoming edge because it is reachable (in po2id).
             insist(newIDom != NO_DOM && pickedPred != NO_DOM);
 
-            for (const Index idp : preds) {
+            for (const Index pred : preds) {
                 // We are looking at all predecessors except the one we picked.
-                if (pickedPred != idp) {
-                    const Index p = id2po[idp];
+                if (pickedPred != pred) {
+                    const Index p = id2po[pred];
                     if (podoms[p] != NO_DOM) { newIDom = intersect(p, newIDom); }
                 }
             }
@@ -156,6 +159,7 @@ std::vector<Index> calculateIDoms(
     }
 
     // Back from the post-order labelling to the real labels.
+    // The unreachable nodes have NO_DOM.
     std::vector<Index> doms(cfg.nodes.size(), NO_DOM);
     for (Index i = 0; i < podoms.size(); ++i) {
         doms[po2id[i]] = po2id[podoms[i]];
