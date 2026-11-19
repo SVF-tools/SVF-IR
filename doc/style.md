@@ -34,4 +34,7 @@ Style
 * Switch statements must have a `default` case.
 * When switch-ing/if-ing on some variants/enums, the `default` or `else` case
   should be marked `unreachable` or `insist` on the non-explicitly handled cases.
+* No implementation in header files.
+  * Exceptions: getters/setters, trivial constructors (copying initialiser lists
+    + insists, if any, in the body).
 * `libsvfir` is to never take on any external dependencies.
