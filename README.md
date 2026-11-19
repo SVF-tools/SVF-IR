@@ -39,7 +39,7 @@ pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
 
 ## Making changes
 
-* Adding or removing source files requires updating `sources.cmake`.
+* Adding or removing source files requires updating `cmake/sources.cmake`.
 * Making changes to the definition requires updating `doc/language.txt`.
 
 ## TODO
