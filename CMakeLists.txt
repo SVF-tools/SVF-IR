@@ -21,6 +21,13 @@ target_include_directories(svfir PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+install(
+  TARGETS svfir
+  ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
+)
+install(DIRECTORY include/ DESTINATION include)
+
 add_executable(testsvfir test/svfir.cpp)
 target_link_libraries(testsvfir PRIVATE svfir)
 
