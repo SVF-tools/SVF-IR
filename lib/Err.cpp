@@ -1,7 +1,7 @@
 #include <variant>
 
-#include "Contracts.h"
-#include "Err.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/Err.h"
 
 namespace SVFIR {
 

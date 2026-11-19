@@ -6,17 +6,17 @@
 #include <unordered_set>
 #include <variant>
 
-#include "Analyses.h"
-#include "Contracts.h"
-#include "ControlFlowGraph.h"
-#include "DominatorTree.h"
-#include "Err.h"
-#include "Index.h"
-#include "Result.h"
-#include "Statements.h"
-#include "SVFIR.h"
-#include "TypedProgram.h"
-#include "Variant.h"
+#include "SVFIR/Analyses.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/ControlFlowGraph.h"
+#include "SVFIR/DominatorTree.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Index.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Statements.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/TypedProgram.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

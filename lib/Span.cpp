@@ -1,9 +1,9 @@
 #include <string>
 #include <variant>
 
-#include "Ast.h"
-#include "Span.h"
-#include "SVFIR.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/SVFIR.h"
 
 namespace {
 

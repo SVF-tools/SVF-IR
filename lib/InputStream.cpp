@@ -1,7 +1,7 @@
 #include <vector>
 #include <istream>
 
-#include "InputStream.h"
+#include "SVFIR/InputStream.h"
 
 namespace SVFIR {
     const char InputStream::NEWLINE = '\n';

@@ -15,7 +15,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(svfir STATIC ${SVFIR_HEADERS} ${SVFIR_SOURCES})
-target_include_directories(svfir PUBLIC svfir/include/)
+
+target_include_directories(svfir PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
 add_executable(testsvfir test/svfir.cpp)
 target_link_libraries(testsvfir PRIVATE svfir)

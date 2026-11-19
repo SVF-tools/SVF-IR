@@ -1,9 +1,9 @@
-#include "Contracts.h"
-#include "Err.h"
-#include "InputStream.h"
-#include "Result.h"
-#include "SExprs.h"
-#include "Variant.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/InputStream.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/SExprs.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

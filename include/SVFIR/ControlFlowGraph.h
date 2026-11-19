@@ -4,8 +4,8 @@
 #include <optional>
 #include <vector>
 
-#include "Ast.h"
-#include "Index.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Index.h"
 
 namespace SVFIR {
 

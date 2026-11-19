@@ -5,10 +5,10 @@
 #include <string>
 #include <variant>
 
-#include "Contracts.h"
-#include "Result.h"
-#include "Span.h"
-#include "Variant.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/Variant.h"
 
 namespace SVFIR {
 

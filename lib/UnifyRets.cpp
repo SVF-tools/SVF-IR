@@ -1,15 +1,15 @@
 #include <unordered_set>
 #include <algorithm>
 
-#include "Analyses.h"
-#include "Ast.h"
-#include "Index.h"
-#include "Span.h"
-#include "Statements.h"
-#include "SVFIR.h"
-#include "Transformations.h"
-#include "TypedProgram.h"
-#include "Variant.h"
+#include "SVFIR/Analyses.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Index.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/Statements.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/Transformations.h"
+#include "SVFIR/TypedProgram.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

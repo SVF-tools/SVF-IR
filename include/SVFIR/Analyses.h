@@ -4,10 +4,10 @@
 #include <functional>
 #include <optional>
 
-#include "Ast.h"
-#include "Err.h"
-#include "Result.h"
-#include "TypedProgram.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/TypedProgram.h"
 
 namespace SVFIR {
 

@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <optional>
 
-#include "Ast.h"
-#include "Statements.h"
-#include "Variant.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Statements.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

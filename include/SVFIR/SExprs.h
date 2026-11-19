@@ -7,10 +7,10 @@
 #include <variant>
 #include <vector>
 
-#include "Err.h"
-#include "InputStream.h"
-#include "Result.h"
-#include "Span.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/InputStream.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Span.h"
 
 namespace SVFIR {
 

@@ -1,12 +1,12 @@
 #include <optional>
 #include <cstdlib>
 
-#include "Analyses.h"
-#include "Err.h"
-#include "Span.h"
-#include "SVFIR.h"
-#include "Result.h"
-#include "Variant.h"
+#include "SVFIR/Analyses.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Variant.h"
 
 #include "test.h"
 

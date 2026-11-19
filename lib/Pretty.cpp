@@ -1,10 +1,10 @@
 #include <regex>
 #include <iostream>
 
-#include "Ast.h"
-#include "Contracts.h"
-#include "SVFIR.h"
-#include "TypedProgram.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/TypedProgram.h"
 
 namespace {
 

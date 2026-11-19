@@ -2,11 +2,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Ast.h"
-#include "Contracts.h"
-#include "ControlFlowGraph.h"
-#include "Index.h"
-#include "Variant.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/ControlFlowGraph.h"
+#include "SVFIR/Index.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

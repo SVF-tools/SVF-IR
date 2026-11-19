@@ -1,11 +1,11 @@
 #ifndef SVFIR_H
 #define SVFIR_H
 
-#include "Ast.h"
-#include "Err.h"
-#include "Result.h"
-#include "Span.h"
-#include "TypedProgram.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/TypedProgram.h"
 
 namespace SVFIR {
 

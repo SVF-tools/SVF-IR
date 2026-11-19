@@ -7,13 +7,13 @@
 #include <stdint.h>
 #include <string>
 
-#include "Contracts.h"
-#include "Ast.h"
-#include "Err.h"
-#include "Result.h"
-#include "Span.h"
-#include "SVFIR.h"
-#include "Variant.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/Span.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/Variant.h"
 
 namespace {
 

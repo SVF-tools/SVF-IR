@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include "Ast.h"
-#include "Contracts.h"
-#include "Err.h"
-#include "Result.h"
-#include "SVFIR.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVFIR;
 

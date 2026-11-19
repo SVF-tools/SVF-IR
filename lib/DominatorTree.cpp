@@ -3,9 +3,9 @@
 #include <set>
 #include <unordered_set>
 
-#include "Ast.h"
-#include "Contracts.h"
-#include "DominatorTree.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/DominatorTree.h"
 
 namespace {
 

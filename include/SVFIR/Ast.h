@@ -8,9 +8,9 @@
 #include <variant>
 #include <vector>
 
-#include "Contracts.h"
-#include "SExprs.h"
-#include "Version.h"
+#include "SVFIR/Contracts.h"
+#include "SVFIR/SExprs.h"
+#include "SVFIR/Version.h"
 
 namespace SVFIR {
 

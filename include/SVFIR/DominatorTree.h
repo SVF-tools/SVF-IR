@@ -5,9 +5,9 @@
 #include <vector>
 #include <set>
 
-#include "Ast.h"
-#include "Index.h"
-#include "ControlFlowGraph.h"
+#include "SVFIR/Ast.h"
+#include "SVFIR/Index.h"
+#include "SVFIR/ControlFlowGraph.h"
 
 namespace SVFIR {
 

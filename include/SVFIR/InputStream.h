@@ -4,7 +4,7 @@
 #include <istream>
 #include <vector>
 
-#include "Span.h"
+#include "SVFIR/Span.h"
 
 namespace SVFIR {
 

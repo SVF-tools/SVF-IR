@@ -1,12 +1,12 @@
 #include <cstdlib>
 
-#include "Err.h"
-#include "Result.h"
-#include "SVFIR.h"
-#include "Variant.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/Result.h"
+#include "SVFIR/SVFIR.h"
+#include "SVFIR/Variant.h"
 
-#include "ControlFlowGraph.h"
-#include "DominatorTree.h"
+#include "SVFIR/ControlFlowGraph.h"
+#include "SVFIR/DominatorTree.h"
 
 #include "test.h"
 
