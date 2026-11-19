@@ -23,10 +23,21 @@ target_include_directories(svfir PUBLIC
 
 install(
   TARGETS svfir
+  EXPORT SVFIRTargets
   ARCHIVE DESTINATION lib
   INCLUDES DESTINATION include
 )
 install(DIRECTORY include/ DESTINATION include)
+
+install(EXPORT SVFIRTargets
+  FILE SVFIRTargets.cmake
+  NAMESPACE SVFIR::
+  DESTINATION lib/cmake/SVFIR
+)
+
+install(FILES cmake/SVFIRConfig.cmake
+  DESTINATION lib/cmake/SVFIR
+)
 
 add_executable(testsvfir test/svfir.cpp)
 target_link_libraries(testsvfir PRIVATE svfir)
