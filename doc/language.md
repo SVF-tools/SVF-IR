@@ -114,8 +114,8 @@ The preamble is an ordered list specifying:
 * Version. Of SVFIR. SVFIR versions have a major and a minor component.
   TODO: this is vague, versioning has not been really specified yet.
 * Source. An atom specifying how this SVFIR program came to be, for example,
-  the language it was translated from. It is CD how this is understood. This
-  is useful for naming a metadata schema and defining CD semantics.
+  the language it was translated from. It is CD how this is understood but is
+  suggested more as an organisation and debugging aide.
 
 Global variables
 ----------------
