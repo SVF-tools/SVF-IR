@@ -48,5 +48,6 @@ pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
 * Reorganise TypedProgram.
   * Should it include graphs? Should it be closed to the outside?
 * Serialised/binary format.
+* Means to link multiple SVFIR programs.
 * LLVM->SVFIR translator.
 * SVFIR->SVF translator (SVF repo).
