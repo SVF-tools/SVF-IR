@@ -16,7 +16,6 @@ set(SVFIR_HEADERS
   include/SVFIR/UnifyReturns.h
   include/SVFIR/Validation.h
   include/SVFIR/Variant.h
-  include/SVFIR/Version.h
 )
 
 set(SVFIR_SOURCES
