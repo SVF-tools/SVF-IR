@@ -1,6 +1,11 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "SVFIR/Ast.h"
+#include "SVFIR/Err.h"
+#include "SVFIR/InputStream.h"
+#include "SVFIR/Result.h"
+
 namespace SVFIR {
 
 /// Parse a <program>, consuming the stream.
