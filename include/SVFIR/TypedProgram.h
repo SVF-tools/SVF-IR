@@ -8,6 +8,9 @@
 
 namespace SVFIR {
 
+/// Check program for errors and produce queriable type information.
+Result<struct TypedProgram, Err> typeProgram(const Program &);
+
 /// Function signature made up of types.
 struct FnSig {
     const std::vector<Type> params;

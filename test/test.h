@@ -3,8 +3,8 @@
 #include "SVFIR/Ast.h"
 #include "SVFIR/Contracts.h"
 #include "SVFIR/Err.h"
+#include "SVFIR/Parser.h"
 #include "SVFIR/Result.h"
-#include "SVFIR/SVFIR.h"
 
 using namespace SVFIR;
 

@@ -2,8 +2,8 @@
 #include <variant>
 
 #include "SVFIR/Ast.h"
+#include "SVFIR/AstHelpers.h"
 #include "SVFIR/Span.h"
-#include "SVFIR/SVFIR.h"
 
 namespace {
 

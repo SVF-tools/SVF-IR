@@ -10,7 +10,6 @@
 
 #include "SVFIR/Contracts.h"
 #include "SVFIR/SExprs.h"
-#include "SVFIR/Version.h"
 
 namespace SVFIR {
 
@@ -185,6 +184,38 @@ using PVal = std::variant<Id, NullConstant>;
 
 /// <ival>
 using IVal = std::variant<Id, IntConstant>;
+
+/// Version number for SVFIR.
+class Version {
+    const uint16_t minor;
+    const uint16_t major;
+
+public:
+    Version(
+        const uint16_t minor,
+        const uint16_t major
+    ) : minor(minor), major(major)
+    { }
+
+    /// This version is compatible with version y when they have the same major
+    /// version and x's minor version is the same or lesser than that of y.
+    /// When x.compatibleWith(y), a program of Version x can be handled by an
+    /// implementation of version y.
+    bool compatibleWith(const Version &y) const;
+
+    bool operator==(const Version &y);
+    bool operator!=(const Version &y);
+
+    std::string toString(void) const;
+
+    /// x < y when the major version of x is less than that of y or the
+    /// minor version of x is less than that of y when both have the same
+    /// major version.
+    bool operator<(const Version &y);
+    bool operator<=(const Version &y);
+    bool operator>(const Version &y);
+    bool operator>=(const Version &y);
+};
 
 /// <preamble>
 struct Preamble final {

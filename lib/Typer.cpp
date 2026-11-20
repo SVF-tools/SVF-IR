@@ -5,17 +5,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include "SVFIR/Analyses.h"
 #include "SVFIR/Ast.h"
+#include "SVFIR/AstHelpers.h"
 #include "SVFIR/Contracts.h"
 #include "SVFIR/ControlFlowGraph.h"
 #include "SVFIR/DominatorTree.h"
 #include "SVFIR/Err.h"
 #include "SVFIR/Index.h"
+#include "SVFIR/Pretty.h"
 #include "SVFIR/Result.h"
 #include "SVFIR/Statements.h"
-#include "SVFIR/SVFIR.h"
 #include "SVFIR/TypedProgram.h"
+#include "SVFIR/Validation.h"
 #include "SVFIR/Variant.h"
 
 namespace {

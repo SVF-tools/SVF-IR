@@ -1,5 +1,5 @@
-#ifndef ANALYSES_H
-#define ANALYSES_H
+#ifndef VALIDATION_H
+#define VALIDATION_H
 
 #include <functional>
 #include <optional>
@@ -118,4 +118,4 @@ std::optional<Err> analyse(const Program &, const std::vector<CheckAnalysis> &);
 
 }  // namespace SVFIR
 
-#endif  // ANALYSES_H
+#endif  // VALIDATION_H

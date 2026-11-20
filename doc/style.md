@@ -7,7 +7,7 @@ Style
 * `PascalCase` for file names.
 * Camel or Pascal case names with acronyms capitalise the first letter or none.
   * Examples: `Ast.h`, `TypedId`, `cfg`.
-  * Exception: the directory `include/SVFIR` and the file `SVFIR.h`.
+  * Exception: the directory `include/SVFIR`.
 * Line length of 80.
   * Including in doc/language.md (some leeway with the grammar bits).
 * All blocks must have braces.

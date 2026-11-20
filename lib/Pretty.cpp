@@ -3,7 +3,7 @@
 
 #include "SVFIR/Ast.h"
 #include "SVFIR/Contracts.h"
-#include "SVFIR/SVFIR.h"
+#include "SVFIR/Pretty.h"
 #include "SVFIR/TypedProgram.h"
 
 namespace {

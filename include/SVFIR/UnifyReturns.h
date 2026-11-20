@@ -1,5 +1,5 @@
-#ifndef TRANSFORMATIONS_H
-#define TRANSFORMATIONS_H
+#ifndef UNIFY_RETURNS_H
+#define UNIFY_RETURNS_H
 
 #include "SVFIR/Ast.h"
 #include "SVFIR/TypedProgram.h"
@@ -16,4 +16,4 @@ TypedProgram unifyReturns(const TypedProgram &tp);
 
 }  // namespace SVFIR
 
-#endif  // TRANSFORMATIONS_H
+#endif  // UNIFY_RETURNS_H

@@ -1,8 +1,8 @@
 #include <cstdlib>
 
 #include "SVFIR/Err.h"
+#include "SVFIR/Pretty.h"
 #include "SVFIR/Result.h"
-#include "SVFIR/SVFIR.h"
 #include "SVFIR/Variant.h"
 
 #include "SVFIR/ControlFlowGraph.h"

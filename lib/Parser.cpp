@@ -10,9 +10,9 @@
 #include "SVFIR/Contracts.h"
 #include "SVFIR/Ast.h"
 #include "SVFIR/Err.h"
+#include "SVFIR/Parser.h"
 #include "SVFIR/Result.h"
 #include "SVFIR/Span.h"
-#include "SVFIR/SVFIR.h"
 #include "SVFIR/Variant.h"
 
 namespace {

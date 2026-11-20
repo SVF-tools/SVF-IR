@@ -1,11 +1,11 @@
 #include <optional>
 #include <cstdlib>
 
-#include "SVFIR/Analyses.h"
 #include "SVFIR/Err.h"
+#include "SVFIR/Pretty.h"
 #include "SVFIR/Span.h"
-#include "SVFIR/SVFIR.h"
 #include "SVFIR/Result.h"
+#include "SVFIR/Validation.h"
 #include "SVFIR/Variant.h"
 
 #include "test.h"

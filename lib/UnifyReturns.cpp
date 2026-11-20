@@ -1,14 +1,14 @@
 #include <unordered_set>
 #include <algorithm>
 
-#include "SVFIR/Analyses.h"
 #include "SVFIR/Ast.h"
+#include "SVFIR/AstHelpers.h"
 #include "SVFIR/Index.h"
 #include "SVFIR/Span.h"
 #include "SVFIR/Statements.h"
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/Transformations.h"
 #include "SVFIR/TypedProgram.h"
+#include "SVFIR/UnifyReturns.h"
+#include "SVFIR/Validation.h"
 #include "SVFIR/Variant.h"
 
 namespace {

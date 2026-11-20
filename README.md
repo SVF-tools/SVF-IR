@@ -42,22 +42,25 @@ pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
 * Adding or removing source files requires updating `cmake/sources.cmake`.
 * Making changes to the definition requires updating `doc/language.txt`.
 
-## Usage
+## Table of Contents
 
-A high-level interface is declared in `SVFIR/SVFIR.h`. Programs are
-defined in terms of the data structures available in `SVFIR/Ast.h` and
-`SVFIR/TypedProgram.h`. Basic data structures and functions which are
-used extensively in passing data around are defined in `SVFIR/Err.h`,
-`SVFIR/Index.h`, `SVFIR/InputStream.h`, `SVFIR/Result.h`, and
-`SVFIR/Variant.h`. This is alongside generous use of vectors, sets, maps,
-and `optional` from the STL.
-
-There are analyses declared in `SVFIR/Analyses.h` and transformations
-declared in `SVFIR/Transformations.h` (of note: return unification) which
-may be useful. Helper functions pertaining to statements are declared
-in `SVFIR/Statements.h`. A control flow graph and dominator tree (and
-post-dominator tree) are available in `SVFIR/ControlFlowGraph.h` and
-`SVFIR/DominatorTree.h` respectively.
+In `include/SVFIR`:
+* `Parser.h`. Produce an AST from text via `parseString` and `parseFile`,
+  or more generically, `parse`.
+* `TypedProgram.h`. Type check and produce a symbol table via
+  `typeProgram`.
+* `Pretty.h`. Turn programs back to strings via `pretty`.
+* `Ast.h`. Defines all AST nodes.
+* `AstHelpers.h`. Conveniences for operating with the AST.
+* `Statements.h`. Conveniences for working with statements.
+* `ControlFlowGraph.h`. Intra-procedural control flow graphs.
+* `DominatorTree.h`. Dominator and post-dominator trees.
+* `UnifyReturns.h`. Combine returns in functions with `unifyReturns`.
+* `Validation.h`. Type checking and symbol table construction. Unlikely
+  to be need directly.
+* `Contracts.h`, `Err.h`, `Index.h`, `InputStream.h`, `Result.h`, `Span.h`,
+  `SExprs.h`, `Variant.h`. Basic data structures and functions used extensively
+  throughout the library.
 
 ## TODO
 
