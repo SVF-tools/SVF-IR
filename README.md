@@ -67,6 +67,7 @@ In `include/SVFIR`:
 * Tests.
 * Reorganise TypedProgram.
   * Should it include graphs? Should it be closed to the outside?
+* Actually define versioning.
 * Serialised/binary format.
 * Means to link multiple SVFIR programs.
 * LLVM->SVFIR translator.
