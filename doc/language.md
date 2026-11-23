@@ -261,10 +261,10 @@ The statements are:
   the same type and r is an 8-bit integer. The following comparisons are
   valid given the type of the operands and all others are invalid:
 
-  * Integer. =/!=/(un/signed </<=/>/>=). That is, for less/greater than
+  * Integer. `=`/`!=`/`(un/signed </<=/>/>=)`. That is, for less/greater than
     comparison, the signed-ness of the operands must be specified.
-  * Float. =/!=/</<=/>/>=.
-  * Pointer. =/!=.
+  * Float. `=`/`!=`/`<`/`<=`/`>`/`>=`.
+  * Pointer. `=`/`!=`.
 
 * Allocate statements, alloc.
 
