@@ -292,8 +292,9 @@ The statements are:
 
   `'(' 'field' <lid:r> <pval:p> <ival:idx> <md>? ')'`
 
-  TODO
-
+  Produces a pointer to the idx-th field of the object pointed to by p into r.
+  What is deemed the idx-th field is CD. Both taking an "out-of-range" field
+  and subsequently using the resulting pointer are CD.
 
 * Bitcast statements, bitcast.
 
