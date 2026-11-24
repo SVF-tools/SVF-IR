@@ -188,9 +188,8 @@ Result<TypedProgram, Err> link(
             linkedGvs.push_back(lgvs[sym.left]);
         } else {
             const GlobalVar &lgv = lgvs[sym.left];
-            const GlobalVar &rgv = lgvs[sym.right.value()];
-            insist(!rgv.isOpaque());
-            if (!lgv.isOpaque()) {
+            const GlobalVar &rgv = rgvs[sym.right.value()];
+            if (!lgv.isOpaque() && !rgv.isOpaque()) {
                 // Left has a body, right does too.
                 if (linkage == Linkage::STRONG) {
                     return Err(
@@ -204,10 +203,15 @@ Result<TypedProgram, Err> link(
                     linkedGvs.push_back(lgv);
                 }
             } else {
-                // Left has no body, right does.
-                // Keep left span, initialiser will have its own.
-                // TODO: merge metadata.
-                linkedGvs.emplace_back(lgv.id, rgv.val, lgv.md, lgv.span);
+                if (!rgv.isOpaque()) {
+                    // Left has no body, right does.
+                    // Keep left span, initialiser will have its own.
+                    // TODO: merge metadata.
+                    linkedGvs.emplace_back(lgv.id, rgv.val, lgv.md, lgv.span);
+                } else {
+                    // Left has no body, right does not too.
+                    linkedGvs.push_back(rgv);
+                }
             }
         }
     }
