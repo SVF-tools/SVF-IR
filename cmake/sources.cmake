@@ -7,6 +7,7 @@ set(SVFIR_HEADERS
   include/SVFIR/Err.h
   include/SVFIR/Index.h
   include/SVFIR/InputStream.h
+  include/SVFIR/Linker.h
   include/SVFIR/Pretty.h
   include/SVFIR/Result.h
   include/SVFIR/SExprs.h
@@ -24,6 +25,7 @@ set(SVFIR_SOURCES
   lib/DominatorTree.cpp
   lib/Err.cpp
   lib/InputStream.cpp
+  lib/Linker.cpp
   lib/Parser.cpp
   lib/Pretty.cpp
   lib/SExprs.cpp
