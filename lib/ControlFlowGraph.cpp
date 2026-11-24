@@ -60,7 +60,7 @@ std::vector<Node> build(const FunctionBody &body) {
             outEdges.push_back(names[tid.name]);
         }
 
-        nodes.push_back(Node(i, body[i].id.name, inEdges, outEdges));
+        nodes.emplace_back(i, body[i].id.name, inEdges, outEdges);
     }
 
     return nodes;

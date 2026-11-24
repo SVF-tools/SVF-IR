@@ -100,7 +100,7 @@ Function unify(const Function &fn) {
                     span(ret.val.value()).end,
                     true
                 );
-                phiArgs.push_back(PhiStmt::Arg(ret.val.value(), bb.id, sp));
+                phiArgs.emplace_back(ret.val.value(), bb.id, sp);
             }
             // Replace return with unconditional jump to unified return block.
             std::vector<Statement> newStmts(bb.stmts);
@@ -109,9 +109,7 @@ Function unify(const Function &fn) {
                 BrStmt(urid, ret.md, Span(ret.span.start, ret.span.end, true))
             );
             // TODO: maybe mark span as gen?
-            newBlocks.push_back(
-                BasicBlock(bb.id, newStmts, std::nullopt, bb.span)
-            );
+            newBlocks.emplace_back(bb.id, newStmts, std::nullopt, bb.span);
         }
     }
 
@@ -126,7 +124,7 @@ Function unify(const Function &fn) {
         // Void.
         urStmts.push_back(RetStmt(std::nullopt, std::nullopt, FAB_SPAN));
     }
-    newBlocks.push_back(BasicBlock(urid, urStmts, std::nullopt, FAB_SPAN));
+    newBlocks.emplace_back(urid, urStmts, std::nullopt, FAB_SPAN);
 
     return Function(
         fn.id, fn.params, fn.vararg, fn.type, newBlocks, fn.md, fn.span

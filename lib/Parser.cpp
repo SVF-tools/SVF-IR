@@ -726,7 +726,7 @@ Result<Statement, Err> parsePhiStmt(const List &l) {
         const Result<Id, Err> &bid = parseBlockId(pair.children[1]);
         if (is<Err>(bid)) { return get<Err>(bid); }
 
-        args.push_back(PhiStmt::Arg(getVal(val), getVal(bid), span(pair)));
+        args.emplace_back(getVal(val), getVal(bid), span(pair));
     }
     if (args.empty()) {
         return Err("Phi statements must have at least one argument.", span(l));
