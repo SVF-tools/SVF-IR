@@ -26,4 +26,15 @@ bool FnSig::matches(const std::vector<Type> &args, const Type &exp) const {
     unreachable();
 }
 
+bool FnSig::operator==(const FnSig &y) const {
+    return
+        this->params == y.params &&
+        this->ret == y.ret &&
+        this->vararg == y.vararg;
+}
+
+bool FnSig::operator!=(const FnSig &y) const {
+    return !(*this == y);
+}
+
 }  // namespace SVFIR

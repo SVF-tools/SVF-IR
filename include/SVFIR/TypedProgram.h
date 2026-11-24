@@ -23,6 +23,10 @@ struct FnSig {
     /// Whether some expected return type and the types of some arguments
     /// match this signature. Importantly, this accounts for varargs.
     bool matches(const std::vector<Type> &args, const Type &expRet) const;
+
+    /// Exact equality of all fields.
+    bool operator==(const FnSig &) const;
+    bool operator!=(const FnSig &) const;
 };
 
 /// Types for names.
