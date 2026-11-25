@@ -69,7 +69,7 @@ All tests are run from `test/test.cpp`. From there, new tests should be added
 to `main` through collecting related tests and running them in a call to
 `runTests`. Those tests are simple functions (`TestFunction` in `test.h`)
 returning true or false on success or failure respectively.  This is made
-more ergonomic by `TEST in `test.h`. The pattern is to define these tests in a
+more ergonomic by `TEST` in `test.h`. The pattern is to define these tests in a
 `.cpp` file and `#include` that directly in `test/test.cpp`.
 
 ## TODO
