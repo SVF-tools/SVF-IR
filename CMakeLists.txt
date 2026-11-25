@@ -40,5 +40,7 @@ install(FILES cmake/SVFIRConfig.cmake
   DESTINATION lib/cmake/SVFIR
 )
 
-add_executable(test test/test.cpp)
-target_link_libraries(test PRIVATE svfir)
+if(PROJECT_IS_TOP_LEVEL)
+  add_executable(test test/test.cpp)
+  target_link_libraries(test PRIVATE svfir)
+endif()
