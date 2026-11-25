@@ -49,6 +49,7 @@ In `include/SVFIR`:
   or more generically, `parse`.
 * `TypedProgram.h`. Type check and produce a symbol table via
   `typeProgram`.
+* `Linker.h`. Fills opaque functions/variables from other programs.
 * `Pretty.h`. Turn programs back to strings via `pretty`.
 * `Ast.h`. Defines all AST nodes.
 * `AstHelpers.h`. Conveniences for operating with the AST.
