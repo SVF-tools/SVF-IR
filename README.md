@@ -44,10 +44,10 @@ In `include/SVFIR`:
   or more generically, `parse`.
 * `TypedProgram.h`. Type check and produce a symbol table via
   `typeProgram`.
-* `Linker.h`. Fills opaque functions/variables from other programs.
+* `Linker.h`. Fills opaque functions/variables from other programs via `link`.
 * `Pretty.h`. Turn programs back to strings via `pretty`.
 * `Ast.h`. Defines all AST nodes.
-* `AstHelpers.h`. Conveniences for operating with the AST.
+* `AstHelpers.h`. Conveniences for working with the AST.
 * `Statements.h`. Conveniences for working with statements.
 * `ControlFlowGraph.h`. Intra-procedural control flow graphs.
 * `DominatorTree.h`. Dominator and post-dominator trees.
