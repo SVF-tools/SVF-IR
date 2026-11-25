@@ -116,7 +116,7 @@ std::optional<Err> _checkPhiStmtArgs(const FunctionBody &bbs) {
                 // We could just compare sorted vectors of real vs. phi
                 // predecessors but good errors would be hard.
                 std::unordered_set<Name> preds;
-                for (const Index pi : cfg.node(i).inEdges) {
+                for (const Index pi : cfg.nodes[i].inEdges) {
                     preds.insert(bbs[pi].id.name);
                 }
 
@@ -234,8 +234,8 @@ std::optional<Err> _checkLocalDefBeforeUse(
                 // There is one argument for each predecessor
                 // (checkPhiStmtArgs). We need their indexes to check dominance.
                 std::unordered_map<Name, Index> preds;
-                for (const Index pred : cfg.node(bbi).inEdges) {
-                    preds[cfg.node(pred).name] = pred;
+                for (const Index pred : cfg.nodes[bbi].inEdges) {
+                    preds[cfg.nodes[pred].name] = pred;
                 }
 
                 for (const PhiStmt::Arg &arg : phi.args) {

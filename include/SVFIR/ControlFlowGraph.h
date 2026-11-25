@@ -61,9 +61,6 @@ struct ControlFlowGraph {
     /// Return this CFG's only exit node, if it has an only exit node.
     std::optional<Index> uniqueExit(void) const;
 
-    /// The i-th node, i.e., nodes[i].
-    const Node &node(const Index i) const;
-
     std::string toString(void) const;
 };
 
