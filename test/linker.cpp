@@ -182,5 +182,31 @@ bool testLinkErrs(void) {
 
 bool testLinker(void) {
     // TODO
+
+    const TypedProgram &p1l = INSIST_TYPED_PARSE(R"(
+        (preamble (version 0.0) (source hand))
+        (variables (@v opaque))
+        (functions (@f i32 () opaque))
+    )");
+    const TypedProgram &p1r = INSIST_TYPED_PARSE(R"(
+        (preamble (version 0.0) (source hand))
+        (variables (@v (i32 0)))
+        (functions (@f i32 () ((!1 ((ret (i32 1)))))))
+    )");
+    const Result<TypedProgram, Err> &lp1 = link(p1l, p1r, Linkage::WEAK);
+    TEST(!is<Err>(lp1));
+    TEST(
+        pretty(get<TypedProgram>(lp1)) ==
+        "(preamble\n"
+        "  (version 0.0)\n"
+        "  (source linker))\n"
+        "(variables\n"
+        "  (@v (i32 0)))\n"
+        "(functions\n"
+        "  (@f i32 () (\n"
+        "    (!1 (\n"
+        "      (ret (i32 1)))))))"
+    );
+
     return true;
 }
