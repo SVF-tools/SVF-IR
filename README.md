@@ -27,7 +27,7 @@ This will produce a debug build in directory `debug-build`. Alternatively,
 The build directory will now contain:
 * `libsvfir.a`: this library contains that needed for parsing, type checking,
   and manipulating SVFIR programs in memory.
-* `test`: this executable contains tests for SVFIR (against `libsvfir.so`).
+* `test`: this executable contains tests for SVFIR (against `libsvfir.a`).
    It is currently quite bare.
 
 SVFIR requires C++17.
