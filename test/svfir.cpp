@@ -125,12 +125,3 @@ bool roundtrip(void) {
     return true;
 }
 
-int main(void) {
-    bool success = true;
-    success &= roundtrip();
-
-    if (success) { std::cout << "All tests passed." << std::endl; }
-    else { std::cout << "Some tests failed." << std::endl; }
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
-}

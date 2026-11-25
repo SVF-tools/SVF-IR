@@ -858,21 +858,3 @@ bool testCheckLocalDefBeforeUse(void) {
 
     return true;
 }
-
-int main(void) {
-    bool success = true;
-    success &= testCheckConstantTypes();
-    success &= testCheckTerminatingStmts();
-    success &= testCheckDuplicateDecs();
-    success &= testCheckVarargStmts();
-    success &= testCheckUndeclaredBlocks();
-    success &= testCheckUndeclaredGlobals();
-    success &= testCheckEntryPredecessors();
-    success &= testCheckPhiStmtArgs();
-    success &= testCheckLocalDefBeforeUse();
-
-    if (success) { std::cout << "All validation tests passed." << std::endl; }
-    else { std::cout << "Some validation tests failed." << std::endl; }
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
-}

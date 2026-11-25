@@ -40,11 +40,5 @@ install(FILES cmake/SVFIRConfig.cmake
   DESTINATION lib/cmake/SVFIR
 )
 
-add_executable(testsvfir test/svfir.cpp)
-target_link_libraries(testsvfir PRIVATE svfir)
-
-add_executable(testvalidation test/validation.cpp)
-target_link_libraries(testvalidation PRIVATE svfir)
-
-add_executable(testlinker test/linker.cpp)
-target_link_libraries(testlinker PRIVATE svfir)
+add_executable(test test/test.cpp)
+target_link_libraries(test PRIVATE svfir)

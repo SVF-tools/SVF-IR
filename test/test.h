@@ -1,6 +1,7 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <functional>
 #include <iostream>
 
 #include "SVFIR/Ast.h"
@@ -11,6 +12,8 @@
 #include "SVFIR/TypedProgram.h"
 
 using namespace SVFIR;
+
+using TestFunction = std::function<bool(void)>;
 
 /// When expr evaluates to false prints an error message and returns false from
 /// enclosing function.

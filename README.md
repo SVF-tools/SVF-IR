@@ -27,7 +27,7 @@ This will produce a debug build in directory `debug-build`. Alternatively,
 The build directory will now contain:
 * `libsvfir.a`: this library contains that needed for parsing, type checking,
   and manipulating SVFIR programs in memory.
-* `testsvfir`: this executable contains tests for SVFIR (against `libsvfir.a`).
+* `test`: this executable contains tests for SVFIR (against `libsvfir.so`).
    It is currently quite bare.
 
 SVFIR requires C++17.
@@ -37,12 +37,7 @@ A PDF version of the specification can be built with Pandoc.
 pandoc -f markdown -t pdf doc/language.md -o svfir.pdf
 ```
 
-## Making changes
-
-* Adding or removing source files requires updating `cmake/sources.cmake`.
-* Making changes to the definition requires updating `doc/language.txt`.
-
-## Table of Contents
+## Public Table of Contents
 
 In `include/SVFIR`:
 * `Parser.h`. Produce an AST from text via `parseString` and `parseFile`,
@@ -63,6 +58,20 @@ In `include/SVFIR`:
   `SExprs.h`, `Variant.h`. Basic data structures and functions used extensively
   throughout the library.
 
+## Making changes
+
+* Adding or removing source files requires updating `cmake/sources.cmake`.
+* Making changes to the definition requires updating `doc/language.txt`.
+
+## Testing
+
+All tests are run from `test/test.cpp`. From there, new tests should be added
+to `main` through collecting related tests and running them in a call to
+`runTests`. Those tests are simple functions (`TestFunction` in `test.h`)
+returning true or false on success or failure respectively.  This is made
+more ergonomic by `TEST in `test.h`. The pattern is to define these tests in a
+`.cpp` file and `#include` that directly in `test/test.cpp`.
+
 ## TODO
 
 * Tests.
@@ -70,6 +79,5 @@ In `include/SVFIR`:
   * Should it include graphs? Should it be closed to the outside?
 * Actually define versioning.
 * Serialised/binary format.
-* Means to link multiple SVFIR programs.
 * LLVM->SVFIR translator.
 * SVFIR->SVF translator (SVF repo).

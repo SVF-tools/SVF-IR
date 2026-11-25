@@ -184,14 +184,3 @@ bool testLinker(void) {
     // TODO
     return true;
 }
-
-int main(void) {
-    bool success = true;
-    success &= testLinkErrs();
-    success &= testLinker();
-
-    if (success) { std::cout << "All linker tests passed." << std::endl; }
-    else { std::cout << "Some linker tests failed." << std::endl; }
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
-}
