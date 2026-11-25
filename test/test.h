@@ -1,3 +1,6 @@
+#ifndef TEST_H
+#define TEST_H
+
 #include <iostream>
 
 #include "SVFIR/Ast.h"
@@ -20,18 +23,24 @@ using namespace SVFIR;
         return false;\
     }
 
-/// Parse source, insisting it is syntactically valid.
-Program insistParse(const std::string &source) {
-    const Result<Program, Err> &p = parseString(source);
-    insist(!is<Err>(p));
-    return get<Program>(p);
-}
+/// Parse string src, insisting it is syntactically valid.
+/// This is a macro rather than function so insist gets a better location.
+#define INSIST_PARSE(src)\
+    [](const std::string src_) {\
+        const Result<Program, Err> &p = parseString(src_);\
+        insist(!is<Err>(p));\
+        return get<Program>(p);\
+    }(src)
 
-/// Parse source, insisting it is syntactically and semantically valid.
-TypedProgram insistTypedParse(const std::string &source) {
-    const Result<Program, Err> &p = parseString(source);
-    insist(!is<Err>(p));
-    const Result<TypedProgram, Err> &tp = typeProgram(get<Program>(p));
-    insist(!is<Err>(tp));
-    return get<TypedProgram>(tp);
-}
+/// Parse string src, insisting it is syntactically and semantically valid.
+/// This is a macro rather than function so insist gets a better location.
+#define INSIST_TYPED_PARSE(src)\
+    [](const std::string src_) {\
+        const Result<Program, Err> &p = parseString(src_);\
+        insist(!is<Err>(p));\
+        const Result<TypedProgram, Err> &tp = typeProgram(get<Program>(p));\
+        insist(!is<Err>(tp));\
+        return get<TypedProgram>(tp);\
+    }(src)
+
+#endif  // TEST_H

@@ -39,12 +39,12 @@ bool testLinkErrs(void) {
         );
     };
 
-    const TypedProgram &p1l = insistTypedParse(R"(
+    const TypedProgram &p1l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables)
         (functions (@f i32 () opaque))
     )");
-    const TypedProgram &p1r = insistTypedParse(R"(
+    const TypedProgram &p1r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@f opaque))
         (functions)
@@ -57,12 +57,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae1));
     TEST(get<Err>(ae1) == ee1);
 
-    const TypedProgram &p2l = insistTypedParse(R"(
+    const TypedProgram &p2l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@v (i32 2)))
         (functions (@f i32 () opaque) (@g void () ((!1 ((ret void))))))
     )");
-    const TypedProgram &p2r = insistTypedParse(R"(
+    const TypedProgram &p2r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions)
@@ -75,12 +75,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae2));
     TEST(get<Err>(ae2) == ee2);
 
-    const TypedProgram &p3l = insistTypedParse(R"(
+    const TypedProgram &p3l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions (@bar void ((ptr %1)) opaque))
     )");
-    const TypedProgram &p3r = insistTypedParse(R"(
+    const TypedProgram &p3r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@v (i32 2)))
         (functions (@f i32 () opaque) (@g void () ((!1 ((ret void))))))
@@ -93,12 +93,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae3));
     TEST(get<Err>(ae3) == ee3);
 
-    const TypedProgram &p4l = insistTypedParse(R"(
+    const TypedProgram &p4l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions (@foo void ((ptr %1)) opaque))
     )");
-    const TypedProgram &p4r = insistTypedParse(R"(
+    const TypedProgram &p4r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@v (i32 2)))
         (functions (@foo i32 ((i32 %x) (i16 %2)) opaque))
@@ -107,12 +107,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae4));
     TEST(get<Err>(ae4) == diffSigsErr("@foo", Span(Loc(4, 20), Loc(4, 57))));
 
-    const TypedProgram &p5l = insistTypedParse(R"(
+    const TypedProgram &p5l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions (@foo i32 ((ptr %1)) opaque))
     )");
-    const TypedProgram &p5r = insistTypedParse(R"(
+    const TypedProgram &p5r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@v (i32 2)))
         (functions (@foo i32 ((ptr %1) ...) ((!1 ((ret (i32 2)))))))
@@ -121,12 +121,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae5));
     TEST(get<Err>(ae5) == diffSigsErr("@foo", Span(Loc(4, 20), Loc(4, 68))));
 
-    const TypedProgram &p6l = insistTypedParse(R"(
+    const TypedProgram &p6l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions (@x void () opaque) (@foo void (...) opaque))
     )");
-    const TypedProgram &p6r = insistTypedParse(R"(
+    const TypedProgram &p6r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@v (i32 2)))
         (functions (@x void () opaque) (@foo i32 (...) ((!1 ((ret (i32 2)))))))
@@ -135,12 +135,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae6));
     TEST(get<Err>(ae6) == diffSigsErr("@foo", Span(Loc(4, 40), Loc(4, 79))));
 
-    const TypedProgram &p7l = insistTypedParse(R"(
+    const TypedProgram &p7l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g opaque))
         (functions (@x void () ((!1 ((ret void))))))
     )");
-    const TypedProgram &p7r = insistTypedParse(R"(
+    const TypedProgram &p7r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 2)))
         (functions (@x void () ((!1 ((ret void))))))
@@ -149,12 +149,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae7));
     TEST(get<Err>(ae7) == doubleFnErr("@x", Span(Loc(4, 20), Loc(4, 52))));
 
-    const TypedProgram &p8l = insistTypedParse(R"(
+    const TypedProgram &p8l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g opaque))
         (functions (@x void () ((!1 ((ret void))))))
     )");
-    const TypedProgram &p8r = insistTypedParse(R"(
+    const TypedProgram &p8r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 2)))
         (functions (@x void () ((!1 ((br !2))) (!2 ((br !2))))))
@@ -163,12 +163,12 @@ bool testLinkErrs(void) {
     TEST(is<Err>(ae8));
     TEST(get<Err>(ae8) == doubleFnErr("@x", Span(Loc(4, 20), Loc(4, 64))));
 
-    const TypedProgram &p9l = insistTypedParse(R"(
+    const TypedProgram &p9l = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 2)))
         (functions)
     )");
-    const TypedProgram &p9r = insistTypedParse(R"(
+    const TypedProgram &p9r = INSIST_TYPED_PARSE(R"(
         (preamble (version 0.0) (source hand))
         (variables (@g (i32 3)))
         (functions (@x void () opaque))
