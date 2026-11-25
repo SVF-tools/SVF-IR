@@ -438,8 +438,14 @@ TODO
 
 Grammar
 -------
+
+This grammar is to be understood as an s-expression grammar. That is, every
+element of the program is either an <atom> or a <list> (except for <program>
+which is a sequence of <list>s). While not expressed in the grammar for
+readability's sake, whitespace and comments can exist between any two
+s-expressions.
+
 ```
-<pos-number> : ('1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9')<digit>*
 <digit> : '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 
 <atom> : {non-whitespace}* | '"'{non-double-quote or two double-quotes}*'"'
@@ -457,7 +463,7 @@ Grammar
 <float-type> : 'f'('16'|'32'|'64'|'128')
 <scalar-type> : 'void' | 'ptr' | <int-type> | <float-type>
 
-<agg-type> : '(' 'agg' ('0'|<pos-number>) ')'
+<agg-type> : '(' 'agg' <digit>+ ')'
 
 ; See commit a6f7e2f4e8d5a0019a215189da5ae47245bb2d70 for type aliases.
 <type> : <scalar-type> | <agg-type>
