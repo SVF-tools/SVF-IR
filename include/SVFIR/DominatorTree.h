@@ -47,6 +47,7 @@ public:
         std::string toString(void) const;
     };
 
+private:
     /// On an Euler tour of the tree, entry and exit timestamps for each node
     /// (index). Every node has a timestamp. Timestamps increment upon visiting
     /// or leaving a node. The timestamps between arrival and withdrawal are
@@ -75,7 +76,13 @@ public:
     /// Order is meaningless.
     const std::vector<Node> unreachables;
 
+private:
     /// Order upon tree, for dominance queries.
+    /// If we arrive at x before y and withdraw from y before x then x
+    /// dominates y. The arrival at x before y means x is a sibling or
+    /// parent of y but then the withdrawal from y before x means x
+    /// cannot be a sibling (we would've withdrawn then visited y) and
+    /// is thus a parent.
     const Tour tour;
 
 public:
@@ -87,6 +94,10 @@ public:
     bool dominates(const Index x, const Index y) const;
 
     std::string toString(void) const;
+
+private:
+    /// Performs and returns a Tour over root. Uses root and unreachables only.
+    Tour mkTour(void) const;
 };
 
 }  // namespace SVFIR
