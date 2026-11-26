@@ -36,6 +36,8 @@ std::vector<Id> getTargets(const BasicBlock &bb) {
 /// Return full list of built out nodes for CFG of body. Respects constraints
 /// on nodes in ControlFlowGraph. body must not be empty.
 std::vector<Node> build(const FunctionBody &body) {
+    // TODO: insist on preconditions.
+
     std::unordered_map<Name, Index> names;
     for (size_t i = 0; i < body.size(); ++i) { names[body[i].id.name] = i; }
 
