@@ -384,17 +384,8 @@ std::optional<Err> checkEntryPredecessors(const Program &p) {
             for (const BasicBlock &bb : fn.body.value()) {
                 const Statement &ts = bb.stmts.back();
                 insist(isTerminatingStmt(ts));
-                std::vector<Name> targets;
-                if (is<BrStmt>(ts)) {
-                    targets.push_back(get<BrStmt>(ts).target.name);
-                } else if (is<BrifStmt>(ts)) {
-                    const BrifStmt &brif = get<BrifStmt>(ts);
-                    targets.push_back(brif.ifTarget.name);
-                    targets.push_back(brif.elseTarget.name);
-                } else { insist(is<RetStmt>(ts)); }
-
-                for (const Name &target : targets) {
-                    if (target == entry) {
+                for (const Id &target : usedBlocks(ts)) {
+                    if (target.name == entry) {
                         return Err(
                             "The entry block '" + entry + "' of function '" +
                             fn.id.name + "' is targeted by '" + pretty(ts) +
