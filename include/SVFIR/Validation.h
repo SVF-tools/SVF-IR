@@ -15,14 +15,20 @@ namespace SVFIR {
 using CheckAnalysis = std::function<std::optional<Err>(const Program &)>;
 
 ////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkDuplicateDecs
+/// PASS: checkDuplicateVars
 /// DEPS: --
-/// Raise an error if duplicate IDs are declared. This comes down to:
+/// Raise an error if duplicate variable IDs are declared. This comes down to:
 ///  * Duplicately named functions and global variables (same namespace).
 ///  * Duplicately named local variables within a function, including paramters.
-///  * Duplicately named blocks within a function.
 ////////////////////////////////////////////////////////////////////////////////
-std::optional<Err> checkDuplicateDecs(const Program &);
+std::optional<Err> checkDuplicateVars(const Program &);
+
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkDuplicateBlocks
+/// DEPS: --
+/// Raise an error if duplicate block IDs are declared.
+////////////////////////////////////////////////////////////////////////////////
+std::optional<Err> checkDuplicateBlocks(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkTerminatingStmts
@@ -38,7 +44,7 @@ std::optional<Err> checkTerminatingStmts(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkEntryPredecessors
-/// DEPS: checkTerminatingStmts
+/// DEPS: checkDuplicateBlocks, checkTerminatingStmts
 /// Raise an error if the entry block has a predecessor.
 ////////////////////////////////////////////////////////////////////////////////
 std::optional<Err> checkEntryPredecessors(const Program &);
@@ -61,7 +67,7 @@ std::optional<Err> checkUndeclaredBlocks(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkPhiStmtArgs
-/// DEPS: checkDupicateDecs, checkUndeclaredBlocks
+/// DEPS: checkDupicateVars, checkDuplicateBlocks, checkUndeclaredBlocks
 /// Raise an error if a phi statement is ill-formed. This comes down to having
 /// (and only having) an argument for each predecessor block of the block the
 /// phi statement is in.
@@ -70,7 +76,8 @@ std::optional<Err> checkPhiStmtArgs(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkLocalDefBeforeUse
-/// DEPS: checkPhiStmtArgs, checkUndeclaredBlocks, checkDuplicateDecs
+/// DEPS: checkPhiStmtArgs, checkUndeclaredBlocks, checkDuplicateBlocks,
+///       checkDuplicateVars
 /// Raises an error if any local variable is used before being appropriately
 /// defined. Our programs must be in SSA form, so this means:
 ///  * For non-phi statements, any use of a local variable must be dominated by

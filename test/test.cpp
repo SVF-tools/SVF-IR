@@ -44,7 +44,7 @@ int main(void) {
         {
             testCheckConstantTypes,
             testCheckTerminatingStmts,
-            testCheckDuplicateDecs,
+            testCheckDuplicateVars,
             testCheckVarargStmts,
             testCheckUndeclaredBlocks,
             testCheckUndeclaredGlobals,

@@ -225,7 +225,7 @@ bool testCheckTerminatingStmts(void) {
     return true;
 }
 
-bool testCheckDuplicateDecs(void) {
+bool testCheckDuplicateVars(void) {
     static const auto globalVarErr =
     [](const std::string &name, const Span &span) {
         return Err(
@@ -248,11 +248,6 @@ bool testCheckDuplicateDecs(void) {
         return Err("Variable '" + name + "' preivously declared.", span);
     };
 
-    static const auto blockErr =
-    [](const std::string &name, const Span &span) {
-        return Err("Block '" + name + "' previously declared.", span);
-    };
-
     // Globals.
 
     const std::string &src1 = R"(
@@ -261,7 +256,7 @@ bool testCheckDuplicateDecs(void) {
         (functions)
     )";
     const Err &ee1 = globalVarErr("@foo", Span(Loc(3, 35), Loc(3, 39)));
-    const std::optional<Err> &ae1 = checkDuplicateDecs(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
     TEST(ae1.has_value() && ae1.value() == ee1);
 
     const std::string &src2 = R"(
@@ -270,7 +265,7 @@ bool testCheckDuplicateDecs(void) {
         (functions (@baz void () opaque) (@bar void () ((!x ((ret void))))))
     )";
     const Err &ee2 = fnErr("@bar", Span(Loc(4, 43), Loc(4, 47)));
-    const std::optional<Err> &ae2 = checkDuplicateDecs(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
     TEST(ae2.has_value() && ae2.value() == ee2);
 
     const std::string &src3 = R"(
@@ -281,7 +276,7 @@ bool testCheckDuplicateDecs(void) {
           (@bar void () ((!x ((ret void))))))
     )";
     const Err &ee3 = fnErr("@bar", Span(Loc(6, 12), Loc(6, 16)));
-    const std::optional<Err> &ae3 = checkDuplicateDecs(INSIST_PARSE(src3));
+    const std::optional<Err> &ae3 = checkDuplicateVars(INSIST_PARSE(src3));
     TEST(ae3.has_value() && ae3.value() == ee3);
 
     // Locals
@@ -293,7 +288,7 @@ bool testCheckDuplicateDecs(void) {
           (@bar void ((i32 %foo) (i64 %bar) (i16 %bar)) ((!x ((ret void))))))
     )";
     const Err &ee4 = paramErr("%bar", Span(Loc(5, 50), Loc(5, 54)));
-    const std::optional<Err> &ae4 = checkDuplicateDecs(INSIST_PARSE(src4));
+    const std::optional<Err> &ae4 = checkDuplicateVars(INSIST_PARSE(src4));
     TEST(ae4.has_value() && ae4.value() == ee4);
 
     const std::string &src5 = R"(
@@ -303,7 +298,7 @@ bool testCheckDuplicateDecs(void) {
           (@bar void ((i32 %foo)) ((!foo ((alloc stack %foo))))))
     )";
     const Err &ee5 = localVarErr("%foo", Span(Loc(5, 56), Loc(5, 60)));
-    const std::optional<Err> &ae5 = checkDuplicateDecs(INSIST_PARSE(src5));
+    const std::optional<Err> &ae5 = checkDuplicateVars(INSIST_PARSE(src5));
     TEST(ae5.has_value() && ae5.value() == ee5);
 
     const std::string &src6 = R"(
@@ -313,7 +308,7 @@ bool testCheckDuplicateDecs(void) {
           (@fn i32 () ((!foo ((alloc stack %foo) (not %foo (i32 550)))))))
     )";
     const Err &ee6 = localVarErr("%foo", Span(Loc(5, 55), Loc(5, 59)));
-    const std::optional<Err> &ae6 = checkDuplicateDecs(INSIST_PARSE(src6));
+    const std::optional<Err> &ae6 = checkDuplicateVars(INSIST_PARSE(src6));
     TEST(ae6.has_value() && ae6.value() == ee6);
 
     const std::string &src7 = R"(
@@ -325,7 +320,7 @@ bool testCheckDuplicateDecs(void) {
             (!bar ((blackhole pure (f16 %foo)))))))
     )";
     const Err &ee7 = localVarErr("%foo", Span(Loc(7, 41), Loc(7, 45)));
-    const std::optional<Err> &ae7 = checkDuplicateDecs(INSIST_PARSE(src7));
+    const std::optional<Err> &ae7 = checkDuplicateVars(INSIST_PARSE(src7));
     TEST(ae7.has_value() && ae7.value() == ee7);
 
     const std::string &src8 = R"(
@@ -340,7 +335,7 @@ bool testCheckDuplicateDecs(void) {
             (!bar ((load (f16 %foo) null))))))
     )";
     const Err &ee8 = localVarErr("%foo", Span(Loc(10, 31), Loc(10, 35)));
-    const std::optional<Err> &ae8 = checkDuplicateDecs(INSIST_PARSE(src8));
+    const std::optional<Err> &ae8 = checkDuplicateVars(INSIST_PARSE(src8));
     TEST(ae8.has_value() && ae8.value() == ee8);
 
     const std::string &src9 = R"(
@@ -355,7 +350,7 @@ bool testCheckDuplicateDecs(void) {
             (!bar ((field %fld null 0) (convert %fld %fld i64))))))
     )";
     const Err &ee9 = localVarErr("%fld", Span(Loc(10, 49), Loc(10, 53)));
-    const std::optional<Err> &ae9 = checkDuplicateDecs(INSIST_PARSE(src9));
+    const std::optional<Err> &ae9 = checkDuplicateVars(INSIST_PARSE(src9));
     TEST(ae9.has_value() && ae9.value() == ee9);
 
     const std::string &src10 = R"(
@@ -370,21 +365,30 @@ bool testCheckDuplicateDecs(void) {
             (!bar ((field %fld null 0) (ret %fld))))))
     )";
     const Err &ee10 = paramErr("%x", Span(Loc(8, 48), Loc(8, 50)));
-    const std::optional<Err> &ae10 = checkDuplicateDecs(INSIST_PARSE(src10));
+    const std::optional<Err> &ae10 = checkDuplicateVars(INSIST_PARSE(src10));
     TEST(ae10.has_value() && ae10.value() == ee10);
 
-    // Blocks.
+    // TODO: correct programs.
 
-    const std::string &src11 = R"(
+    return true;
+}
+
+bool testCheckDuplicateBlocks(void) {
+    static const auto blockErr =
+    [](const std::string &name, const Span &span) {
+        return Err("Block '" + name + "' previously declared.", span);
+    };
+
+    const std::string &src1 = R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn void () ((!1 ((ret void))) (!1 ((ret void)))))))";
-    const Err &ee11 = blockErr("!1", Span(Loc(5, 44), Loc(5, 46)));
-    const std::optional<Err> &ae11 = checkDuplicateDecs(INSIST_PARSE(src11));
-    TEST(ae11.has_value() && ae11.value() == ee11);
+    const Err &ee1 = blockErr("!1", Span(Loc(5, 44), Loc(5, 46)));
+    const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
+    TEST(ae1.has_value() && ae1.value() == ee1);
 
-    const std::string &src12 = R"(
+    const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -394,14 +398,13 @@ bool testCheckDuplicateDecs(void) {
             (!x ((ret void)))
             (!2 ((ret void)))
             (!x ((ret void)))))))";
-    const Err &ee12 = blockErr("!x", Span(Loc(10, 14), Loc(10, 16)));
-    const std::optional<Err> &ae12 = checkDuplicateDecs(INSIST_PARSE(src12));
-    TEST(ae12.has_value() && ae12.value() == ee12);
-
-    // TODO: correct programs.
+    const Err &ee2 = blockErr("!x", Span(Loc(10, 14), Loc(10, 16)));
+    const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
+    TEST(ae2.has_value() && ae2.value() == ee2);
 
     return true;
 }
+
 
 bool testCheckVarargStmts(void) {
     static const auto varargErr =

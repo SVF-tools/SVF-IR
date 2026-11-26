@@ -24,7 +24,7 @@ namespace {
 
 using namespace SVFIR;
 
-// checkDuplicateDecs //////////////////////////////////////////////////////////
+// checkDuplicateVars //////////////////////////////////////////////////////////
 std::optional<Err> _checkDuplicateGlobalDecs(
     const std::vector<GlobalVar> &vs,
     const std::vector<Function> &fns
@@ -75,23 +75,6 @@ std::optional<Err> _checkDuplicateLocalDecs(const Function &fn) {
                     }
                 }
             }
-        }
-    }
-
-    return std::nullopt;
-}
-
-std::optional<Err> _checkDuplicateBlockDecs(const Function &fn) {
-    std::unordered_set<Name> names;
-    if (fn.body.has_value()) {
-        for (const BasicBlock &bb : fn.body.value()) {
-            const Name &name = bb.id.name;
-            if (names.find(name) != names.cend()) {
-                return Err(
-                    "Block '" + name + "' previously declared.",
-                    span(bb.id)
-                );
-            } else { names.insert(name); }
         }
     }
 
@@ -325,7 +308,7 @@ std::optional<Err> _checkConstantType(const TypedConstant &tc) {
 
 namespace SVFIR {
 
-std::optional<Err> checkDuplicateDecs(const Program &p) {
+std::optional<Err> checkDuplicateVars(const Program &p) {
     const std::optional<Err> &gs = _checkDuplicateGlobalDecs(
         p.globalVars, p.functions
     );
@@ -334,9 +317,25 @@ std::optional<Err> checkDuplicateDecs(const Program &p) {
     for (const Function &fn : p.functions) {
         const std::optional<Err> &ls = _checkDuplicateLocalDecs(fn);
         if (ls.has_value()) { return ls.value(); }
+    }
 
-        const std::optional<Err> &bs = _checkDuplicateBlockDecs(fn);
-        if (bs.has_value()) { return bs.value(); }
+    return std::nullopt;
+}
+
+std::optional<Err> checkDuplicateBlocks(const Program &p) {
+    for (const Function &fn : p.functions) {
+        if (fn.body.has_value()) {
+            std::unordered_set<Name> names;
+            for (const BasicBlock &bb : fn.body.value()) {
+                const Name &name = bb.id.name;
+                if (names.find(name) != names.cend()) {
+                    return Err(
+                        "Block '" + name + "' previously declared.",
+                        span(bb.id)
+                    );
+                } else { names.insert(name); }
+            }
+        }
     }
 
     return std::nullopt;
