@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <set>
 
 #include "SVFIR/Ast.h"
 #include "SVFIR/Index.h"
@@ -46,9 +45,6 @@ public:
         /// [id name]
         /// children: ...
         std::string toString(void) const;
-
-        bool operator==(const Node &) const;
-        bool operator<(const Node &) const;
     };
 
     /// On an Euler tour of the tree, entry and exit timestamps for each node
@@ -76,7 +72,8 @@ public:
 
     /// Nodes which are not reachable in the CFG this tree was constructed
     /// from (and are thus not dominated by root so are not part of the tree).
-    const std::set<Node> unreachables;
+    /// Order is meaningless.
+    const std::vector<Node> unreachables;
 
     /// Order upon tree, for dominance queries.
     const Tour tour;

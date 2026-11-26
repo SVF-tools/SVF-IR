@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <functional>
-#include <set>
 #include <unordered_set>
 
 #include "SVFIR/Ast.h"
@@ -201,13 +200,13 @@ DominatorTree::Node build(
 }
 
 /// Returns any node that cannot be reached from cfg's entry node.
-std::set<Node> unreachableNodes(
+std::vector<Node> unreachableNodes(
     const ControlFlowGraph &cfg,
     const CFGInterpreter &ci
 ) {
     insist(!cfg.nodes.empty());
 
-    std::set<Node> unreachables;
+    std::vector<Node> unreachables;
 
     // Any "gaps" in the list of reachable nodes are unreachable nodes.
     std::vector<Index> reachables = postOrder(cfg, ci);
@@ -224,7 +223,7 @@ std::set<Node> unreachableNodes(
         // Nodes in interval (x, y) are unreachable (may be empty).
         for (Index g = x + 1; g < y; ++g) {
             const Node &gn = Node(g, cfg.nodes[g].name, std::vector<Node>());
-            unreachables.insert(gn);
+            unreachables.push_back(gn);
         }
     }
 
@@ -301,16 +300,6 @@ std::string DominatorTree::toString(void) const {
     }
 
     return s;
-}
-
-bool DominatorTree::Node::operator==(const Node &n) const {
-    // Ignore name, it is not a key.
-    return this->id == n.id && this->children == n.children;
-}
-
-bool DominatorTree::Node::operator<(const Node &n) const {
-    // Ignore name, it is not a key.
-    return this->id < n.id || (this->id == n.id && this->children < n.children);
 }
 
 std::string DominatorTree::Node::toString(void) const {
