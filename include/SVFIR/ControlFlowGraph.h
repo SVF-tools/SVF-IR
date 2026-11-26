@@ -51,8 +51,13 @@ struct ControlFlowGraph {
         std::string toAbbrString(void) const;
     };
 
-    /// The given FunctionBody must be non-empty. (Aside, an empty body is not
-    /// part of a valid program.)
+    /// The given FunctionBody must be non-empty (an empty body is never part
+    /// of a parseable program anyway). This function body must have no
+    /// duplicate basic blocks, not refer to any undeclared basic blocks, and
+    /// have terminating statement, and only have terminating statements, as
+    /// the final instruction in a basic block. This can be satisfied via
+    /// checkDuplicateBlocks, checkUndeclaredBlocks, and checkTerminatingStmts,
+    /// or more simply, via typeProgram.
     ControlFlowGraph(const FunctionBody &);
 
     /// The unique entry node.

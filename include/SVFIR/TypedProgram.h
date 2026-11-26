@@ -8,7 +8,8 @@
 
 namespace SVFIR {
 
-/// Check program for errors and produce queriable type information.
+/// Check program for any semantic errors including name misuses, type errors,
+/// and others, and produce queriable type information.
 Result<struct TypedProgram, Err> typeProgram(const Program &);
 
 /// Function signature made up of types.
