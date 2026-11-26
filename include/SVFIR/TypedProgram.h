@@ -69,6 +69,28 @@ public:
     : program(program), symbols(symbols) { }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: checkConstantTypes
+/// DEPS: --
+/// Checks that the type of a typed constant matches its partner constant.
+/// TODO: this can be pushed to the grammar, consider that...
+/// TODO: consider semantics for int/float not fitting in width.
+////////////////////////////////////////////////////////////////////////////////
+std::optional<Err> checkConstantTypes(const Program &);
+
+////////////////////////////////////////////////////////////////////////////////
+/// PASS: buildSymbolTable
+/// DEPS: checkConstantTypes, all passes in Validation.h.
+/// Type checks the program, raising an error on any type error. Otherwise
+/// returns a symbol table for the program. Type checking involves:
+///  * That operands of statements (including types in convert/bitcast)
+///    are appropriately typed.
+///    * For calls, this involves checking that *some* function exists with
+///      a matching signature.
+///  * That typed constants carry appropriate types.
+////////////////////////////////////////////////////////////////////////////////
+Result<SymbolTable, Err> buildSymbolTable(const Program &);
+
 }  // namespace SVFIR
 
 #endif  // TYPEDPROGRAM_H
