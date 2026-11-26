@@ -54,11 +54,7 @@ int main(void) {
         });
 
     // cfg.cpp /////////////////////////////////////////////////////////////////
-    success &= runTests(
-        "CFG tests",
-        {
-            testCfg1,
-        });
+    success &= runTests("CFG tests", {testCfg1, testCfg2, testCfg3, testCfg4});
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
