@@ -4,6 +4,7 @@
 
 #include "test.h"
 
+#include "cfg.cpp"
 #include "linker.cpp"
 #include "validation.cpp"
 #include "svfir.cpp"
@@ -50,6 +51,13 @@ int main(void) {
             testCheckEntryPredecessors,
             testCheckPhiStmtArgs,
             testCheckLocalDefBeforeUse
+        });
+
+    // cfg.cpp /////////////////////////////////////////////////////////////////
+    success &= runTests(
+        "CFG tests",
+        {
+            testCfg1,
         });
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
