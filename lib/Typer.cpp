@@ -554,12 +554,12 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
         {
             checkConstantTypes,
             checkTerminatingStmts,
+            checkVarargStmts,
             checkDuplicateBlocks,
             checkUndeclaredBlocks,
-            checkDuplicateVars,
-            checkVarargStmts,
-            checkUndeclaredGlobals,
             checkEntryPredecessors,
+            checkDuplicateVars,
+            checkUndeclaredGlobals,
             checkPhiStmtArgs,
             checkLocalDefBeforeUse
         }
