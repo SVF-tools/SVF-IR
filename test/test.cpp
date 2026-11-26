@@ -5,6 +5,7 @@
 #include "test.h"
 
 #include "cfg.cpp"
+#include "dominance.cpp"
 #include "linker.cpp"
 #include "validation.cpp"
 #include "svfir.cpp"
@@ -55,6 +56,17 @@ int main(void) {
 
     // cfg.cpp /////////////////////////////////////////////////////////////////
     success &= runTests("CFG tests", {testCfg1, testCfg2, testCfg3, testCfg4});
+
+    // dominance.cpp ///////////////////////////////////////////////////////////
+    success &= runTests(
+        "Dominance tests",
+        {
+            testDominance1,
+            testDominance2,
+            testDominance3,
+            testDominance4
+        }
+    );
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
