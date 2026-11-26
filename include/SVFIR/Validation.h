@@ -30,6 +30,15 @@ std::optional<Err> checkDuplicateVars(const Program &);
 ////////////////////////////////////////////////////////////////////////////////
 std::optional<Err> checkDuplicateBlocks(const Program &);
 
+///////////////////////////////////////////////////////////////////////////////
+/// PASS: checkUndeclaredBlocks
+/// DEPS: --
+/// Raise an error if branches are used incorrectly. This comes down to:
+///  * br and brif instructions targeting non-existent branches.
+///  * phi instructions referring to non-existent blocks in args.
+////////////////////////////////////////////////////////////////////////////////
+std::optional<Err> checkUndeclaredBlocks(const Program &);
+
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkTerminatingStmts
 /// DEPS: --
@@ -55,15 +64,6 @@ std::optional<Err> checkEntryPredecessors(const Program &);
 /// Raise an error if a vararg statement is used in a non-vararg function.
 ////////////////////////////////////////////////////////////////////////////////
 std::optional<Err> checkVarargStmts(const Program &);
-
-////////////////////////////////////////////////////////////////////////////////
-/// PASS: checkUndeclaredBlocks
-/// DEPS: --
-/// Raise an error if branches are used incorrectly. This comes down to:
-///  * br and brif instructions targeting non-existent branches.
-///  * phi instructions referring to non-existent blocks in args.
-////////////////////////////////////////////////////////////////////////////////
-std::optional<Err> checkUndeclaredBlocks(const Program &);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// PASS: checkPhiStmtArgs
