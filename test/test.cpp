@@ -75,7 +75,12 @@ int main(void) {
     // dominance.cpp ///////////////////////////////////////////////////////////
     success &= runTests(
         "Return unification",
-        {testUnifyReturns1}
+        {
+            testUnifyReturns1,
+            testUnifyReturns2,
+            testUnifyReturns3,
+            testUnifyReturns4
+        }
     );
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
