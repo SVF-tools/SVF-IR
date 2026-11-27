@@ -225,21 +225,20 @@ std::optional<Err> _checkLocalDefBeforeUse(
                     if (is<Id>(arg.val) && get<Id>(arg.val).isLocal()) {
                         const Id &var = get<Id>(arg.val);
                         const Index pi = preds.at(arg.pred.name);
-                        const StmtLoc &dl = defs.at(var.name);
                         // The use is in this block, not pred, so we check that
-                        // we are either defined in pred or some dominator. If
-                        // it's a parameter of course, no problem.
-                        if (
-                            params.find(var.name) == params.cend() &&
-                            pi != dl.block &&
-                            !dt.dominates(dl.block ,pi)
-                        ) {
-                            return Err(
-                                "Local variable '" + var.name + "' in phi "
-                                "argument was not defined in or strictly "
-                                "before predecessor '" + arg.pred.name + "'.",
-                                arg.span
-                            );
+                        // we are either defined *in* pred or some dominator of
+                        // pred. If it's a parameter of course, no problem.
+                        if (params.find(var.name) == params.cend()) {
+                            const StmtLoc &dl = defs.at(var.name);
+                            if (pi != dl.block && !dt.dominates(dl.block ,pi)) {
+                                return Err(
+                                    "Local variable '" + var.name + "' in phi "
+                                    "argument was not defined in or strictly "
+                                    "before predecessor '" + arg.pred.name +
+                                    "'.",
+                                    arg.span
+                                );
+                            }
                         }
                     }
                 }
