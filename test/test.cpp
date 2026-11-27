@@ -38,11 +38,11 @@ int main(void) {
     success &= runTests("roundtrip", {roundtrip});
 
     // linker.cpp //////////////////////////////////////////////////////////////
-    success &= runTests("Linker tests", {testLinkErrs, testLinker});
+    success &= runTests("Linker", {testLinkErrs, testLinker});
 
     // validation.cpp //////////////////////////////////////////////////////////
     success &= runTests(
-        "Validation tests",
+        "Validation",
         {
             testCheckConstantTypes,
             testCheckTerminatingStmts,
@@ -56,11 +56,11 @@ int main(void) {
         });
 
     // cfg.cpp /////////////////////////////////////////////////////////////////
-    success &= runTests("CFG tests", {testCfg1, testCfg2, testCfg3, testCfg4});
+    success &= runTests("CFG", {testCfg1, testCfg2, testCfg3, testCfg4});
 
     // dominance.cpp ///////////////////////////////////////////////////////////
     success &= runTests(
-        "Dominance tests",
+        "Dominance",
         {
             testDominance1,
             testDominance2,
@@ -74,7 +74,7 @@ int main(void) {
 
     // dominance.cpp ///////////////////////////////////////////////////////////
     success &= runTests(
-        "Return unification tests",
+        "Return unification",
         {testUnifyReturns1}
     );
 
