@@ -11,7 +11,7 @@ does not understand, and 2) SVF understands.)
 Along with the core parser and similar tools and the SVFIR definition, this
 repository will host multiple translators to SVFIR.
 
-The language is described in `doc/language.txt`.
+The language is described in `doc/language.md`.
 
 ## Building
 
@@ -61,7 +61,7 @@ In `include/SVFIR`:
 ## Making changes
 
 * Adding or removing source files requires updating `cmake/sources.cmake`.
-* Making changes to the definition requires updating `doc/language.txt`.
+* Making changes to the definition requires updating `doc/language.md`.
 
 ## Testing
 
