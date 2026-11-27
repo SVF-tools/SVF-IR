@@ -254,6 +254,8 @@ DominatorTree::DominatorTree(const ControlFlowGraph &cfg, const Kind kind)
 }
 
 bool DominatorTree::dominates(const Index x, const Index y) const {
+    insist(x < tour.arrival.size() && y < tour.arrival.size());
+
     for (const Node &u : unreachables) {
         if (u.id == x || u.id == y) { return false; }
     }
