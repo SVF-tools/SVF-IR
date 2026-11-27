@@ -9,6 +9,7 @@
 #include "linker.cpp"
 #include "validation.cpp"
 #include "svfir.cpp"
+#include "unify-returns.cpp"
 
 /// Runs all of the tests in tests, in order, printing a message at the end.
 /// Note, testFunctions using TEST do short-circuit but runTests going through
@@ -69,6 +70,12 @@ int main(void) {
             testPostDominance2,
             testPostDominance3
         }
+    );
+
+    // dominance.cpp ///////////////////////////////////////////////////////////
+    success &= runTests(
+        "Return unification tests",
+        {testUnifyReturns1}
     );
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
