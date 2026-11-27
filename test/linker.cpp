@@ -195,20 +195,18 @@ bool testLinker(void) {
     )");
     const Result<TypedProgram, Err> &lp1 = link(p1l, p1r, Linkage::WEAK);
     TEST(!is<Err>(lp1));
-    TEST(
-        pretty(get<TypedProgram>(lp1)) ==
-        strip(R"(
-            (preamble
-              (version 0.0)
-              (source linker))
-            (variables
-              (@v (i32 0)))
-            (functions
-              (@f i32 () (
-                (!1 (
-                  (ret (i32 1)))))))
-        )")
-    );
+    static const std::string &elp1 = strip(R"(
+        (preamble
+          (version 0.0)
+          (source linker))
+        (variables
+          (@v (i32 0)))
+        (functions
+          (@f i32 () (
+            (!1 (
+              (ret (i32 1)))))))
+    )");
+    TEST(pretty(get<TypedProgram>(lp1)) == elp1);
 
     return true;
 }

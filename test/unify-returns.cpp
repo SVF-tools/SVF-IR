@@ -22,37 +22,33 @@ bool testUnifyReturns1(void) {
               (ret void)))))
           (@bar void () ((!0 ((ret void))))))
     )");
-
     const TypedProgram &utp = unifyReturns(tp);
-    TEST(
-        pretty(utp) ==
-        strip(R"(
-            (preamble
-              (version 0.0)
-              (source hand))
-            (variables)
-            (functions
-              (@foo void ((i8 %c)) (
-                (!0 (
-                  (br !unified-ret)))
-                (!1 (
-                  (alloc heap %x [ptr])
-                  (br !unified-ret)))
-                (!2 (
-                  (blackhole pure (i32 %y))
-                  (brif %c [i8] !1 !3)))
-                (!3 (
-                  (add %z1 [i32] (i32 2) (i32 3))
-                  (sub %z2 [i32] %z1 [i32] (i32 3))
-                  (br !unified-ret)))
-                (!unified-ret (
-                  (ret void)))))
-              (@bar void () (
-                (!0 (
-                  (ret void))))))
-        )")
-    );
-
+    static const std::string &eutp = strip(R"(
+        (preamble
+          (version 0.0)
+          (source hand))
+        (variables)
+        (functions
+          (@foo void ((i8 %c)) (
+            (!0 (
+              (br !unified-ret)))
+            (!1 (
+              (alloc heap %x [ptr])
+              (br !unified-ret)))
+            (!2 (
+              (blackhole pure (i32 %y))
+              (brif %c [i8] !1 !3)))
+            (!3 (
+              (add %z1 [i32] (i32 2) (i32 3))
+              (sub %z2 [i32] %z1 [i32] (i32 3))
+              (br !unified-ret)))
+            (!unified-ret (
+              (ret void)))))
+          (@bar void () (
+            (!0 (
+              (ret void))))))
+    )");
+    TEST(pretty(utp) == eutp);
     return true;
 }
 
@@ -80,41 +76,37 @@ bool testUnifyReturns2(void) {
               (load (i32 %iv) @v)
               (ret %iv))))))
     )");
-
     const TypedProgram &utp = unifyReturns(tp);
-    TEST(
-        pretty(utp) ==
-        strip(R"(
-            (preamble
-              (version 0.0)
-              (source hand))
-            (variables
-              (@v (i32 200)))
-            (functions
-              (@foo i32 ((i32 %a) (i32 %b)) (
-                (!0 (
-                  (convert %c [i8] %a [i32] i8)
-                  (brif %c [i8] !1 !2)))
-                (!1 (
-                  (alloc stack %x [ptr])
-                  (load (i32 %ix) %x [ptr])
-                  (br !unified-ret)))
-                (!2 (
-                  (phi %p [i32] ((%a [i32] !0)))
-                  (br !unified-ret)))
-                (!3 (
-                  (add %z1 [i32] (i32 2) (i32 3))
-                  (sub %z2 [i32] %z1 [i32] (i32 3))
-                  (br !unified-ret)))
-                (!? (
-                  (load (i32 %iv) @v)
-                  (br !unified-ret)))
-                (!unified-ret (
-                  (phi %unified-ret [i32] ((%ix [i32] !1) (%p [i32] !2) ((i32 5) !3) (%iv [i32] !?)))
-                  (ret %unified-ret [i32]))))))
-        )")
-    );
-
+    static const std::string &eutp = strip(R"(
+        (preamble
+          (version 0.0)
+          (source hand))
+        (variables
+          (@v (i32 200)))
+        (functions
+          (@foo i32 ((i32 %a) (i32 %b)) (
+            (!0 (
+              (convert %c [i8] %a [i32] i8)
+              (brif %c [i8] !1 !2)))
+            (!1 (
+              (alloc stack %x [ptr])
+              (load (i32 %ix) %x [ptr])
+              (br !unified-ret)))
+            (!2 (
+              (phi %p [i32] ((%a [i32] !0)))
+              (br !unified-ret)))
+            (!3 (
+              (add %z1 [i32] (i32 2) (i32 3))
+              (sub %z2 [i32] %z1 [i32] (i32 3))
+              (br !unified-ret)))
+            (!? (
+              (load (i32 %iv) @v)
+              (br !unified-ret)))
+            (!unified-ret (
+              (phi %unified-ret [i32] ((%ix [i32] !1) (%p [i32] !2) ((i32 5) !3) (%iv [i32] !?)))
+              (ret %unified-ret [i32]))))))
+    )");
+    TEST(pretty(utp) == eutp);
     return true;
 }
 
@@ -134,11 +126,9 @@ bool testUnifyReturns3(void) {
             (!1 (
               (br !1))))))
     )");
-
     const TypedProgram &tp = INSIST_TYPED_PARSE(p);
     const TypedProgram &utp = unifyReturns(tp);
     TEST(pretty(utp.program) == p);
-
     return true;
 }
 
@@ -151,28 +141,23 @@ bool testUnifyReturns4(void) {
             (!0 ((ret @v)))
             (!1 ((ret (ptr null)))))))
     )");
-
     const TypedProgram &utp = unifyReturns(tp);
-
-    TEST(
-        pretty(utp) ==
-        strip(R"(
-            (preamble
-              (version 0.0)
-              (source hand))
-            (variables
-              (@v (i32 200)))
-            (functions
-              (@foo ptr () (
-                (!0 (
-                  (br !unified-ret)))
-                (!1 (
-                  (br !unified-ret)))
-                (!unified-ret (
-                  (phi %unified-ret [ptr] ((@v !0) ((ptr null) !1)))
-                  (ret %unified-ret [ptr]))))))
-        )")
-    );
-
+    static const std::string &eutp = strip(R"(
+        (preamble
+          (version 0.0)
+          (source hand))
+        (variables
+          (@v (i32 200)))
+        (functions
+          (@foo ptr () (
+            (!0 (
+              (br !unified-ret)))
+            (!1 (
+              (br !unified-ret)))
+            (!unified-ret (
+              (phi %unified-ret [ptr] ((@v !0) ((ptr null) !1)))
+              (ret %unified-ret [ptr]))))))
+    )");
+    TEST(pretty(utp) == eutp);
     return true;
 }
