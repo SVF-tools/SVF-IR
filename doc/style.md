@@ -5,7 +5,7 @@ Style
   * Namespaces blocks do not induce indentation.
 * `camelCase` names, except `GLOBALS_WHICH_ARE_LIKE_THIS`.
   * Exception: macros in `Contracts.h`.
-* `PascalCase` for file names.
+* `PascalCase` for library type file names.
 * Camel or Pascal case names with acronyms capitalise the first letter or none.
   * Examples: `Ast.h`, `TypedId`, `cfg`.
   * Exception: the directory `include/SVFIR`.
@@ -38,5 +38,5 @@ Style
   should be marked `unreachable` or `insist` on the non-explicitly handled cases.
 * No implementation in header files.
   * Exceptions: getters/setters, trivial constructors (copying initialiser lists
-    + insists, if any, in the body).
+    + insists, if any, in the body), `test/test.h`.
 * `libsvfir` is to never take on any external dependencies.

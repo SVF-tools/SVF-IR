@@ -197,15 +197,17 @@ bool testLinker(void) {
     TEST(!is<Err>(lp1));
     TEST(
         pretty(get<TypedProgram>(lp1)) ==
-        "(preamble\n"
-        "  (version 0.0)\n"
-        "  (source linker))\n"
-        "(variables\n"
-        "  (@v (i32 0)))\n"
-        "(functions\n"
-        "  (@f i32 () (\n"
-        "    (!1 (\n"
-        "      (ret (i32 1)))))))"
+        strip(R"(
+            (preamble
+              (version 0.0)
+              (source linker))
+            (variables
+              (@v (i32 0)))
+            (functions
+              (@f i32 () (
+                (!1 (
+                  (ret (i32 1)))))))
+        )")
     );
 
     return true;

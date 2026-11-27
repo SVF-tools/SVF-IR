@@ -16,7 +16,7 @@ bool testCheckConstantTypes(void) {
     static const auto source1 = [](const std::string &c) {
         const std::string &ps =
             "(preamble (version 0.0) (source test))\n"
-            "(variables (@FOO " + c +  "))\n"
+            "(variables (@FOO " + c + "))\n"
             "(functions)\n";
         return INSIST_PARSE(ps);
     };

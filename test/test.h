@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <iostream>
+#include <sstream>
 
 #include "SVFIR/Ast.h"
 #include "SVFIR/Contracts.h"
@@ -45,5 +46,44 @@ using TestFunction = std::function<bool(void)>;
         insist(!is<Err>(tp));\
         return get<TypedProgram>(tp);\
     }(src)
+
+/// Strip the common margin to each line in s. For the first and last lines,
+/// if it is empty or contains space characters only, it is removed.
+std::string strip(const std::string &s) {
+    std::vector<std::string> lines;
+    std::stringstream ss = std::stringstream(s);
+    for (std::string l; std::getline(ss, l, '\n');) { lines.push_back(l); }
+
+    if (!lines.empty()) {
+        if (lines.front().find_first_not_of(' ') == std::string::npos) {
+            lines.erase(lines.begin());
+        }
+    }
+
+    if (!lines.empty()) {
+        const std::string &first = *(lines.begin());
+        if (lines.back().find_first_not_of(' ') == std::string::npos) {
+            lines.pop_back();
+        }
+    }
+
+    unsigned int commonMargin = std::numeric_limits<unsigned int>::max();
+    for (const std::string &l : lines) {
+        unsigned int margin = 0;
+        for (const char c : l) {
+            if (c == ' ') { ++margin; }
+            else { break; }
+        }
+        if (margin < commonMargin) { commonMargin = margin; }
+    }
+
+    std::string r;
+    for (const std::string &l : lines) {
+        if (!r.empty()) { r += '\n'; }
+        r += l.substr(commonMargin);
+    }
+
+    return r;
+}
 
 #endif  // TEST_H
