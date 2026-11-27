@@ -64,7 +64,10 @@ int main(void) {
             testDominance1,
             testDominance2,
             testDominance3,
-            testDominance4
+            testDominance4,
+            testPostDominance1,
+            testPostDominance2,
+            testPostDominance3
         }
     );
 

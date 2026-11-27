@@ -203,3 +203,180 @@ bool testDominance4(void) {
 
     return true;
 }
+
+bool testPostDominance1(void) {
+    using Node = DominatorTree::Node;
+
+    static const Program &p = INSIST_PARSE(R"(
+        (preamble (version 0.0) (source hand))
+        (variables)
+        (functions
+          (@f void ((i32 %x)) (
+            (!0 ((br !1)))
+            (!1 ((br !2)))
+            (!2 ((br !3)))
+            (!3 ((ret void))))))
+    )");
+
+    const ControlFlowGraph &cfg = ControlFlowGraph(p.functions[0].body.value());
+    const DominatorTree &pdt = DominatorTree(cfg, DominatorTree::Kind::POSTDOM);
+
+    static const Node &n0 = Node(0, "!0", std::vector<Node>());
+    static const Node &n1 = Node(1, "!1", {n0});
+    static const Node &n2 = Node(2, "!2", {n1});
+    static const Node &n3 = Node(3, "!3", {n2});
+
+    TEST(pdt.root == n3);
+    TEST(pdt.unreachables.empty());
+
+    TEST(pdt.dominates(3, 2));
+    TEST(pdt.dominates(3, 1));
+    TEST(pdt.dominates(3, 0));
+    TEST(pdt.dominates(2, 1));
+    TEST(pdt.dominates(2, 0));
+    TEST(pdt.dominates(1, 0));
+
+    TEST(!pdt.dominates(0, 0));
+    TEST(!pdt.dominates(1, 1));
+    TEST(!pdt.dominates(2, 2));
+    TEST(!pdt.dominates(3, 3));
+    TEST(!pdt.dominates(0, 1));
+    TEST(!pdt.dominates(0, 2));
+    TEST(!pdt.dominates(0, 3));
+    TEST(!pdt.dominates(1, 2));
+    TEST(!pdt.dominates(1, 3));
+    TEST(!pdt.dominates(2, 3));
+
+    return true;
+}
+
+bool testPostDominance2(void) {
+    using Node = DominatorTree::Node;
+
+    static const Program &p = INSIST_PARSE(R"(
+        (preamble (version 0.0) (source hand))
+        (variables)
+        (functions
+          (@f void ((i8 %c)) (
+            (!0 ((brif %c !1 !2)))
+            (!1 ((brif %c !2 !3)))
+            (!2 ((brif %c !3 !2)))
+            (!3 ((ret void))))))
+    )");
+
+    const ControlFlowGraph &cfg = ControlFlowGraph(p.functions[0].body.value());
+    const DominatorTree &pdt = DominatorTree(cfg, DominatorTree::Kind::POSTDOM);
+
+    static const Node &n0 = Node(0, "!0", std::vector<Node>());
+    static const Node &n1 = Node(1, "!1", std::vector<Node>());
+    static const Node &n2 = Node(2, "!2", std::vector<Node>());
+    static const Node &n3 = Node(3, "!3", {n0, n1, n2});
+
+    TEST(pdt.root == n3);
+    TEST(pdt.unreachables.empty());
+
+    TEST(pdt.dominates(3, 2));
+    TEST(pdt.dominates(3, 1));
+    TEST(pdt.dominates(3, 0));
+
+    TEST(!pdt.dominates(2, 1));
+    TEST(!pdt.dominates(2, 0));
+    TEST(!pdt.dominates(1, 0));
+    TEST(!pdt.dominates(0, 0));
+    TEST(!pdt.dominates(1, 1));
+    TEST(!pdt.dominates(2, 2));
+    TEST(!pdt.dominates(3, 3));
+    TEST(!pdt.dominates(0, 1));
+    TEST(!pdt.dominates(0, 2));
+    TEST(!pdt.dominates(0, 3));
+    TEST(!pdt.dominates(1, 2));
+    TEST(!pdt.dominates(1, 3));
+    TEST(!pdt.dominates(2, 3));
+
+    return true;
+}
+
+bool testPostDominance3(void) {
+    using Node = DominatorTree::Node;
+
+    static const Program &p = INSIST_PARSE(R"(
+        (preamble (version 0.0) (source hand))
+        (variables)
+        (functions
+          (@f void ((i8 %c)) (
+            (!a ((brif %c !b !c)))
+            (!b ((br !z)))
+            (!c ((br !z)))
+            (!d ((brif %c !c !z)))
+            (!e ((br !b)))
+            (!f ((br !f)))
+            (!z ((ret void))))))
+    )");
+
+    const ControlFlowGraph &cfg = ControlFlowGraph(p.functions[0].body.value());
+    const DominatorTree &pdt = DominatorTree(cfg, DominatorTree::Kind::POSTDOM);
+
+    static const Node &na = Node(0, "!a", std::vector<Node>());
+    static const Node &nc = Node(2, "!c", std::vector<Node>());
+    static const Node &nd = Node(3, "!d", std::vector<Node>());
+    static const Node &ne = Node(4, "!e", std::vector<Node>());
+    static const Node &nb = Node(1, "!b", {ne});
+    static const Node &nz = Node(6, "!z", {na, nb, nc, nd});
+    static const Node &nf = Node(5, "!f", std::vector<Node>());
+
+    TEST(pdt.root == nz);
+    const std::vector<Node> &eu = {nf};
+    TEST(pdt.unreachables == eu);
+
+    TEST(pdt.dominates(6, 0));
+    TEST(pdt.dominates(6, 1));
+    TEST(pdt.dominates(6, 2));
+    TEST(pdt.dominates(6, 3));
+    TEST(pdt.dominates(6, 4));
+    TEST(pdt.dominates(1, 4));
+
+    TEST(!pdt.dominates(0, 0));
+    TEST(!pdt.dominates(0, 1));
+    TEST(!pdt.dominates(0, 2));
+    TEST(!pdt.dominates(0, 3));
+    TEST(!pdt.dominates(0, 4));
+    TEST(!pdt.dominates(0, 5));
+    TEST(!pdt.dominates(0, 6));
+    TEST(!pdt.dominates(1, 0));
+    TEST(!pdt.dominates(1, 1));
+    TEST(!pdt.dominates(1, 2));
+    TEST(!pdt.dominates(1, 3));
+    TEST(!pdt.dominates(1, 5));
+    TEST(!pdt.dominates(1, 6));
+    TEST(!pdt.dominates(2, 0));
+    TEST(!pdt.dominates(2, 1));
+    TEST(!pdt.dominates(2, 2));
+    TEST(!pdt.dominates(2, 3));
+    TEST(!pdt.dominates(2, 4));
+    TEST(!pdt.dominates(2, 5));
+    TEST(!pdt.dominates(2, 6));
+    TEST(!pdt.dominates(3, 0));
+    TEST(!pdt.dominates(3, 1));
+    TEST(!pdt.dominates(3, 2));
+    TEST(!pdt.dominates(3, 3));
+    TEST(!pdt.dominates(3, 4));
+    TEST(!pdt.dominates(3, 5));
+    TEST(!pdt.dominates(3, 6));
+    TEST(!pdt.dominates(4, 0));
+    TEST(!pdt.dominates(4, 1));
+    TEST(!pdt.dominates(4, 2));
+    TEST(!pdt.dominates(4, 3));
+    TEST(!pdt.dominates(4, 4));
+    TEST(!pdt.dominates(4, 5));
+    TEST(!pdt.dominates(4, 6));
+    TEST(!pdt.dominates(5, 0));
+    TEST(!pdt.dominates(5, 1));
+    TEST(!pdt.dominates(5, 2));
+    TEST(!pdt.dominates(5, 3));
+    TEST(!pdt.dominates(5, 4));
+    TEST(!pdt.dominates(5, 5));
+    TEST(!pdt.dominates(5, 6));
+
+
+    return true;
+}
