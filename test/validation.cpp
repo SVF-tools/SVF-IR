@@ -568,37 +568,46 @@ bool testCheckUndeclaredBlocks(void) {
         return Err("Block '" + name + "' undeclared.", span);
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (@fn void () ((!1 ((br !2))))))
-    )";
+    )");
     const Err &ee1 = undecErr("!2", Span(Loc(4, 43), Loc(4, 45)));
-    const std::optional<Err> &ae1 = checkUndeclaredBlocks(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkUndeclaredBlocks(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (@fn void () ((!1 ((brif (i8 0) !1 !2))))))
-    )";
+    )");
     const Err &ee2 = undecErr("!2", Span(Loc(4, 55), Loc(4, 57)));
-    const std::optional<Err> &ae2 = checkUndeclaredBlocks(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkUndeclaredBlocks(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
-          (@fn void () ((!x ((ret void)))))
-          (@fn void () ((!y ((phi %x (((i32 5) !y) ((i32 4) !x))))))))
-    )";
-    const Err &ee3 = undecErr("!x", Span(Loc(6, 61), Loc(6, 63)));
-    const std::optional<Err> &ae3 = checkUndeclaredBlocks(INSIST_PARSE(src3));
+          (@f void () ((!x ((ret void)))))
+          (@g void () ((!y ((phi %x (((i32 5) !y) ((i32 4) !x))) (ret void))))))
+    )");
+    const Err &ee3 = undecErr("!x", Span(Loc(6, 60), Loc(6, 62)));
+    const std::optional<Err> &ae3 = checkUndeclaredBlocks(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
     // TODO: correct programs.
 
@@ -611,38 +620,48 @@ bool testCheckUndeclaredGlobals(void) {
         return Err("Global '" + name + "' undeclared.", span);
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo @bar))
         (functions)
-    )";
+    )");
     const Err &ee1 = undecErr("@bar", Span(Loc(3, 26), Loc(3, 30)));
-    const std::optional<Err> &ae1 = checkUndeclaredGlobals(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkUndeclaredGlobals(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque))
         (functions
-          (@fn void () ( (!1 ((store (ptr null) @foo) (load (i32 %a) @foo2))))))
-    )";
-    const Err &ee2 = undecErr("@foo2", Span(Loc(5, 70), Loc(5, 75)));
-    const std::optional<Err> &ae2 = checkUndeclaredGlobals(INSIST_PARSE(src2));
+          (@fn void () (
+            (!1 ((store (ptr null) @foo) (load (i32 %a) @foo2) (ret void))))))
+    )");
+    const Err &ee2 = undecErr("@foo2", Span(Loc(6, 57), Loc(6, 62)));
+    const std::optional<Err> &ae2 = checkUndeclaredGlobals(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo @foo))
         (functions
-          (@fn ptr () ( (!1 ((store (ptr null) @foo) (ret @fn)))))
-          (@fnn void () ( (!2 ((call void @void ((i32 2))))))))
-    )";
-    const Err &ee3 = undecErr("@void", Span(Loc(6, 43), Loc(6, 48)));
-    const std::optional<Err> &ae3 = checkUndeclaredGlobals(INSIST_PARSE(src3));
+          (@fn ptr () ((!1 ((store (ptr null) @foo) (ret @fn)))))
+          (@fnn void () ((!2 ((call void @void ((i32 2))) (ret void))))))
+    )");
+    const Err &ee3 = undecErr("@void", Span(Loc(6, 42), Loc(6, 47)));
+    const std::optional<Err> &ae3 = checkUndeclaredGlobals(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
     // TODO: correct programs.
 
@@ -665,55 +684,66 @@ bool testCheckEntryPredecessors(void) {
         );
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@f void () ((!1 ((br !1))))))
-    )";
+    )");
     const Err &ee1 =
         predErr("!1", "@f", "(br !1)", Span(Loc(5, 29), Loc(5, 36)));
-    const std::optional<Err> &ae1 = checkEntryPredecessors(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkEntryPredecessors(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@f void () ((!1 ((ret void)))))
           (@g void () ((!x ((ret void))) (!y ((brif (i8 1) !y !x))))))
-    )";
+    )");
     const Err &ee2 = predErr(
-            "!x", "@g", "(brif (i8 1) !y !x)", Span(Loc(6, 47), Loc(6, 66))
-        );
-    const std::optional<Err> &ae2 = checkEntryPredecessors(INSIST_PARSE(src2));
+        "!x", "@g", "(brif (i8 1) !y !x)", Span(Loc(6, 47), Loc(6, 66))
+    );
+    const std::optional<Err> &ae2 = checkEntryPredecessors(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@f void () ((!1 ((ret void)))))
           (@g void () ((!x ((ret void))) (!y ((brif (i8 1) !x !y))))))
-    )";
+    )");
     const Err &ee3 = predErr(
         "!x", "@g", "(brif (i8 1) !x !y)", Span(Loc(6, 47), Loc(6, 66))
     );
-    const std::optional<Err> &ae3 = checkEntryPredecessors(INSIST_PARSE(src3));
+    const std::optional<Err> &ae3 = checkEntryPredecessors(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
-    const std::string &src4 = R"(
+    const Program &p4 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@f void () ((!1 ((br !2))) (!2 ((ret void)))))
           (@g void () ((!2 ((ret void))))))
-    )";
-    const std::optional<Err> &ae4 = checkEntryPredecessors(INSIST_PARSE(src4));
+    )");
+    const std::optional<Err> &ae4 = checkEntryPredecessors(p4);
     TEST(!ae4.has_value());
+    const Result<TypedProgram> &tae4 = typeProgram(p4);
+    TEST(!is<Err>(tae4));
 
     // TODO: correct programs.
 
@@ -755,53 +785,62 @@ bool testCheckPhiStmtArgs(void) {
         );
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn void () (
             (!1 ((br !2)))
             (!2 ((phi %x (((i8 1) !1) ((i8 2) !1))) (ret void))))))
-    )";
+    )");
     const Err &ee1 = dupPredErr(
         "!1", "(phi %x (((i8 1) !1) ((i8 2) !1)))", Span(Loc(7, 39), Loc(7, 50))
     );
-    const std::optional<Err> &ae1 = checkPhiStmtArgs(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkPhiStmtArgs(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn void () (
             (!1 ((br !2)))
             (!2 ((phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1))) (br !2))))))
-    )";
+    )");
     const Err &ee2 = dupPredErr(
         "!1",
         "(phi %x (((i8 1) !1) ((i8 2) !2) ((i8 3) !1)))",
         Span(Loc(7, 51), Loc(7, 62))
     );
-    const std::optional<Err> &ae2 = checkPhiStmtArgs(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkPhiStmtArgs(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn void () (
             (!1 ((phi %a (((ptr null) !1))) (ret void))))))
-    )";
+    )");
     const Err &ee3 = notPredErr(
         "!1", "(phi %a (((ptr null) !1)))", Span(Loc(6, 27), Loc(6, 42))
     );
-    const std::optional<Err> &ae3 = checkPhiStmtArgs(INSIST_PARSE(src3));
+    const std::optional<Err> &ae3 = checkPhiStmtArgs(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
-    const std::string &src4 = R"(
+    const Program &p4 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -809,15 +848,18 @@ bool testCheckPhiStmtArgs(void) {
             (!1 ((br !2)))
             (!2 ((br !3)))
             (!3 ((phi %y ((%x !2) (%x !1))) (ret %y))))))
-    )";
+    )");
     const Err &ee4 = notPredErr(
         "!1", "(phi %y ((%x !2) (%x !1)))", Span(Loc(8, 35), Loc(8, 42))
     );
-    const std::optional<Err> &ae4 = checkPhiStmtArgs(INSIST_PARSE(src4));
+    const std::optional<Err> &ae4 = checkPhiStmtArgs(p4);
     TEST(ae4.has_value());
     TEST(ae4.value() == ee4);
+    const Result<TypedProgram> &tae4 = typeProgram(p4);
+    TEST(is<Err>(tae4));
+    TEST(get<Err>(tae4) == ee4);
 
-    const std::string &src5 = R"(
+    const Program &p5 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -825,15 +867,18 @@ bool testCheckPhiStmtArgs(void) {
             (!1 ((br !3)))
             (!2 ((br !3)))
             (!3 ((phi %y ((%x !2))) (ret %y))))))
-    )";
+    )");
     const Err &ee5 = incomprehensiveErr(
         "'!1'", false, "(phi %y ((%x !2)))", Span(Loc(8, 18), Loc(8, 36))
     );
-    const std::optional<Err> &ae5 = checkPhiStmtArgs(INSIST_PARSE(src5));
+    const std::optional<Err> &ae5 = checkPhiStmtArgs(p5);
     TEST(ae5.has_value());
     TEST(ae5.value() == ee5);
+    const Result<TypedProgram> &tae5 = typeProgram(p5);
+    TEST(is<Err>(tae5));
+    TEST(get<Err>(tae5) == ee5);
 
-    const std::string &src6 = R"(
+    const Program &p6 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -843,16 +888,19 @@ bool testCheckPhiStmtArgs(void) {
             (!b ((br !2)))
             (!c ((brif (i8 1) !2 !2)))
             (!2 ((phi %y ((%x !1))) (ret %y))))))
-    )";
+    )");
     const Err &ee6 = incomprehensiveErr(
         "'!c', '!b', '!a'",
         true,
         "(phi %y ((%x !1)))",
         Span(Loc(10, 18), Loc(10, 36))
     );
-    const std::optional<Err> &ae6 = checkPhiStmtArgs(INSIST_PARSE(src6));
+    const std::optional<Err> &ae6 = checkPhiStmtArgs(p6);
     TEST(ae6.has_value());
     TEST(ae6.value() == ee6);
+    const Result<TypedProgram> &tae6 = typeProgram(p6);
+    TEST(is<Err>(tae6));
+    TEST(get<Err>(tae6) == ee6);
 
     // TODO: correct programs.
 
@@ -878,31 +926,37 @@ bool testCheckLocalDefBeforeUse(void) {
         );
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (@f i32 () ((!1 ((ret %x))))))
-    )";
+    )");
     const Err &ee1 = useErr("%x", "(ret %x)", Span(Loc(4, 42), Loc(4, 44)));
-    const std::optional<Err> &ae1 = checkLocalDefBeforeUse(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkLocalDefBeforeUse(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
           @f ptr () (
             (!1 ((load (i32 %1) %x) (br !2)))
             (!2 ((alloc stack %x) (ret %x))))))
-    )";
+    )");
     const Err &ee2 =
         useErr("%x", "(load (i32 %1) %x)", Span(Loc(6, 33), Loc(6, 35)));
-    const std::optional<Err> &ae2 = checkLocalDefBeforeUse(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkLocalDefBeforeUse(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -910,13 +964,16 @@ bool testCheckLocalDefBeforeUse(void) {
             (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
             (!2 ((not %a %1) (br !3)))
             (!3 ((ret %a))))))
-    )";
+    )");
     const Err &ee3 = useErr("%a", "(ret %a)", Span(Loc(8, 23), Loc(8, 25)));
-    const std::optional<Err> &ae3 = checkLocalDefBeforeUse(INSIST_PARSE(src3));
+    const std::optional<Err> &ae3 = checkLocalDefBeforeUse(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
-    const std::string &src4 = R"(
+    const Program &p4 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -924,11 +981,13 @@ bool testCheckLocalDefBeforeUse(void) {
             (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
             (!2 ((not %a %1) (br !3)))
             (!3 ((ret %1))))))
-    )";
-    const std::optional<Err> &ae4 = checkLocalDefBeforeUse(INSIST_PARSE(src4));
+    )");
+    const std::optional<Err> &ae4 = checkLocalDefBeforeUse(p4);
     TEST(!ae4.has_value());
+    const Result<TypedProgram> &tae4 = typeProgram(p4);
+    TEST(!is<Err>(tae4));
 
-    const std::string &src5 = R"(
+    const Program &p5 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -936,11 +995,13 @@ bool testCheckLocalDefBeforeUse(void) {
             (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
             (!2 ((not %a %1) (br !3)))
             (!3 ((phi %z ((%1 !2) (%1 !1))) (ret (i32 2)))))))
-    )";
-    const std::optional<Err> &ae5 = checkLocalDefBeforeUse(INSIST_PARSE(src5));
+    )");
+    const std::optional<Err> &ae5 = checkLocalDefBeforeUse(p5);
     TEST(!ae5.has_value());
+    const Result<TypedProgram> &tae5 = typeProgram(p5);
+    TEST(!is<Err>(tae5));
 
-    const std::string &src6 = R"(
+    const Program &p6 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -948,13 +1009,16 @@ bool testCheckLocalDefBeforeUse(void) {
             (!1 ((load (i32 %1) null) (brif %1 !2 !3)))
             (!2 ((not %a %1) (br !3)))
             (!3 ((phi %z ((%a !2) (%a !1))) (ret (i32 2)))))))
-    )";
+    )");
     const Err &ee6 = phiErr("%a", "!1", Span(Loc(8, 35), Loc(8, 42)));
-    const std::optional<Err> &ae6 = checkLocalDefBeforeUse(INSIST_PARSE(src6));
+    const std::optional<Err> &ae6 = checkLocalDefBeforeUse(p6);
     TEST(ae6.has_value());
     TEST(ae6.value() == ee6);
+    const Result<TypedProgram> &tae6 = typeProgram(p6);
+    TEST(is<Err>(tae6));
+    TEST(get<Err>(tae6) == ee6);
 
-    const std::string &src7 = R"(
+    const Program &p7 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -963,13 +1027,16 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %2 (i32 3)) (br !3)))
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%2 !3))) (ret %y))))))
-    )";
+    )");
     const Err &ee7 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
-    const std::optional<Err> &ae7 = checkLocalDefBeforeUse(INSIST_PARSE(src7));
+    const std::optional<Err> &ae7 = checkLocalDefBeforeUse(p7);
     TEST(ae7.has_value());
     TEST(ae7.value() == ee7);
+    const Result<TypedProgram> &tae7 = typeProgram(p7);
+    TEST(is<Err>(tae7));
+    TEST(get<Err>(tae7) == ee7);
 
-    const std::string &src8 = R"(
+    const Program &p8 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -978,13 +1045,16 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %2 (i32 3)) (br !3)))
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%2 !3))) (ret %y))))))
-    )";
+    )");
     const Err &ee8 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
-    const std::optional<Err> &ae8 = checkLocalDefBeforeUse(INSIST_PARSE(src8));
+    const std::optional<Err> &ae8 = checkLocalDefBeforeUse(p8);
     TEST(ae8.has_value());
     TEST(ae8.value() == ee8);
+    const Result<TypedProgram> &tae8 = typeProgram(p8);
+    TEST(is<Err>(tae8));
+    TEST(get<Err>(tae8) == ee8);
 
-    const std::string &src9 = R"(
+    const Program &p9 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions (
@@ -993,9 +1063,11 @@ bool testCheckLocalDefBeforeUse(void) {
             (!2 ((not %2 (i32 3)) (br !3)))
             (!3 ((phi %x ((%1 !1) (%2 !2))) (br !4)))
             (!4 ((phi %y ((%1 !3))) (ret %y))))))
-    )";
-    const std::optional<Err> &ae9 = checkLocalDefBeforeUse(INSIST_PARSE(src9));
+    )");
+    const std::optional<Err> &ae9 = checkLocalDefBeforeUse(p9);
     TEST(!ae9.has_value());
+    const Result<TypedProgram> &tae9 = typeProgram(p9);
+    TEST(!is<Err>(tae9));
 
     // TODO: correct programs.
 
