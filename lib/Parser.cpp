@@ -1724,7 +1724,7 @@ Result<Function> parseFunction(const SExpr &s) {
     ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }
     if (!is<List>(*it)) { return notAList("function parameters", span(*it)); }
-    Result<std::tuple<std::vector<Param>, bool>> paramsr =
+    const Result<std::tuple<std::vector<Param>, bool>> &paramsr =
         parseFunctionParams(get<List>(*it));
     if (is<Err>(paramsr)) { return get<Err>(paramsr); }
     const std::vector<Param> &params = get<0>(getVal(paramsr));
