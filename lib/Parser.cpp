@@ -1729,9 +1729,7 @@ Result<std::vector<BasicBlock>> parseFunctionBlocks(const SExpr &s) {
     return blocks;
 }
 
-Result<std::tuple<std::vector<Param>, bool>> parseFunctionParams(
-    const List &l
-) {
+Result<std::pair<std::vector<Param>, bool>> parseFunctionParams(const List &l) {
     std::vector<Param> params;
     bool vararg = false;
     for (size_t i = 0; i < l.children.size(); ++i) {
@@ -1759,7 +1757,7 @@ Result<std::tuple<std::vector<Param>, bool>> parseFunctionParams(
         }
     }
 
-    return std::make_tuple(params, vararg);
+    return std::make_pair(params, vararg);
 }
 
 /// <function>
@@ -1782,13 +1780,13 @@ Result<Function> parseFunction(const SExpr &s) {
     ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }
     if (!is<List>(*it)) { return notAList("function parameters", span(*it)); }
-    const Result<std::tuple<std::vector<Param>, bool>> &paramsr =
+    const Result<std::pair<std::vector<Param>, bool>> &paramsr =
         parseFunctionParams(get<List>(*it));
     if (is<Err>(paramsr)) { return get<Err>(paramsr); }
-    const std::tuple<std::vector<Param>, bool> &fullParams =
-        get<std::tuple<std::vector<Param>, bool>>(paramsr);
-    const std::vector<Param> &params = get<0>(fullParams);
-    const bool vararg = get<1>(fullParams);
+    const std::pair<std::vector<Param>, bool> &fullParams =
+        get<std::pair<std::vector<Param>, bool>>(paramsr);
+    const std::vector<Param> &params = fullParams.first;
+    const bool vararg = fullParams.second;
 
     ++it;
     if (it == end) {
