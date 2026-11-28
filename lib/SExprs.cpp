@@ -69,7 +69,7 @@ bool skipNonSignificant(InputStream &stream) {
 /// Parse an Atom. stream must point to the start of the atom.
 /// Very inefficient.
 Result<SExpr, Err> parseAtom(InputStream &stream) {
-    insist(!isDelimiter(stream.peek()));
+    insist(stream.peek() == QUOTE || !isDelimiter(stream.peek()));
 
     Loc start = stream.cursor();
 
