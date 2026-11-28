@@ -115,7 +115,7 @@ Result<MaybeMetadata> parseMaybeMdSuffix(
         Result<Metadata> md = parseMetadata(*pos);
         if (is<Err>(md)) { return get<Err>(md); }
         if (pos + 1 != end) { return listTooLong(desc, span(l)); }
-        return getVal(md);
+        return get<Metadata>(md);
     } else { return std::nullopt; }
     unreachable();
 }
@@ -230,8 +230,8 @@ Result<Id> parseVarId(const SExpr &s) {
     if (!is<Atom>(s)) { return notAnAtom("local/global (var) ID", span(s)); }
     const std::string &text = get<Atom>(s).val;
     if (text.size() < 2) { return shortId("Local/global (var)", span(s)); }
-    if (text[0] == '%') { return getVal(parseLocalId(s)); }
-    else if (text[0] == '@') { return getVal(parseGlobalId(s)); }
+    if (text[0] == '%') { return get<Id>(parseLocalId(s)); }
+    else if (text[0] == '@') { return get<Id>(parseGlobalId(s)); }
     else { return noSpecialCharId("Local/global (var)", "%/@", span(s)); }
 }
 
@@ -254,7 +254,7 @@ Result<TypedId> parseTypedId(const SExpr &s) {
 
     if (it + 1 != end) { return listTooLong("typed (local) ID", sp); }
 
-    return TypedId(getVal(lid), getVal(type), span(s));
+    return TypedId(get<Id>(lid), get<Type>(type), span(s));
 }
 
 /// <param>
@@ -279,7 +279,7 @@ Result<Param> parseParam(const SExpr &s) {
         parseMaybeMdSuffix(it, end, list, "aggregate type");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Param(getVal(id), getVal(type), getVal(md), span(s));
+    return Param(get<Id>(id), get<Type>(type), get<MaybeMetadata>(md), span(s));
 }
 
 Result<TypedConstant> parseTypedConst(const SExpr &s);
@@ -374,12 +374,12 @@ Result<Constant> parseConst(const SExpr &s) {
                         "latter, note:\n  " + get<Err>(vi).toString(),
                         span(*it)
                     );
-                } else { vals.push_back(getVal(vi)); }
+                } else { vals.push_back(get<Id>(vi)); }
             } else {
-                if (is<SeqConstant>(getVal(tc).constant)) {
+                if (is<SeqConstant>(get<TypedConstant>(tc).constant)) {
                     return Err("seq constants must be flattened.", span(*it));
                 }
-                vals.push_back(getVal(tc));
+                vals.push_back(get<TypedConstant>(tc));
             }
         }
 
@@ -410,7 +410,12 @@ Result<TypedConstant> parseTypedConst(const SExpr &s) {
         parseMaybeMdSuffix(it, end, list, "typed constant");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return TypedConstant(getVal(constant), getVal(type), getVal(md), span(s));
+    return TypedConstant(
+        get<Constant>(constant),
+        get<Type>(type),
+        get<MaybeMetadata>(md),
+        span(s)
+    );
 }
 
 /// Version in preamble.
@@ -517,7 +522,7 @@ Result<Preamble> parsePreamble(const SExpr &s) {
 
     if (it + 1 != end) { return listTooLong("preamble", sp); }
 
-    return Preamble(getVal(version), source, span(s));
+    return Preamble(get<Version>(version), source, span(s));
 }
 
 /// <gval>
@@ -527,7 +532,7 @@ Result<Val> parseGVal(const SExpr &s) {
     if (is<Atom>(s)) {
         // Try for <gid>.
         const Result<Id> &gid = parseGlobalId(s);
-        if (!is<Err>(gid)) { return Val(getVal(gid)); }
+        if (!is<Err>(gid)) { return Val(get<Id>(gid)); }
         else {
             return Err(
                 expectation + " "
@@ -540,7 +545,7 @@ Result<Val> parseGVal(const SExpr &s) {
         // Try for <typed-const>
         insist(is<List>(s));
         const Result<TypedConstant> &tc = parseTypedConst(s);
-        if (!is<Err>(tc)) { return Val(getVal(tc)); }
+        if (!is<Err>(tc)) { return Val(get<TypedConstant>(tc)); }
         else {
             return Err(
                 expectation + " "
@@ -559,7 +564,7 @@ Result<Val> parseVal(const SExpr &s) {
         "Expected a typed constant or a local/global (var) ID.";
     if (is<Atom>(s)) {
         const Result<Id> &vid = parseVarId(s);
-        if (!is<Err>(vid)) { return Val(getVal(vid)); }
+        if (!is<Err>(vid)) { return Val(get<Id>(vid)); }
         else {
             return Err(
                 expectation + " "
@@ -571,7 +576,7 @@ Result<Val> parseVal(const SExpr &s) {
     } else {
         insist(is<List>(s));
         const Result<TypedConstant> &tc = parseTypedConst(s);
-        if (!is<Err>(tc)) { return Val(getVal(tc)); }
+        if (!is<Err>(tc)) { return Val(get<TypedConstant>(tc)); }
         else {
             return Err(
                 expectation + " "
@@ -591,12 +596,12 @@ Result<PVal> parsePVal(const SExpr &s) {
     }
 
     const Result<Constant> &c = parseConst(s);
-    if (!is<Err>(c) && is<NullConstant>(getVal(c))) {
-        return PVal(get<NullConstant>(getVal(c)));
+    if (!is<Err>(c) && is<NullConstant>(get<Constant>(c))) {
+        return PVal(get<NullConstant>(get<Constant>(c)));
     }
 
     const Result<Id> &vid = parseVarId(s);
-    if (!is<Err>(vid)) { return PVal(getVal(vid)); }
+    if (!is<Err>(vid)) { return PVal(get<Id>(vid)); }
     else {
         return Err(
             "Expected a null constant or a local/global (var) ID. "
@@ -615,12 +620,12 @@ Result<IVal> parseIVal(const SExpr &s) {
     }
 
     const Result<Constant> &c = parseConst(s);
-    if (!is<Err>(c) && is<IntConstant>(getVal(c))) {
-        return IVal(get<IntConstant>(getVal(c)));
+    if (!is<Err>(c) && is<IntConstant>(get<Constant>(c))) {
+        return IVal(get<IntConstant>(get<Constant>(c)));
     }
 
     const Result<Id> &vid = parseVarId(s);
-    if (!is<Err>(vid)) { return IVal(getVal(vid)); }
+    if (!is<Err>(vid)) { return IVal(get<Id>(vid)); }
     else {
         return Err(
             "Expected an integer constant or a local/global (var) ID. "
@@ -657,7 +662,7 @@ Result<GlobalVar> parseGlobalVar(const SExpr &s) {
                 get<Err>(gvalr).toString(),
                 span(*it)
             );
-        } else { gval.emplace(getVal(gvalr)); }
+        } else { gval.emplace(get<Val>(gvalr)); }
     }
 
     ++it;
@@ -665,7 +670,7 @@ Result<GlobalVar> parseGlobalVar(const SExpr &s) {
         parseMaybeMdSuffix(it, end, list, "variable");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return GlobalVar(getVal(gid), gval, getVal(md), span(s));
+    return GlobalVar(get<Id>(gid), gval, get<MaybeMetadata>(md), span(s));
 }
 
 /// <variables>
@@ -686,7 +691,7 @@ Result<std::vector<GlobalVar>> parseGlobalVars(const SExpr &s) {
     for (; it != end; ++it) {
         const Result<GlobalVar> &variable = parseGlobalVar(*it);
         if (is<Err>(variable)) { return get<Err>(variable); }
-        variables.push_back(getVal(variable));
+        variables.push_back(get<GlobalVar>(variable));
     }
 
     return variables;
@@ -725,7 +730,7 @@ Result<Statement> parsePhiStmt(const List &l) {
         const Result<Id> &bid = parseBlockId(pair.children[1]);
         if (is<Err>(bid)) { return get<Err>(bid); }
 
-        args.emplace_back(getVal(val), getVal(bid), span(pair));
+        args.emplace_back(get<Val>(val), get<Id>(bid), span(pair));
     }
     if (args.empty()) {
         return Err("Phi statements must have at least one argument.", span(l));
@@ -736,7 +741,9 @@ Result<Statement> parsePhiStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "phi statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(PhiStmt(getVal(lid), args, getVal(md), span(l)));
+    return Statement(
+        PhiStmt(get<Id>(lid), args, get<MaybeMetadata>(md), span(l))
+    );
 }
 
 /// To be called on (call ...) only.
@@ -769,7 +776,7 @@ Result<Statement> parseCallStmt(const List &l) {
                 span(*it)
             );
         }
-        tlid.emplace(getVal(tlidr));
+        tlid.emplace(get<TypedId>(tlidr));
     }
 
     ++it;
@@ -784,7 +791,7 @@ Result<Statement> parseCallStmt(const List &l) {
     for (const auto a : get<List>(*it).children) {
         const Result<Val> &val = parseVal(a);
         if (is<Err>(val)) { return get<Err>(val); }
-        args.push_back(getVal(val));
+        args.push_back(get<Val>(val));
     }
 
     ++it;
@@ -792,7 +799,9 @@ Result<Statement> parseCallStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "call statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(CallStmt(tlid, getVal(callee), args, getVal(md), span(l)));
+    return Statement(
+        CallStmt(tlid, get<PVal>(callee), args, get<MaybeMetadata>(md), span(l))
+    );
 }
 
 /// To be called on (br ...) only.
@@ -812,7 +821,7 @@ Result<Statement> parseBrStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "branch statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(BrStmt(getVal(target), getVal(md), span(l)));
+    return Statement(BrStmt(get<Id>(target), get<MaybeMetadata>(md), span(l)));
 }
 
 /// To be called on (brif ...) only.
@@ -844,7 +853,11 @@ Result<Statement> parseBrifStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BrifStmt(
-        getVal(val), getVal(ifTarget), getVal(elseTarget), getVal(md), span(l)
+        get<Val>(val),
+        get<Id>(ifTarget),
+        get<Id>(elseTarget),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -868,7 +881,7 @@ Result<Statement> parseRet(const List &l) {
                 get<Err>(valr).toString(),
                 span(*it)
             );
-        } else { val.emplace(getVal(valr)); }
+        } else { val.emplace(get<Val>(valr)); }
     }
 
     ++it;
@@ -876,7 +889,7 @@ Result<Statement> parseRet(const List &l) {
         parseMaybeMdSuffix(it, end, l, "return statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return RetStmt(val, getVal(md), span(l));
+    return RetStmt(val, get<MaybeMetadata>(md), span(l));
 }
 
 Result <BinaryOpStmt::Op> parseCmpOp(const SExpr &s) {
@@ -998,11 +1011,11 @@ Result<Statement> parseCmpStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BinaryOpStmt(
-        getVal(op),
-        getVal(lid),
-        getVal(left),
-        getVal(right),
-        getVal(md),
+        get<BinaryOpStmt::Op>(op),
+        get<Id>(lid),
+        get<Val>(left),
+        get<Val>(right),
+        get<MaybeMetadata>(md),
         span(l)
     ));
 }
@@ -1041,7 +1054,9 @@ Result<Statement> parseAllocStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "allocation statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(AllocStmt(kind, getVal(lid), getVal(md), span(l)));
+    return Statement(
+        AllocStmt(kind, get<Id>(lid), get<MaybeMetadata>(md), span(l))
+    );
 }
 
 /// To be called on (store ...) only.
@@ -1066,7 +1081,12 @@ Result<Statement> parseStoreStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "store statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(StoreStmt(getVal(val), getVal(dst), getVal(md), span(l)));
+    return Statement(StoreStmt(
+        get<Val>(val),
+        get<PVal>(dst),
+        get<MaybeMetadata>(md),
+        span(l)
+    ));
 }
 
 /// To be called on (load ...) only.
@@ -1093,7 +1113,9 @@ Result<Statement> parseLoadStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "load statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(LoadStmt(getVal(tlid), getVal(src), getVal(md), span(l)));
+    return Statement(LoadStmt(
+        get<TypedId>(tlid), get<PVal>(src), get<MaybeMetadata>(md), span(l)
+    ));
 }
 
 /// To be called on (field ...) only.
@@ -1126,9 +1148,13 @@ Result<Statement> parseFieldStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "field statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(
-        FieldStmt(getVal(lid), getVal(src), getVal(index), getVal(md), span(l))
-    );
+    return Statement(FieldStmt(
+        get<Id>(lid),
+        get<PVal>(src),
+        get<IVal>(index),
+        get<MaybeMetadata>(md),
+        span(l)
+    ));
 }
 
 /// To be called on (bitcast ...) only.
@@ -1159,7 +1185,11 @@ Result<Statement> parseBitCastStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BitCastStmt(
-        getVal(lid), getVal(val), getVal(type), getVal(md), span(l)
+        get<Id>(lid),
+        get<Val>(val),
+        get<Type>(type),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1242,7 +1272,12 @@ Result<Statement> parseConvertStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(ConvertStmt(
-        getVal(lid), getVal(val), getVal(type), extKind, getVal(md), span(l)
+        get<Id>(lid),
+        get<Val>(val),
+        get<Type>(type),
+        extKind,
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1284,7 +1319,12 @@ Result<Statement> parseAddMulSubStmt(const List &l) {
     else { unreachable(); }
 
     return Statement(BinaryOpStmt(
-        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+        op,
+        get<Id>(lid),
+        get<Val>(left),
+        get<Val>(right),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1336,19 +1376,19 @@ Result<Statement> parseDivRemStmt(const List &l) {
             );
         }
     }
-    const Id &lid = getVal(lidr);
+    const Id &lid = get<Id>(lidr);
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "left operand", sp); }
     const Result<Val> &leftr = parseVal(*it);
     if (is<Err>(leftr)) { return get<Err>(leftr); }
-    const Val &left = getVal(leftr);
+    const Val &left = get<Val>(leftr);
 
     ++it;
     if (it == end) { return listCutShort(stmtDesc, "right operand", sp); }
     const Result<Val> &rightr = parseVal(*it);
     if (is<Err>(rightr)) { return get<Err>(rightr); }
-    const Val &right = getVal(rightr);
+    const Val &right = get<Val>(rightr);
 
     ++it;
     const Result<MaybeMetadata> &md =
@@ -1372,7 +1412,9 @@ Result<Statement> parseDivRemStmt(const List &l) {
         }
     } else { unreachable(); }
 
-    return Statement(BinaryOpStmt(op, lid, left, right, getVal(md), span(l)));
+    return Statement(
+        BinaryOpStmt(op, lid, left, right, get<MaybeMetadata>(md), span(l))
+    );
 }
 
 /// To be called on (not ...) only.
@@ -1397,7 +1439,11 @@ Result<Statement> parseNotStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(UnaryOpStmt(
-        UnaryOpStmt::Op::NOT, getVal(lid), getVal(val), getVal(md), span(l)
+        UnaryOpStmt::Op::NOT,
+        get<Id>(lid),
+        get<Val>(val),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1445,7 +1491,12 @@ Result<Statement> parseAndOrXorShiftlStmt(const List &l) {
     else { unreachable(); }
 
     return Statement(BinaryOpStmt(
-        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+        op,
+        get<Id>(lid),
+        get<Val>(left),
+        get<Val>(right),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1498,7 +1549,12 @@ Result<Statement> parseShiftrStmt(const List &l) {
     if (is<Err>(md)) { return get<Err>(md); }
 
     return Statement(BinaryOpStmt(
-        op, getVal(lid), getVal(left), getVal(right), getVal(md), span(l)
+        op,
+        get<Id>(lid),
+        get<Val>(left),
+        get<Val>(right),
+        get<MaybeMetadata>(md),
+        span(l)
     ));
 }
 
@@ -1525,9 +1581,9 @@ Result<Statement> parseVarargStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "vararg statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(
-        VarargStmt(getVal(tlid), getVal(val), getVal(md), span(l))
-    );
+    return Statement(VarargStmt(
+        get<TypedId>(tlid), get<IVal>(val), get<MaybeMetadata>(md), span(l)
+    ));
 }
 
 /// To be called on (blackhole ...) only.
@@ -1576,7 +1632,7 @@ Result<Statement> parseBlackholeStmt(const List &l) {
                 get<Err>(tlidr).toString(),
                 span(*it)
             );
-        } else { tlid.emplace(getVal(tlidr)); }
+        } else { tlid.emplace(get<TypedId>(tlidr)); }
     }
 
     ++it;
@@ -1584,7 +1640,9 @@ Result<Statement> parseBlackholeStmt(const List &l) {
         parseMaybeMdSuffix(it, end, l, "blackhole statement");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Statement(BlackholeStmt(pure, tlid, getVal(md), span(l)));
+    return Statement(
+        BlackholeStmt(pure, tlid, get<MaybeMetadata>(md), span(l))
+    );
 }
 
 /// <stmt>
@@ -1648,7 +1706,7 @@ Result<BasicBlock> parseBasicBlock(const SExpr &s) {
     for (auto s : get<List>(*it).children) {
         const Result<Statement> &stmt = parseStmt(s);
         if (is<Err>(stmt)) { return get<Err>(stmt); }
-        stmts.push_back(getVal(stmt));
+        stmts.push_back(get<Statement>(stmt));
     }
 
     ++it;
@@ -1656,7 +1714,7 @@ Result<BasicBlock> parseBasicBlock(const SExpr &s) {
         parseMaybeMdSuffix(it, end, l, "basic block");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return BasicBlock(getVal(bid), stmts, getVal(md), span(s));
+    return BasicBlock(get<Id>(bid), stmts, get<MaybeMetadata>(md), span(s));
 }
 
 Result<std::vector<BasicBlock>> parseFunctionBlocks(const SExpr &s) {
@@ -1665,7 +1723,7 @@ Result<std::vector<BasicBlock>> parseFunctionBlocks(const SExpr &s) {
     for (auto rawBlock : get<List>(s).children) {
         const Result<BasicBlock> &block = parseBasicBlock(rawBlock);
         if (is<Err>(block)) { return get<Err>(block); }
-        blocks.push_back(getVal(block));
+        blocks.push_back(get<BasicBlock>(block));
     }
 
     return blocks;
@@ -1678,7 +1736,7 @@ Result<std::tuple<std::vector<Param>, bool>> parseFunctionParams(
     bool vararg = false;
     for (size_t i = 0; i < l.children.size(); ++i) {
         const Result<Param> &param = parseParam(l.children[i]);
-        if (!is<Err>(param)) { params.push_back(getVal(param)); }
+        if (!is<Err>(param)) { params.push_back(get<Param>(param)); }
         else {
             insist(is<Err>(param));
             if (i == l.children.size() - 1) {
@@ -1713,13 +1771,13 @@ Result<Function> parseFunction(const SExpr &s) {
     if (it == end) { return listCutShort("function", "name", span(s)); }
     const Result<Id> &gidr = parseGlobalId(*it);
     if (is<Err>(gidr)) { return get<Err>(gidr); }
-    const Id &gid = getVal(gidr);
+    const Id &gid = get<Id>(gidr);
 
     ++it;
     if (it == end) { return listCutShort("function", "return type", span(s)); }
     const Result<Type> &typer = parseType(*it);
     if (is<Err>(typer)) { return get<Err>(typer); }
-    const Type &type = getVal(typer);
+    const Type &type = get<Type>(typer);
 
     ++it;
     if (it == end) { return listCutShort("function", "parameters", span(s)); }
@@ -1727,8 +1785,10 @@ Result<Function> parseFunction(const SExpr &s) {
     const Result<std::tuple<std::vector<Param>, bool>> &paramsr =
         parseFunctionParams(get<List>(*it));
     if (is<Err>(paramsr)) { return get<Err>(paramsr); }
-    const std::vector<Param> &params = get<0>(getVal(paramsr));
-    const bool vararg = get<1>(getVal(paramsr));
+    const std::tuple<std::vector<Param>, bool> &fullParams =
+        get<std::tuple<std::vector<Param>, bool>>(paramsr);
+    const std::vector<Param> &params = get<0>(fullParams);
+    const bool vararg = get<1>(fullParams);
 
     ++it;
     if (it == end) {
@@ -1757,7 +1817,7 @@ Result<Function> parseFunction(const SExpr &s) {
                 span(*it)
             );
         }
-        bbs.emplace(getVal(bbsr));
+        bbs.emplace(get<std::vector<BasicBlock>>(bbsr));
     }
 
     ++it;
@@ -1765,7 +1825,9 @@ Result<Function> parseFunction(const SExpr &s) {
         parseMaybeMdSuffix(it, end, l, "function");
     if (is<Err>(md)) { return get<Err>(md); }
 
-    return Function(gid, params, vararg, type, bbs, getVal(md), span(s));
+    return Function(
+        gid, params, vararg, type, bbs, get<MaybeMetadata>(md), span(s)
+    );
 }
 
 /// <functions>
@@ -1786,7 +1848,7 @@ Result<std::vector<Function>> parseFunctions(const SExpr &s) {
     for (; it != end; ++it) {
         const Result<Function> &function = parseFunction(*it);
         if (is<Err>(function)) { return get<Err>(function); }
-        functions.push_back(getVal(function));
+        functions.push_back(get<Function>(function));
     }
 
     return functions;
@@ -1815,7 +1877,7 @@ Result<Program> parseProgram(SExprSeq ss) {
     if (it != end) {
         const Result<Metadata> &mdr = parseMetadata(*it);
         if (is<Err>(mdr)) { return get<Err>(mdr); }
-        md.emplace(getVal(mdr));
+        md.emplace(get<Metadata>(mdr));
 
         if (it + 1 != end) {
             return Err("Unexpected element after program metadata.");
@@ -1823,9 +1885,9 @@ Result<Program> parseProgram(SExprSeq ss) {
     }
 
     return Program(
-        getVal(preamble),
-        getVal(variables),
-        getVal(functions),
+        get<Preamble>(preamble),
+        get<std::vector<GlobalVar>>(variables),
+        get<std::vector<Function>>(functions),
         md,
         Span(span(*(ss.begin())).start, span(*(ss.end() - 1)).end)
     );

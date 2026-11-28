@@ -567,7 +567,7 @@ Result<TypedProgram> typeProgram(const Program &p) {
 
     const Result<SymbolTable> &syms = buildSymbolTable(p);
     if (is<Err>(syms)) { return get<Err>(syms); }
-    else { return TypedProgram(p, getVal(syms)); }
+    else { return TypedProgram(p, get<SymbolTable>(syms)); }
     unreachable();
 }
 

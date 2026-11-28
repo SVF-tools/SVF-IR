@@ -80,12 +80,18 @@ bool testCheckConstantTypes(void) {
     const std::optional<Err> &ae2 = checkConstantTypes(source2(c2));
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(source2(c2));
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
     const std::string &c3 = "(i8 null)";
     const Err &ee3 = decErr("i8", "pointer", "null", c3, span1(c3));
     const std::optional<Err> &ae3 = checkConstantTypes(source1(c3));
     TEST(ae3.has_value())
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(source1(c3));
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ae3);
 
     const std::string &c4 = "(ptr (seq (i32 5)))";
     const Err &ee4 =
@@ -93,30 +99,45 @@ bool testCheckConstantTypes(void) {
     const std::optional<Err> &ae4 = checkConstantTypes(source2(c4));
     TEST(ae4.has_value());
     TEST(ae4.value() == ee4);
+    const Result<TypedProgram> &tae4 = typeProgram(source2(c4));
+    TEST(is<Err>(tae4));
+    TEST(get<Err>(tae4) == ae4);
 
     const std::string &c5 = "((agg 3) 5.5)";
     const Err &ee5 = decErr("(agg 3)", "float", "5.5", c5, span1(c5));
     const std::optional<Err> &ae5 = checkConstantTypes(source1(c5));
     TEST(ae5.has_value());
     TEST(ae5.value() == ee5);
+    const Result<TypedProgram> &tae5 = typeProgram(source1(c5));
+    TEST(is<Err>(tae5));
+    TEST(get<Err>(tae5) == ae5);
 
     const std::string &c6 = "((agg 0) (seq (i8 0) (i32 6)))";
     const Err &ee6 = aggErr(0, 2, c6, span2(c6));
     const std::optional<Err> &ae6 = checkConstantTypes(source2(c6));
     TEST(ae6.has_value());
     TEST(ae6.value() == ee6);
+    const Result<TypedProgram> &tae6 = typeProgram(source2(c6));
+    TEST(is<Err>(tae6));
+    TEST(get<Err>(tae6) == ae6);
 
     const std::string &c7 = "((agg 50) (seq))";
     const Err &ee7 = aggErr(50, 0, c7, span1(c7));
     const std::optional<Err> &ae7 = checkConstantTypes(source1(c7));
     TEST(ae7.has_value());
     TEST(ae7.value() == ee7);
+    const Result<TypedProgram> &tae7 = typeProgram(source1(c7));
+    TEST(is<Err>(tae7));
+    TEST(get<Err>(tae7) == ae7);
 
     const std::string &c8 = "((agg 2) (seq (i32 1)))";
     const Err &ee8 = aggErr(2, 1, c8, span2(c8));
     const std::optional<Err> &ae8 = checkConstantTypes(source2(c8));
     TEST(ae8.has_value());
     TEST(ae8.value() == ee8);
+    const Result<TypedProgram> &tae8 = typeProgram(source2(c8));
+    TEST(is<Err>(tae8));
+    TEST(get<Err>(tae8) == ae8);
 
     const std::string &c9 = "((agg 1) (seq (f64 5)))";
     const Err &ee9 =
@@ -124,6 +145,9 @@ bool testCheckConstantTypes(void) {
     const std::optional<Err> &ae9 = checkConstantTypes(source1(c9));
     TEST(ae9.has_value());
     TEST(ae9.value() == ee9);
+    const Result<TypedProgram> &tae9 = typeProgram(source1(c9));
+    TEST(is<Err>(tae9));
+    TEST(get<Err>(tae9) == ae9);
 
     // TODO: correct programs.
 

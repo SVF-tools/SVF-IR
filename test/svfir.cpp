@@ -21,7 +21,7 @@ bool roundtrip(void) {
     )");
     const Result<Program> res1 = parseString(program1);
     TEST(!is<Err>(res1));
-    TEST(pretty(getVal(res1)) == program1);
+    TEST(pretty(get<Program>(res1)) == program1);
 
     const std::string &program2 = strip(R"(
         (preamble
@@ -109,7 +109,7 @@ bool roundtrip(void) {
     )");
     const Result<Program> res2 = parseString(program2);
     TEST(!is<Err>(res2));
-    TEST(pretty(getVal(res2)) == program2);
+    TEST(pretty(get<Program>(res2)) == program2);
 
     const std::string program3 = strip(R"(
         (preamble
@@ -122,7 +122,7 @@ bool roundtrip(void) {
     )");
     const Result<Program> res3 = parseString(program3);
     TEST(!is<Err>(res3));
-    TEST(pretty(getVal(res3)) == program3);
+    TEST(pretty(get<Program>(res3)) == program3);
 
     return true;
 }

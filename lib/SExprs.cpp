@@ -122,7 +122,7 @@ Result<SExpr> parseList(InputStream &stream) {
         else {
             const Result<SExpr> &res = SVFIR::SExprs::parse(stream);
             if (is<Err>(res)) { return get<Err>(res); }
-            children.push_back(getVal(res));
+            children.push_back(get<SExpr>(res));
         }
         c = stream.peek();
     }
@@ -161,7 +161,7 @@ Result<SExprSeq> parseSeq(InputStream &stream) {
         else {
             const Result<SExpr> &res = parse(stream);
             if (is<Err>(res)) { return get<Err>(res); }
-            seq.push_back(getVal(res));
+            seq.push_back(get<SExpr>(res));
         }
     }
 
