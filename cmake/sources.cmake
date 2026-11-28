@@ -9,7 +9,6 @@ set(SVFIR_HEADERS
   include/SVFIR/InputStream.h
   include/SVFIR/Linker.h
   include/SVFIR/Pretty.h
-  include/SVFIR/Result.h
   include/SVFIR/SExprs.h
   include/SVFIR/Span.h
   include/SVFIR/Statements.h

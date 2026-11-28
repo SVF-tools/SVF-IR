@@ -1,7 +1,6 @@
 #include "SVFIR/Contracts.h"
 #include "SVFIR/Err.h"
 #include "SVFIR/InputStream.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/SExprs.h"
 #include "SVFIR/Variant.h"
 
@@ -68,7 +67,7 @@ bool skipNonSignificant(InputStream &stream) {
 
 /// Parse an Atom. stream must point to the start of the atom.
 /// Very inefficient.
-Result<SExpr, Err> parseAtom(InputStream &stream) {
+Result<SExpr> parseAtom(InputStream &stream) {
     insist(stream.peek() == QUOTE || !isDelimiter(stream.peek()));
 
     Loc start = stream.cursor();
@@ -110,7 +109,7 @@ Result<SExpr, Err> parseAtom(InputStream &stream) {
 }
 
 /// Parse a List. stream must point to the start of the list.
-Result<SExpr, Err> parseList(InputStream &stream) {
+Result<SExpr> parseList(InputStream &stream) {
     insist(stream.peek() == LPAREN);
 
     SExprSeq children = SExprSeq();
@@ -121,7 +120,7 @@ Result<SExpr, Err> parseList(InputStream &stream) {
     while (!stream.atEof() && c != RPAREN) {
         if (skipNonSignificant(stream)) { }
         else {
-            const Result<SExpr, Err> &res = SVFIR::SExprs::parse(stream);
+            const Result<SExpr> &res = SVFIR::SExprs::parse(stream);
             if (is<Err>(res)) { return get<Err>(res); }
             children.push_back(getVal(res));
         }
@@ -141,7 +140,7 @@ Result<SExpr, Err> parseList(InputStream &stream) {
 namespace SVFIR {
 namespace SExprs {
 
-Result<SExpr, Err> parse(InputStream &stream) {
+Result<SExpr> parse(InputStream &stream) {
     while (!stream.atEof()) {
         const char c = stream.peek();
         if (skipNonSignificant(stream)) { }
@@ -155,12 +154,12 @@ Result<SExpr, Err> parse(InputStream &stream) {
     return Err("Expected an s-expression, got nothing.");
 }
 
-Result<SExprSeq, Err> parseSeq(InputStream &stream) {
+Result<SExprSeq> parseSeq(InputStream &stream) {
     SExprSeq seq;
     while (!stream.atEof()) {
         if (skipNonSignificant(stream)) { }
         else {
-            const Result<SExpr, Err> &res = parse(stream);
+            const Result<SExpr> &res = parse(stream);
             if (is<Err>(res)) { return get<Err>(res); }
             seq.push_back(getVal(res));
         }

@@ -13,7 +13,6 @@
 #include "SVFIR/Err.h"
 #include "SVFIR/Index.h"
 #include "SVFIR/Pretty.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Statements.h"
 #include "SVFIR/TypedProgram.h"
 #include "SVFIR/Validation.h"
@@ -519,7 +518,7 @@ std::vector<Index> _defUseBlockOrder(const Function &fn) {
 
 namespace SVFIR {
 
-Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
+Result<SymbolTable> buildSymbolTable(const Program &p) {
     SymbolTable::SigMap sigs;
     for (const Function &fn : p.functions) {
         insist(sigs.count(fn.id.name) == 0);
@@ -548,7 +547,7 @@ Result<SymbolTable, Err> buildSymbolTable(const Program &p) {
     return SymbolTable(sigs, fnTables);
 }
 
-Result<TypedProgram, Err> typeProgram(const Program &p) {
+Result<TypedProgram> typeProgram(const Program &p) {
     const std::optional<Err> &ae = analyse(
         p,
         {
@@ -566,7 +565,7 @@ Result<TypedProgram, Err> typeProgram(const Program &p) {
     );
     if (ae.has_value()) { return ae.value(); }
 
-    const Result<SymbolTable, Err> &syms = buildSymbolTable(p);
+    const Result<SymbolTable> &syms = buildSymbolTable(p);
     if (is<Err>(syms)) { return get<Err>(syms); }
     else { return TypedProgram(p, getVal(syms)); }
     unreachable();

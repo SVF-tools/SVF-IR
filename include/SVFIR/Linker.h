@@ -1,7 +1,6 @@
 #include "SVFIR/Ast.h"
 #include "SVFIR/Err.h"
 #include "SVFIR/TypedProgram.h"
-#include "SVFIR/Result.h"
 
 namespace SVFIR {
 
@@ -27,7 +26,7 @@ enum class Linkage { WEAK, STRONG };
 ///  tp2.
 ///  6) if x is opaque in tp1 and a function/variable of the same name is opaque
 ///  in tp2, the resulting program includes x.
-Result<TypedProgram, Err> link(
+Result<TypedProgram> link(
     const TypedProgram &,
     const TypedProgram &,
     const Linkage

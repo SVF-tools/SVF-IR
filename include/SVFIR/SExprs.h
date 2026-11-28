@@ -9,7 +9,6 @@
 
 #include "SVFIR/Err.h"
 #include "SVFIR/InputStream.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Span.h"
 
 namespace SVFIR {
@@ -48,11 +47,11 @@ struct List {
 
 /// Parse an S-expression, including allowance for whitespace or comments at the
 /// start. A comment or whitespace on their own does not make an s-expression.
-Result<SExpr, Err> parse(InputStream &);
+Result<SExpr> parse(InputStream &);
 
 /// Parse a sequence of S-expressions separated by whitespace, comments, or
 /// nothing.
-Result<SExprSeq, Err> parseSeq(InputStream &);
+Result<SExprSeq> parseSeq(InputStream &);
 
 /// Returns true when s is an atom and s's value equals x.
 bool atomEq(const SExpr &s, const std::string &x);

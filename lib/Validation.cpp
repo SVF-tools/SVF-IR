@@ -14,7 +14,6 @@
 #include "SVFIR/Err.h"
 #include "SVFIR/Index.h"
 #include "SVFIR/Pretty.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Statements.h"
 #include "SVFIR/TypedProgram.h"
 #include "SVFIR/Validation.h"

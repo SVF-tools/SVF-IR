@@ -4,18 +4,17 @@
 #include "SVFIR/Ast.h"
 #include "SVFIR/Err.h"
 #include "SVFIR/InputStream.h"
-#include "SVFIR/Result.h"
 
 namespace SVFIR {
 
 /// Parse a <program>, consuming the stream.
 /// See parseFile and parseString for shortcuts.
-Result<Program, Err> parse(InputStream &);
+Result<Program> parse(InputStream &);
 
 /// Parses a <program> from given file.
-Result<Program, Err> parseFile(const std::string &filename);
+Result<Program> parseFile(const std::string &filename);
 /// Parses a <program> from given string.
-Result<Program, Err> parseString(const std::string &str);
+Result<Program> parseString(const std::string &str);
 
 }  // namespacec SVFIR
 

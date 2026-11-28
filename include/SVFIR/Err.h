@@ -6,7 +6,6 @@
 #include <variant>
 
 #include "SVFIR/Contracts.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Span.h"
 #include "SVFIR/Variant.h"
 
@@ -26,10 +25,11 @@ struct Err {
     std::string toString(void) const;
 };
 
-// Special case of Result with an error.
+template <typename T>
+using Result = std::variant<T, Err>;
 
 template <typename T>
-const T &getVal(const Result<T, Err> &res) {
+const T &getVal(const Result<T> &res) {
     insist(is<T>(res));
     return get<T>(res);
 }

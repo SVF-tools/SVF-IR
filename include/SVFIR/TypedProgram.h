@@ -10,7 +10,7 @@ namespace SVFIR {
 
 /// Check program for any semantic errors including name misuses, type errors,
 /// and others, and produce queriable type information.
-Result<struct TypedProgram, Err> typeProgram(const Program &);
+Result<struct TypedProgram> typeProgram(const Program &);
 
 /// Function signature made up of types.
 struct FnSig {
@@ -90,7 +90,7 @@ std::optional<Err> checkConstantTypes(const Program &);
 ///      a matching signature.
 ///  * That typed constants carry appropriate types.
 ////////////////////////////////////////////////////////////////////////////////
-Result<SymbolTable, Err> buildSymbolTable(const Program &);
+Result<SymbolTable> buildSymbolTable(const Program &);
 
 }  // namespace SVFIR
 

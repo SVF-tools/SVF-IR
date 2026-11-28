@@ -2,7 +2,6 @@
 
 #include "SVFIR/Err.h"
 #include "SVFIR/Pretty.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Variant.h"
 
 #include "SVFIR/ControlFlowGraph.h"
@@ -20,7 +19,7 @@ bool roundtrip(void) {
         (variables)
         (functions)
     )");
-    const Result<Program, Err> res1 = parseString(program1);
+    const Result<Program> res1 = parseString(program1);
     TEST(!is<Err>(res1));
     TEST(pretty(getVal(res1)) == program1);
 
@@ -108,7 +107,7 @@ bool roundtrip(void) {
             (!34 (
               (ret void))))))
     )");
-    const Result<Program, Err> res2 = parseString(program2);
+    const Result<Program> res2 = parseString(program2);
     TEST(!is<Err>(res2));
     TEST(pretty(getVal(res2)) == program2);
 
@@ -121,7 +120,7 @@ bool roundtrip(void) {
         (functions
           (@baz void ((ptr %0) ...) opaque))
     )");
-    const Result<Program, Err> res3 = parseString(program3);
+    const Result<Program> res3 = parseString(program3);
     TEST(!is<Err>(res3));
     TEST(pretty(getVal(res3)) == program3);
 

@@ -54,8 +54,8 @@ In `include/SVFIR`:
 * `UnifyReturns.h`. Combine returns in functions with `unifyReturns`.
 * `Validation.h`. Type checking and symbol table construction. Unlikely
   to be need directly.
-* `Contracts.h`, `Err.h`, `Index.h`, `InputStream.h`, `Result.h`, `Span.h`,
-  `SExprs.h`, `Variant.h`. Basic data structures and functions used extensively
+* `Contracts.h`, `Err.h`, `Index.h`, `InputStream.h`, `Span.h`, `SExprs.h`,
+  `Variant.h`. Basic data structures and functions used extensively
   throughout the library.
 
 ## Making changes

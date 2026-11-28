@@ -9,7 +9,6 @@
 #include "SVFIR/Contracts.h"
 #include "SVFIR/Err.h"
 #include "SVFIR/Parser.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/TypedProgram.h"
 
 using namespace SVFIR;
@@ -31,7 +30,7 @@ using TestFunction = std::function<bool(void)>;
 /// This is a macro rather than function so insist gets a better location.
 #define INSIST_PARSE(src)\
     [](const std::string src_) {\
-        const Result<Program, Err> &p = parseString(src_);\
+        const Result<Program> &p = parseString(src_);\
         insist(!is<Err>(p));\
         return get<Program>(p);\
     }(src)
@@ -40,9 +39,9 @@ using TestFunction = std::function<bool(void)>;
 /// This is a macro rather than function so insist gets a better location.
 #define INSIST_TYPED_PARSE(src)\
     [](const std::string src_) {\
-        const Result<Program, Err> &p = parseString(src_);\
+        const Result<Program> &p = parseString(src_);\
         insist(!is<Err>(p));\
-        const Result<TypedProgram, Err> &tp = typeProgram(get<Program>(p));\
+        const Result<TypedProgram> &tp = typeProgram(get<Program>(p));\
         insist(!is<Err>(tp));\
         return get<TypedProgram>(tp);\
     }(src)

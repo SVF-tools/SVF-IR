@@ -4,7 +4,6 @@
 #include "SVFIR/Err.h"
 #include "SVFIR/Pretty.h"
 #include "SVFIR/Span.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/TypedProgram.h"
 #include "SVFIR/Validation.h"
 #include "SVFIR/Variant.h"
@@ -72,7 +71,7 @@ bool testCheckConstantTypes(void) {
     const std::optional<Err> &ae1 = checkConstantTypes(source1(c1));
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
-    const Result<TypedProgram, Err> &tae1 = typeProgram(source1(c1));
+    const Result<TypedProgram> &tae1 = typeProgram(source1(c1));
     TEST(is<Err>(tae1));
     TEST(get<Err>(tae1) == ee1);
 

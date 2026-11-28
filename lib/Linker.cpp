@@ -9,7 +9,6 @@
 #include "SVFIR/Index.h"
 #include "SVFIR/Linker.h"
 #include "SVFIR/TypedProgram.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/Variant.h"
 
 namespace {
@@ -111,7 +110,7 @@ namespace SVFIR {
 
 // TODO: metadata is not handled!
 // TODO: account for version compatibility.
-Result<TypedProgram, Err> link(
+Result<TypedProgram> link(
     const TypedProgram &left,
     const TypedProgram &right,
     const Linkage linkage
@@ -216,7 +215,7 @@ Result<TypedProgram, Err> link(
         }
     }
 
-    const Result<TypedProgram, Err> &newProgram = typeProgram(Program(
+    const Result<TypedProgram> &newProgram = typeProgram(Program(
         Preamble(left.program.preamble.version, "linker", FAB_SPAN),
         linkedGvs,
         linkedFns,

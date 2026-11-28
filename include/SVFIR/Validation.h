@@ -6,7 +6,6 @@
 
 #include "SVFIR/Ast.h"
 #include "SVFIR/Err.h"
-#include "SVFIR/Result.h"
 #include "SVFIR/TypedProgram.h"
 
 namespace SVFIR {
