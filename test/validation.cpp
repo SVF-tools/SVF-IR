@@ -69,49 +69,58 @@ bool testCheckConstantTypes(void) {
     const std::string &c1 = "(i32 1.1)";
     const Err &ee1 = decErr("i32", "float", "1.1", c1, span1(c1));
     const std::optional<Err> &ae1 = checkConstantTypes(source1(c1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &c2 = "(void 1)";
     const Err &ee2 = decErr("void", "integer", "1", c2, span2(c2));
     const std::optional<Err> &ae2 = checkConstantTypes(source2(c2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &c3 = "(i8 null)";
     const Err &ee3 = decErr("i8", "pointer", "null", c3, span1(c3));
     const std::optional<Err> &ae3 = checkConstantTypes(source1(c3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value())
+    TEST(ae3.value() == ee3);
 
     const std::string &c4 = "(ptr (seq (i32 5)))";
     const Err &ee4 =
         decErr("ptr", "aggregation", "(seq (i32 5))", c4, span2(c4));
     const std::optional<Err> &ae4 = checkConstantTypes(source2(c4));
-    TEST(ae4.has_value() && ae4.value() == ee4);
+    TEST(ae4.has_value());
+    TEST(ae4.value() == ee4);
 
     const std::string &c5 = "((agg 3) 5.5)";
     const Err &ee5 = decErr("(agg 3)", "float", "5.5", c5, span1(c5));
     const std::optional<Err> &ae5 = checkConstantTypes(source1(c5));
-    TEST(ae5.has_value() && ae5.value() == ee5);
+    TEST(ae5.has_value());
+    TEST(ae5.value() == ee5);
 
     const std::string &c6 = "((agg 0) (seq (i8 0) (i32 6)))";
     const Err &ee6 = aggErr(0, 2, c6, span2(c6));
     const std::optional<Err> &ae6 = checkConstantTypes(source2(c6));
-    TEST(ae6.has_value() && ae6.value() == ee6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
 
     const std::string &c7 = "((agg 50) (seq))";
     const Err &ee7 = aggErr(50, 0, c7, span1(c7));
     const std::optional<Err> &ae7 = checkConstantTypes(source1(c7));
-    TEST(ae7.has_value() && ae7.value() == ee7);
+    TEST(ae7.has_value());
+    TEST(ae7.value() == ee7);
 
     const std::string &c8 = "((agg 2) (seq (i32 1)))";
     const Err &ee8 = aggErr(2, 1, c8, span2(c8));
     const std::optional<Err> &ae8 = checkConstantTypes(source2(c8));
-    TEST(ae8.has_value() && ae8.value() == ee8);
+    TEST(ae8.has_value());
+    TEST(ae8.value() == ee8);
 
     const std::string &c9 = "((agg 1) (seq (f64 5)))";
     const Err &ee9 =
         decErr("f64", "integer", "5", "(f64 5)", Span(Loc(2, 32), Loc(2, 39)));
     const std::optional<Err> &ae9 = checkConstantTypes(source1(c9));
-    TEST(ae9.has_value() && ae9.value() == ee9);
+    TEST(ae9.has_value());
+    TEST(ae9.value() == ee9);
 
     // TODO: correct programs.
 
@@ -148,7 +157,8 @@ bool testCheckTerminatingStmts(void) {
     const Err &ee1 =
         nonTerminatorErr("(not %z (i8 1))", "!y", Span(Loc(7, 43), Loc(7, 58)));
     const std::optional<Err> &ae1 = checkTerminatingStmts(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -162,7 +172,8 @@ bool testCheckTerminatingStmts(void) {
             "(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36))
         );
     const std::optional<Err> &ae2 = checkTerminatingStmts(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -178,7 +189,8 @@ bool testCheckTerminatingStmts(void) {
             "(phi %p ((%x !x1) (%x !x2)))", "!y", Span(Loc(8, 20), Loc(8, 48))
         );
     const std::optional<Err> &ae3 = checkTerminatingStmts(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -191,7 +203,8 @@ bool testCheckTerminatingStmts(void) {
     const Err &ee4 =
         terminatorErr("(ret void)", "!x", Span(Loc(6, 20), Loc(6, 30)));
     const std::optional<Err> &ae4 = checkTerminatingStmts(INSIST_PARSE(src4));
-    TEST(ae4.has_value() && ae4.value() == ee4);
+    TEST(ae4.has_value());
+    TEST(ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -204,7 +217,8 @@ bool testCheckTerminatingStmts(void) {
     const Err &ee5 =
         terminatorErr("(br !x)", "!y", Span(Loc(7, 20), Loc(7, 27)));
     const std::optional<Err> &ae5 = checkTerminatingStmts(INSIST_PARSE(src5));
-    TEST(ae5.has_value() && ae5.value() == ee5);
+    TEST(ae5.has_value());
+    TEST(ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -218,7 +232,8 @@ bool testCheckTerminatingStmts(void) {
     const Err &ee6 =
         terminatorErr("(brif %o !y !z)", "!z", Span(Loc(8, 42), Loc(8, 57)));
     const std::optional<Err> &ae6 = checkTerminatingStmts(INSIST_PARSE(src6));
-    TEST(ae6.has_value() && ae6.value() == ee6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
 
     // TODO: correct programs.
 
@@ -257,7 +272,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee1 = globalVarErr("@foo", Span(Loc(3, 35), Loc(3, 39)));
     const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -266,7 +282,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee2 = fnErr("@bar", Span(Loc(4, 43), Loc(4, 47)));
     const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -277,7 +294,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee3 = fnErr("@bar", Span(Loc(6, 12), Loc(6, 16)));
     const std::optional<Err> &ae3 = checkDuplicateVars(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     // Locals
 
@@ -289,7 +307,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee4 = paramErr("%bar", Span(Loc(5, 50), Loc(5, 54)));
     const std::optional<Err> &ae4 = checkDuplicateVars(INSIST_PARSE(src4));
-    TEST(ae4.has_value() && ae4.value() == ee4);
+    TEST(ae4.has_value());
+    TEST(ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -299,7 +318,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee5 = localVarErr("%foo", Span(Loc(5, 56), Loc(5, 60)));
     const std::optional<Err> &ae5 = checkDuplicateVars(INSIST_PARSE(src5));
-    TEST(ae5.has_value() && ae5.value() == ee5);
+    TEST(ae5.has_value());
+    TEST(ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -309,7 +329,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee6 = localVarErr("%foo", Span(Loc(5, 55), Loc(5, 59)));
     const std::optional<Err> &ae6 = checkDuplicateVars(INSIST_PARSE(src6));
-    TEST(ae6.has_value() && ae6.value() == ee6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
 
     const std::string &src7 = R"(
         (preamble (version 0.0) (source test))
@@ -321,7 +342,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee7 = localVarErr("%foo", Span(Loc(7, 41), Loc(7, 45)));
     const std::optional<Err> &ae7 = checkDuplicateVars(INSIST_PARSE(src7));
-    TEST(ae7.has_value() && ae7.value() == ee7);
+    TEST(ae7.has_value());
+    TEST(ae7.value() == ee7);
 
     const std::string &src8 = R"(
         (preamble (version 0.0) (source test))
@@ -336,7 +358,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee8 = localVarErr("%foo", Span(Loc(10, 31), Loc(10, 35)));
     const std::optional<Err> &ae8 = checkDuplicateVars(INSIST_PARSE(src8));
-    TEST(ae8.has_value() && ae8.value() == ee8);
+    TEST(ae8.has_value());
+    TEST(ae8.value() == ee8);
 
     const std::string &src9 = R"(
         (preamble (version 0.0) (source test))
@@ -351,7 +374,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee9 = localVarErr("%fld", Span(Loc(10, 49), Loc(10, 53)));
     const std::optional<Err> &ae9 = checkDuplicateVars(INSIST_PARSE(src9));
-    TEST(ae9.has_value() && ae9.value() == ee9);
+    TEST(ae9.has_value());
+    TEST(ae9.value() == ee9);
 
     const std::string &src10 = R"(
         (preamble (version 0.0) (source test))
@@ -366,7 +390,8 @@ bool testCheckDuplicateVars(void) {
     )";
     const Err &ee10 = paramErr("%x", Span(Loc(8, 48), Loc(8, 50)));
     const std::optional<Err> &ae10 = checkDuplicateVars(INSIST_PARSE(src10));
-    TEST(ae10.has_value() && ae10.value() == ee10);
+    TEST(ae10.has_value());
+    TEST(ae10.value() == ee10);
 
     // TODO: correct programs.
 
@@ -386,7 +411,8 @@ bool testCheckDuplicateBlocks(void) {
           (@fn void () ((!1 ((ret void))) (!1 ((ret void)))))))";
     const Err &ee1 = blockErr("!1", Span(Loc(5, 44), Loc(5, 46)));
     const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -400,7 +426,8 @@ bool testCheckDuplicateBlocks(void) {
             (!x ((ret void)))))))";
     const Err &ee2 = blockErr("!x", Span(Loc(10, 14), Loc(10, 16)));
     const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     return true;
 }
@@ -423,7 +450,8 @@ bool testCheckVarargStmts(void) {
     )";
     const Err &ee1 = varargErr("(vararg (i32 %x) 1)", "@fn", Span(Loc(4, 39), Loc(4, 58)));
     const std::optional<Err> &ae1 = checkVarargStmts(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -436,7 +464,8 @@ bool testCheckVarargStmts(void) {
     )";
     const Err &ee2 = varargErr("(vararg (ptr %1) 0)", "@fn", Span(Loc(8, 18), Loc(8, 37)));
     const std::optional<Err> &ae2 = checkVarargStmts(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     // TODO: correct programs.
 
@@ -456,7 +485,8 @@ bool testCheckUndeclaredBlocks(void) {
     )";
     const Err &ee1 = undecErr("!2", Span(Loc(4, 43), Loc(4, 45)));
     const std::optional<Err> &ae1 = checkUndeclaredBlocks(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -465,7 +495,8 @@ bool testCheckUndeclaredBlocks(void) {
     )";
     const Err &ee2 = undecErr("!2", Span(Loc(4, 55), Loc(4, 57)));
     const std::optional<Err> &ae2 = checkUndeclaredBlocks(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -476,7 +507,8 @@ bool testCheckUndeclaredBlocks(void) {
     )";
     const Err &ee3 = undecErr("!x", Span(Loc(6, 61), Loc(6, 63)));
     const std::optional<Err> &ae3 = checkUndeclaredBlocks(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     // TODO: correct programs.
 
@@ -496,7 +528,8 @@ bool testCheckUndeclaredGlobals(void) {
     )";
     const Err &ee1 = undecErr("@bar", Span(Loc(3, 26), Loc(3, 30)));
     const std::optional<Err> &ae1 = checkUndeclaredGlobals(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -506,7 +539,8 @@ bool testCheckUndeclaredGlobals(void) {
     )";
     const Err &ee2 = undecErr("@foo2", Span(Loc(5, 70), Loc(5, 75)));
     const std::optional<Err> &ae2 = checkUndeclaredGlobals(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -517,7 +551,8 @@ bool testCheckUndeclaredGlobals(void) {
     )";
     const Err &ee3 = undecErr("@void", Span(Loc(6, 43), Loc(6, 48)));
     const std::optional<Err> &ae3 = checkUndeclaredGlobals(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     // TODO: correct programs.
 
@@ -549,7 +584,8 @@ bool testCheckEntryPredecessors(void) {
     const Err &ee1 =
         predErr("!1", "@f", "(br !1)", Span(Loc(5, 29), Loc(5, 36)));
     const std::optional<Err> &ae1 = checkEntryPredecessors(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -562,7 +598,8 @@ bool testCheckEntryPredecessors(void) {
             "!x", "@g", "(brif (i8 1) !y !x)", Span(Loc(6, 47), Loc(6, 66))
         );
     const std::optional<Err> &ae2 = checkEntryPredecessors(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -575,7 +612,8 @@ bool testCheckEntryPredecessors(void) {
         "!x", "@g", "(brif (i8 1) !x !y)", Span(Loc(6, 47), Loc(6, 66))
     );
     const std::optional<Err> &ae3 = checkEntryPredecessors(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -639,7 +677,8 @@ bool testCheckPhiStmtArgs(void) {
         "!1", "(phi %x (((i8 1) !1) ((i8 2) !1)))", Span(Loc(7, 39), Loc(7, 50))
     );
     const std::optional<Err> &ae1 = checkPhiStmtArgs(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -655,7 +694,8 @@ bool testCheckPhiStmtArgs(void) {
         Span(Loc(7, 51), Loc(7, 62))
     );
     const std::optional<Err> &ae2 = checkPhiStmtArgs(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -668,7 +708,8 @@ bool testCheckPhiStmtArgs(void) {
         "!1", "(phi %a (((ptr null) !1)))", Span(Loc(6, 27), Loc(6, 42))
     );
     const std::optional<Err> &ae3 = checkPhiStmtArgs(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -683,7 +724,8 @@ bool testCheckPhiStmtArgs(void) {
         "!1", "(phi %y ((%x !2) (%x !1)))", Span(Loc(8, 35), Loc(8, 42))
     );
     const std::optional<Err> &ae4 = checkPhiStmtArgs(INSIST_PARSE(src4));
-    TEST(ae4.has_value() && ae4.value() == ee4);
+    TEST(ae4.has_value());
+    TEST(ae4.value() == ee4);
 
     const std::string &src5 = R"(
         (preamble (version 0.0) (source test))
@@ -698,7 +740,8 @@ bool testCheckPhiStmtArgs(void) {
         "'!1'", false, "(phi %y ((%x !2)))", Span(Loc(8, 18), Loc(8, 36))
     );
     const std::optional<Err> &ae5 = checkPhiStmtArgs(INSIST_PARSE(src5));
-    TEST(ae5.has_value() && ae5.value() == ee5);
+    TEST(ae5.has_value());
+    TEST(ae5.value() == ee5);
 
     const std::string &src6 = R"(
         (preamble (version 0.0) (source test))
@@ -718,7 +761,8 @@ bool testCheckPhiStmtArgs(void) {
         Span(Loc(10, 18), Loc(10, 36))
     );
     const std::optional<Err> &ae6 = checkPhiStmtArgs(INSIST_PARSE(src6));
-    TEST(ae6.has_value() && ae6.value() == ee6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
 
     // TODO: correct programs.
 
@@ -751,7 +795,8 @@ bool testCheckLocalDefBeforeUse(void) {
     )";
     const Err &ee1 = useErr("%x", "(ret %x)", Span(Loc(4, 42), Loc(4, 44)));
     const std::optional<Err> &ae1 = checkLocalDefBeforeUse(INSIST_PARSE(src1));
-    TEST(ae1.has_value() && ae1.value() == ee1);
+    TEST(ae1.has_value());
+    TEST(ae1.value() == ee1);
 
     const std::string &src2 = R"(
         (preamble (version 0.0) (source test))
@@ -764,7 +809,8 @@ bool testCheckLocalDefBeforeUse(void) {
     const Err &ee2 =
         useErr("%x", "(load (i32 %1) %x)", Span(Loc(6, 33), Loc(6, 35)));
     const std::optional<Err> &ae2 = checkLocalDefBeforeUse(INSIST_PARSE(src2));
-    TEST(ae2.has_value() && ae2.value() == ee2);
+    TEST(ae2.has_value());
+    TEST(ae2.value() == ee2);
 
     const std::string &src3 = R"(
         (preamble (version 0.0) (source test))
@@ -777,7 +823,8 @@ bool testCheckLocalDefBeforeUse(void) {
     )";
     const Err &ee3 = useErr("%a", "(ret %a)", Span(Loc(8, 23), Loc(8, 25)));
     const std::optional<Err> &ae3 = checkLocalDefBeforeUse(INSIST_PARSE(src3));
-    TEST(ae3.has_value() && ae3.value() == ee3);
+    TEST(ae3.has_value());
+    TEST(ae3.value() == ee3);
 
     const std::string &src4 = R"(
         (preamble (version 0.0) (source test))
@@ -814,7 +861,8 @@ bool testCheckLocalDefBeforeUse(void) {
     )";
     const Err &ee6 = phiErr("%a", "!1", Span(Loc(8, 35), Loc(8, 42)));
     const std::optional<Err> &ae6 = checkLocalDefBeforeUse(INSIST_PARSE(src6));
-    TEST(ae6.has_value() && ae6.value() == ee6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
 
     const std::string &src7 = R"(
         (preamble (version 0.0) (source test))
@@ -828,7 +876,8 @@ bool testCheckLocalDefBeforeUse(void) {
     )";
     const Err &ee7 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
     const std::optional<Err> &ae7 = checkLocalDefBeforeUse(INSIST_PARSE(src7));
-    TEST(ae7.has_value() && ae7.value() == ee7);
+    TEST(ae7.has_value());
+    TEST(ae7.value() == ee7);
 
     const std::string &src8 = R"(
         (preamble (version 0.0) (source test))
@@ -842,7 +891,8 @@ bool testCheckLocalDefBeforeUse(void) {
     )";
     const Err &ee8 = phiErr("%2", "!3", Span(Loc(9, 27), Loc(9, 34)));
     const std::optional<Err> &ae8 = checkLocalDefBeforeUse(INSIST_PARSE(src8));
-    TEST(ae8.has_value() && ae8.value() == ee8);
+    TEST(ae8.has_value());
+    TEST(ae8.value() == ee8);
 
     const std::string &src9 = R"(
         (preamble (version 0.0) (source test))
