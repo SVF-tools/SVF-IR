@@ -108,7 +108,6 @@ Function unify(const Function &fn) {
             newStmts.push_back(
                 BrStmt(urid, ret.md, Span(ret.span.start, ret.span.end, true))
             );
-            // TODO: maybe mark span as gen?
             newBlocks.emplace_back(bb.id, newStmts, std::nullopt, bb.span);
         }
     }
