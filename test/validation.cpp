@@ -527,29 +527,35 @@ bool testCheckVarargStmts(void) {
         );
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
-        (functions (@fn void () ((!1 ((vararg (i32 %x) 1))))))
-    )";
+        (functions (@fn void () ((!1 ((vararg (i32 %x) 1) (ret void))))))
+    )");
     const Err &ee1 = varargErr("(vararg (i32 %x) 1)", "@fn", Span(Loc(4, 39), Loc(4, 58)));
-    const std::optional<Err> &ae1 = checkVarargStmts(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkVarargStmts(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@o void () opaque)
           (@fn (agg 0) ((i32 %p) (ptr %1)) (
-            (!1 ((load (ptr %1) null)))
-            (!2 ((vararg (ptr %1) 0))))))
-    )";
+            (!1 ((load (ptr %1) null) (ret ((agg 0) (seq)))))
+            (!2 ((vararg (ptr %1) 0) (ret ((agg 0) (seq))))))))
+    )");
     const Err &ee2 = varargErr("(vararg (ptr %1) 0)", "@fn", Span(Loc(8, 18), Loc(8, 37)));
-    const std::optional<Err> &ae2 = checkVarargStmts(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkVarargStmts(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
     // TODO: correct programs.
 
