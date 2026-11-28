@@ -29,7 +29,7 @@ template <typename T>
 using Result = std::variant<T, Err>;
 
 template <typename T>
-const T &getVal(const Result<T> &res) {
+const T getVal(const Result<T> &res) {
     insist(is<T>(res));
     return get<T>(res);
 }
