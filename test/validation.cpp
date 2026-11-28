@@ -173,36 +173,42 @@ bool testCheckTerminatingStmts(void) {
         );
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@foo void ((ptr %x)) (
               (!x ((ret void)))
               (!y ((add %y (i8 1) (i8 2)) (not %z (i8 1)))))))
-    )";
+    )");
     const Err &ee1 =
         nonTerminatorErr("(not %z (i8 1))", "!y", Span(Loc(7, 43), Loc(7, 58)));
-    const std::optional<Err> &ae1 = checkTerminatingStmts(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkTerminatingStmts(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@foo void ((ptr %x)) (
               (!x ((alloc stack %1)))
               (!y ((add %a (f16 1.0) (f16 2.2)))))))
-    )";
+    )");
     const Err &ee2 = nonTerminatorErr(
-            "(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36))
-        );
-    const std::optional<Err> &ae2 = checkTerminatingStmts(INSIST_PARSE(src2));
+        "(alloc stack %1)", "!x", Span(Loc(6, 20), Loc(6, 36))
+    );
+    const std::optional<Err> &ae2 = checkTerminatingStmts(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -211,43 +217,52 @@ bool testCheckTerminatingStmts(void) {
               (!x2 ((brif (i8 1) !y !z)))
               (!y ((phi %p ((%x !x1) (%x !x2)))))
               (!z ((ret void))))))
-    )";
+    )");
     const Err &ee3 = nonTerminatorErr(
-            "(phi %p ((%x !x1) (%x !x2)))", "!y", Span(Loc(8, 20), Loc(8, 48))
-        );
-    const std::optional<Err> &ae3 = checkTerminatingStmts(INSIST_PARSE(src3));
+        "(phi %p ((%x !x1) (%x !x2)))", "!y", Span(Loc(8, 20), Loc(8, 48))
+    );
+    const std::optional<Err> &ae3 = checkTerminatingStmts(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
-    const std::string &src4 = R"(
+    const Program &p4 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@foo void ((i32 %x)) (
               (!x ((ret void) (alloc stack %1) (ret void)))
               (!y ((add %a %x %x) (add %a %x %x) (ret void))))))
-    )";
+    )");
     const Err &ee4 =
         terminatorErr("(ret void)", "!x", Span(Loc(6, 20), Loc(6, 30)));
-    const std::optional<Err> &ae4 = checkTerminatingStmts(INSIST_PARSE(src4));
+    const std::optional<Err> &ae4 = checkTerminatingStmts(p4);
     TEST(ae4.has_value());
     TEST(ae4.value() == ee4);
+    const Result<TypedProgram> &tae4 = typeProgram(p4);
+    TEST(is<Err>(tae4));
+    TEST(get<Err>(tae4) == ee4);
 
-    const std::string &src5 = R"(
+    const Program &p5 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@foo void ((ptr %x)) (
               (!x ((br !y)))
               (!y ((br !x) (add %a %b %c))))))
-    )";
+    )");
     const Err &ee5 =
         terminatorErr("(br !x)", "!y", Span(Loc(7, 20), Loc(7, 27)));
-    const std::optional<Err> &ae5 = checkTerminatingStmts(INSIST_PARSE(src5));
+    const std::optional<Err> &ae5 = checkTerminatingStmts(p5);
     TEST(ae5.has_value());
     TEST(ae5.value() == ee5);
+    const Result<TypedProgram> &tae5 = typeProgram(p5);
+    TEST(is<Err>(tae5));
+    TEST(get<Err>(tae5) == ee5);
 
-    const std::string &src6 = R"(
+    const Program &p6 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -255,12 +270,15 @@ bool testCheckTerminatingStmts(void) {
               (!x ((br !y)))
               (!y ((add %a %b %c) (br !z)))
               (!z ((or %o (i8 1) (i8 2)) (brif %o !y !z) (ret void))))))
-    )";
+    )");
     const Err &ee6 =
         terminatorErr("(brif %o !y !z)", "!z", Span(Loc(8, 42), Loc(8, 57)));
-    const std::optional<Err> &ae6 = checkTerminatingStmts(INSIST_PARSE(src6));
+    const std::optional<Err> &ae6 = checkTerminatingStmts(p6);
     TEST(ae6.has_value());
     TEST(ae6.value() == ee6);
+    const Result<TypedProgram> &tae6 = typeProgram(p6);
+    TEST(is<Err>(tae6));
+    TEST(get<Err>(tae6) == ee6);
 
     // TODO: correct programs.
 
@@ -292,133 +310,164 @@ bool testCheckDuplicateVars(void) {
 
     // Globals.
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque) (@foo (i32 2)))
         (functions)
-    )";
+    )");
     const Err &ee1 = globalVarErr("@foo", Span(Loc(3, 35), Loc(3, 39)));
-    const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkDuplicateVars(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque) (@bar (i32 2)))
         (functions (@baz void () opaque) (@bar void () ((!x ((ret void))))))
-    )";
+    )");
     const Err &ee2 = fnErr("@bar", Span(Loc(4, 43), Loc(4, 47)));
-    const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkDuplicateVars(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
-    const std::string &src3 = R"(
+    const Program &p3 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo ((agg 0) (seq))))
         (functions
           (@bar void () ((!x ((ret void)))))
           (@bar void () ((!x ((ret void))))))
-    )";
+    )");
     const Err &ee3 = fnErr("@bar", Span(Loc(6, 12), Loc(6, 16)));
-    const std::optional<Err> &ae3 = checkDuplicateVars(INSIST_PARSE(src3));
+    const std::optional<Err> &ae3 = checkDuplicateVars(p3);
     TEST(ae3.has_value());
     TEST(ae3.value() == ee3);
+    const Result<TypedProgram> &tae3 = typeProgram(p3);
+    TEST(is<Err>(tae3));
+    TEST(get<Err>(tae3) == ee3);
 
     // Locals
 
-    const std::string &src4 = R"(
+    const Program &p4 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque))
         (functions
           (@bar void ((i32 %foo) (i64 %bar) (i16 %bar)) ((!x ((ret void))))))
-    )";
+    )");
     const Err &ee4 = paramErr("%bar", Span(Loc(5, 50), Loc(5, 54)));
-    const std::optional<Err> &ae4 = checkDuplicateVars(INSIST_PARSE(src4));
+    const std::optional<Err> &ae4 = checkDuplicateVars(p4);
     TEST(ae4.has_value());
     TEST(ae4.value() == ee4);
+    const Result<TypedProgram> &tae4 = typeProgram(p4);
+    TEST(is<Err>(tae4));
+    TEST(get<Err>(tae4) == ee4);
 
-    const std::string &src5 = R"(
+    const Program &p5 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables (@foo opaque))
         (functions
-          (@bar void ((i32 %foo)) ((!foo ((alloc stack %foo))))))
-    )";
+          (@bar void ((i32 %foo)) ((!foo ((alloc stack %foo) (ret void))))))
+    )");
     const Err &ee5 = localVarErr("%foo", Span(Loc(5, 56), Loc(5, 60)));
-    const std::optional<Err> &ae5 = checkDuplicateVars(INSIST_PARSE(src5));
+    const std::optional<Err> &ae5 = checkDuplicateVars(p5);
     TEST(ae5.has_value());
     TEST(ae5.value() == ee5);
+    const Result<TypedProgram> &tae5 = typeProgram(p5);
+    TEST(is<Err>(tae5));
+    TEST(get<Err>(tae5) == ee5);
 
-    const std::string &src6 = R"(
-        (preamble (version 0.0) (source test))
-        (variables)
-        (functions
-          (@fn i32 () ((!foo ((alloc stack %foo) (not %foo (i32 550)))))))
-    )";
-    const Err &ee6 = localVarErr("%foo", Span(Loc(5, 55), Loc(5, 59)));
-    const std::optional<Err> &ae6 = checkDuplicateVars(INSIST_PARSE(src6));
-    TEST(ae6.has_value());
-    TEST(ae6.value() == ee6);
-
-    const std::string &src7 = R"(
+    const Program &p6 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn i32 () (
-            (!foo ((alloc stack %foo) (not %bar (i32 550))))
-            (!bar ((blackhole pure (f16 %foo)))))))
-    )";
+            (!foo ((alloc stack %foo) (not %foo (i32 550)) (ret (i32 2)))))))
+    )");
+    const Err &ee6 = localVarErr("%foo", Span(Loc(6, 44), Loc(6, 48)));
+    const std::optional<Err> &ae6 = checkDuplicateVars(p6);
+    TEST(ae6.has_value());
+    TEST(ae6.value() == ee6);
+    const Result<TypedProgram> &tae6 = typeProgram(p6);
+    TEST(is<Err>(tae6));
+    TEST(get<Err>(tae6) == ee6);
+
+    const Program &p7 = INSIST_PARSE(R"(
+        (preamble (version 0.0) (source test))
+        (variables)
+        (functions
+          (@fn i32 () (
+            (!foo ((alloc stack %foo) (not %bar (i32 550)) (br !bar)))
+            (!bar ((blackhole pure (f16 %foo)) (br !bar))))))
+    )");
     const Err &ee7 = localVarErr("%foo", Span(Loc(7, 41), Loc(7, 45)));
-    const std::optional<Err> &ae7 = checkDuplicateVars(INSIST_PARSE(src7));
+    const std::optional<Err> &ae7 = checkDuplicateVars(p7);
     TEST(ae7.has_value());
     TEST(ae7.value() == ee7);
+    const Result<TypedProgram> &tae7 = typeProgram(p7);
+    TEST(is<Err>(tae7));
+    TEST(get<Err>(tae7) == ee7);
 
-    const std::string &src8 = R"(
+    const Program &p8 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn1 i32 () (
-            (!foo ((alloc stack %foo) (not %bar (i32 550))))
-            (!bar ((blackhole pure (f16 %baz))))))
+            (!foo ((alloc stack %foo) (not %bar (i32 550)) (br !bar)))
+            (!bar ((blackhole pure (f16 %baz)) (br !bar)))))
           (@fn2 void ((i32 %foo)) (
             (!foo ((ret %foo)))
-            (!bar ((load (f16 %foo) null))))))
-    )";
+            (!bar ((load (f16 %foo) null) (ret %foo))))))
+    )");
     const Err &ee8 = localVarErr("%foo", Span(Loc(10, 31), Loc(10, 35)));
-    const std::optional<Err> &ae8 = checkDuplicateVars(INSIST_PARSE(src8));
+    const std::optional<Err> &ae8 = checkDuplicateVars(p8);
     TEST(ae8.has_value());
     TEST(ae8.value() == ee8);
+    const Result<TypedProgram> &tae8 = typeProgram(p8);
+    TEST(is<Err>(tae8));
+    TEST(get<Err>(tae8) == ee8);
 
-    const std::string &src9 = R"(
+    const Program &p9 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
           (@fn1 i32 () (
-            (!foo ((alloc stack %foo) (not %bar (i32 550))))
-            (!bar ((blackhole pure (f16 %baz))))))
+            (!foo ((alloc stack %foo) (not %bar (i32 550)) (br !bar)))
+            (!bar ((blackhole pure (f16 %baz)) (br !bar)))))
           (@fn2 void ((i32 %foo)) (
             (!foo ((brif %foo !bar !bar)))
-            (!bar ((field %fld null 0) (convert %fld %fld i64))))))
-    )";
+            (!bar ((field %fld null 0) (convert %fld %fld i64) (ret void))))))
+    )");
     const Err &ee9 = localVarErr("%fld", Span(Loc(10, 49), Loc(10, 53)));
-    const std::optional<Err> &ae9 = checkDuplicateVars(INSIST_PARSE(src9));
+    const std::optional<Err> &ae9 = checkDuplicateVars(p9);
     TEST(ae9.has_value());
     TEST(ae9.value() == ee9);
+    const Result<TypedProgram> &tae9 = typeProgram(p9);
+    TEST(is<Err>(tae9));
+    TEST(get<Err>(tae9) == ee9);
 
-    const std::string &src10 = R"(
+    const Program &p10 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
-          (@fn1 i32 ((i32 %foo1)) (
-            (!foo ((alloc stack %foo2) (not %bar (i32 550))))
-            (!bar ((blackhole pure (f16 %baz))))))
+          (@fn1 void ((i32 %foo1)) (
+            (!foo ((alloc stack %foo2) (not %bar (i32 550)) (ret void)))
+            (!bar ((blackhole pure (f16 %baz)) (ret void)))))
           (@fn2 void ((i32 %foo) (ptr %x) (ptr %x)) (
             (!foo ((brif %foo !bar !bar)))
             (!bar ((field %fld null 0) (ret %fld))))))
-    )";
+    )");
     const Err &ee10 = paramErr("%x", Span(Loc(8, 48), Loc(8, 50)));
-    const std::optional<Err> &ae10 = checkDuplicateVars(INSIST_PARSE(src10));
+    const std::optional<Err> &ae10 = checkDuplicateVars(p10);
     TEST(ae10.has_value());
     TEST(ae10.value() == ee10);
+    const Result<TypedProgram> &tae10 = typeProgram(p10);
+    TEST(is<Err>(tae10));
+    TEST(get<Err>(tae10) == ee10);
 
     // TODO: correct programs.
 
