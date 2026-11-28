@@ -480,17 +480,21 @@ bool testCheckDuplicateBlocks(void) {
         return Err("Block '" + name + "' previously declared.", span);
     };
 
-    const std::string &src1 = R"(
+    const Program &p1 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
-          (@fn void () ((!1 ((ret void))) (!1 ((ret void)))))))";
+          (@fn void () ((!1 ((ret void))) (!1 ((ret void))))))
+    )");
     const Err &ee1 = blockErr("!1", Span(Loc(5, 44), Loc(5, 46)));
-    const std::optional<Err> &ae1 = checkDuplicateVars(INSIST_PARSE(src1));
+    const std::optional<Err> &ae1 = checkDuplicateBlocks(p1);
     TEST(ae1.has_value());
     TEST(ae1.value() == ee1);
+    const Result<TypedProgram> &tae1 = typeProgram(p1);
+    TEST(is<Err>(tae1));
+    TEST(get<Err>(tae1) == ee1);
 
-    const std::string &src2 = R"(
+    const Program &p2 = INSIST_PARSE(R"(
         (preamble (version 0.0) (source test))
         (variables)
         (functions
@@ -499,11 +503,15 @@ bool testCheckDuplicateBlocks(void) {
             (!1 ((ret void)))
             (!x ((ret void)))
             (!2 ((ret void)))
-            (!x ((ret void)))))))";
+            (!x ((ret void))))))
+    )");
     const Err &ee2 = blockErr("!x", Span(Loc(10, 14), Loc(10, 16)));
-    const std::optional<Err> &ae2 = checkDuplicateVars(INSIST_PARSE(src2));
+    const std::optional<Err> &ae2 = checkDuplicateBlocks(p2);
     TEST(ae2.has_value());
     TEST(ae2.value() == ee2);
+    const Result<TypedProgram> &tae2 = typeProgram(p2);
+    TEST(is<Err>(tae2));
+    TEST(get<Err>(tae2) == ee2);
 
     return true;
 }
